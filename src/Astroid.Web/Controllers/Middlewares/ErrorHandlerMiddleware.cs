@@ -76,7 +76,7 @@ public class ErrorHandlerMiddleware
 		response.ContentType = "text/html";
 
 		await response.WriteAsync("<html lang=\"en\"><body>\r\n");
-		await response.WriteAsync("<h2>MonoSign Handled Exception</h2>\r\n");
+		await response.WriteAsync("<h2>Astroid Error Handler</h2>\r\n");
 
 		var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
 
