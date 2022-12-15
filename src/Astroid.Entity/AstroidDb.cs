@@ -1,42 +1,37 @@
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Reflection;
-using System.Threading.Tasks;
+using Astroid.Core;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Metadata;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Configuration;
 
 namespace Astroid.Entity;
 
 public class AstroidDb : DbContext
 {
-	public static DatabaseProvider DefaultProvider { get; set; }
+	private DatabaseProvider Provider { get; set; }
+	private string ConnectionString { get; set; }
 
 	#region DbSets
 
+	public DbSet<ADUser> Users { get; set; }
+
 	#endregion DbSets
 
-	private AstroidDb() { }
+	public AstroidDb(DbContextOptions<AstroidDb> options, IConfiguration config) : base(options)
+	{
+		var settings = config.Get<AConfAppSettings>() ?? new();
 
-	public AstroidDb(DbContextOptions<AstroidDb> options) : base(options) { }
+		ConnectionString = settings.Database.ConnectionString!;
+		Provider = settings.Database.DatabaseProvider;
+	}
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 	{
 		if (!optionsBuilder.IsConfigured)
 		{
-			var connectionString = "";
-			switch (DefaultProvider)
+			switch (Provider)
 			{
 				case DatabaseProvider.PostgreSql:
 					optionsBuilder
-						.UseNpgsql(connectionString, options =>
+						.UseNpgsql(ConnectionString, options =>
 						{
 							options.CommandTimeout(30);
 						});
@@ -46,8 +41,7 @@ public class AstroidDb : DbContext
 				case DatabaseProvider.MySql:
 				case DatabaseProvider.Unknown:
 				default:
-					throw new ArgumentOutOfRangeException(nameof(DefaultProvider));
-					throw new ArgumentOutOfRangeException(nameof(DefaultProvider));
+					throw new InvalidDataException(nameof(Provider));
 			}
 		}
 

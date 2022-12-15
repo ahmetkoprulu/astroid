@@ -7,6 +7,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.Web", "src\Astroid.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.Entity", "src\Astroid.Entity\Astroid.Entity.csproj", "{F3A7F704-D2B7-4FA1-8727-D29C51665D7C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.Core", "src\Astroid.Core\Astroid.Core.csproj", "{94EF8E4B-84B8-4444-8488-F3213F1A5E04}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,5 +32,12 @@ Global
 		{F3A7F704-D2B7-4FA1-8727-D29C51665D7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F3A7F704-D2B7-4FA1-8727-D29C51665D7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F3A7F704-D2B7-4FA1-8727-D29C51665D7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{94EF8E4B-84B8-4444-8488-F3213F1A5E04}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{94EF8E4B-84B8-4444-8488-F3213F1A5E04}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{94EF8E4B-84B8-4444-8488-F3213F1A5E04}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{94EF8E4B-84B8-4444-8488-F3213F1A5E04}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{94EF8E4B-84B8-4444-8488-F3213F1A5E04} = {C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}
 	EndGlobalSection
 EndGlobal

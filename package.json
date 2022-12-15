@@ -1,0 +1,26 @@
+{
+  "name": "astroid",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "cd src/Astroid.Web && NODE_ENV=development dotnet watch run",
+    "db-migrate": "dotnet ef migrations add --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
+    "db-migrate-list": "dotnet ef migrations list --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
+    "db-update": "dotnet ef database update --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
+    "db-migrate-rm": "dotnet ef migrations remove --project src/Astroid.Entity/ --startup-project src/Astroid.Web/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahmetkoprulu/astroid.git"
+  },
+  "author": "aek",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ahmetkoprulu/astroid/issues"
+  },
+  "homepage": "https://github.com/ahmetkoprulu/astroid#readme"
+}

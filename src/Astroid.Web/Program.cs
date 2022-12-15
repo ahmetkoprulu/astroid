@@ -1,18 +1,21 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
+using Astroid.Core;
+using Astroid.Entity;
 using Astroid.Web;
 using Astroid.Web.Middleware;
+using Microsoft.AspNetCore.SpaServices;
 using VueCliMiddleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
-	var remoteConfig = context.Configuration.Get<ACAppSettings>();
+	var remoteConfig = context.Configuration.Get<AConfAppSettings>();
 	if (remoteConfig?.Endpoints == null || !remoteConfig.Endpoints.Any()) return;
 	foreach (var endpoint in remoteConfig.Endpoints)
 	{
-		var url = new Uri(endpoint.Url);
+		var url = new Uri(endpoint.Url!);
 
 		var port = url.Port != 0 ? url.Port : url.Scheme == "https" ? 443 : 80;
 
@@ -41,7 +44,7 @@ builder.WebHost.ConfigureKestrel((context, options) =>
 	}
 });
 
-static X509Certificate2 LoadCertificate(ACEndpoint config, Uri url)
+static X509Certificate2 LoadCertificate(AConfEndpoint config, Uri url)
 {
 	return null;
 	if (config.Certificate == null) return null;
@@ -64,20 +67,52 @@ static X509Certificate2 LoadCertificate(ACEndpoint config, Uri url)
 	throw new InvalidOperationException("No valid certificate configuration found for the current endpoint.");
 }
 
+// Dependency Injections
+builder.Services.AddDbContext<AstroidDb>();
+
 // Add services to the container.
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Authentication things
+builder.Services
+	.AddAuthentication(ACWeb.Authentication.DefaultSchema)
+	.AddCookie(ACWeb.Authentication.DefaultSchema, options =>
+		{
+			options.Cookie.Name = ACWeb.Authentication.DefaultSchema;
+			options.Cookie.Path = "/";
+			options.Cookie.SameSite = SameSiteMode.None;
+			options.LoginPath = new PathString(ACWeb.Authentication.SignInPath);
+			options.LogoutPath = new PathString(ACWeb.Authentication.SignOutPath);
+			options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+		}
+	);
+builder.Services.AddAuthorization();
+// builder.Services.AddSession(options =>
+// {
+// 	options.IdleTimeout = TimeSpan.FromDays(1);
+// 	options.Cookie.Name = ACWeb.Authentication.SessionKey;
+// 	// options.Cookie.IsEssential = true;
+// 	// options.Cookie.HttpOnly = true;
+// 	options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+// 	options.Cookie.SameSite = SameSiteMode.Strict;
+// });
 
 // In production, the Vue files will be served from this directory
 builder.Services.AddSpaStaticFiles(configuration => configuration.RootPath = "wwwroot/dist");
 
 var app = builder.Build();
+var conf = app.Configuration.Get<AConfAppSettings>();
 
-// Configure the HTTP request pipeline.
+// using var db = app.Services.GetRequiredService<AstroidDb>();
+// db.Database.EnsureCreated();
+
 if (app.Environment.IsDevelopment())
 {
+	app.UseDeveloperExceptionPage();
 	app.UseSwagger();
 	app.UseSwaggerUI();
 }
@@ -85,25 +120,29 @@ if (app.Environment.IsDevelopment())
 app.UseStaticFiles();
 app.UseSpaStaticFiles();
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
-app.UseAuthorization();
-
 app.UseRouting();
-app.MapControllers();
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseEndpoints(_ => { });
 
-app.UseCors();
-
-app.UseSpa(spa =>
+app.UseEndpoints(e =>
 {
-	spa.Options.SourcePath = "Client";
+	e.MapControllers();
 	if (app.Environment.IsDevelopment())
 	{
-		spa.UseProxyToSpaDevelopmentServer("http://localhost:8080");
-		spa.UseVueCli(npmScript: "serve");
+		e.MapToVueCliProxy(
+			"{*path}",
+			new SpaOptions { SourcePath = "Client" },
+			npmScript: "serve",
+			regex: "Compiled successfully",
+			forceKill: true
+		);
 	}
 });
+app.UseCors();
 
 app.Run();

@@ -13,6 +13,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="../Astroid.Core/Astroid.Core.csproj" />
     <ProjectReference Include="../Astroid.Entity/Astroid.Entity.csproj" />
   </ItemGroup>
 </Project>

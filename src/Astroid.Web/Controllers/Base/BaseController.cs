@@ -2,9 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Astroid.Entity;
 using Astroid.Web.Models;
+using System.Security.Claims;
+using Astroid.Core;
+using Microsoft.AspNetCore.Authentication;
 
-namespace MonoSign.Web.Management;
+namespace Astroid.Web;
 
+[ApiController]
+[Route("api/[controller]")]
 public class BaseController : Controller
 {
 	protected AstroidDb Db { get; set; }
@@ -15,6 +20,30 @@ public class BaseController : Controller
 	public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
 	{
 		await base.OnActionExecutionAsync(context, next);
+	}
+
+	[NonAction]
+	public async Task AuthenticateUser(ADUser user, Guid sessionId, bool isPermanent)
+	{
+		var claims = new List<Claim>
+			{
+				new Claim(ACWeb.Authentication.SessionKey, sessionId.ToString()),
+				new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+				new Claim(ClaimTypes.Name, user.Name),
+				new Claim(ClaimTypes.Email, user.Email),
+			};
+
+		var claimsIdentity = new ClaimsIdentity(claims, ACWeb.Authentication.DefaultSchema);
+		var principle = new ClaimsPrincipal(claimsIdentity);
+
+		await HttpContext.SignOutAsync(ACWeb.Authentication.DefaultSchema);
+		var authProperties = new AuthenticationProperties
+		{
+			IsPersistent = isPermanent,
+			ExpiresUtc = DateTime.UtcNow.AddDays(30),
+			AllowRefresh = true
+		};
+		await HttpContext.SignInAsync(ACWeb.Authentication.DefaultSchema, principle, authProperties);
 	}
 
 	#region Return Types

@@ -1,4 +1,4 @@
-namespace Astroid.Entity;
+namespace Astroid.Core;
 
 public enum DatabaseProvider
 {
