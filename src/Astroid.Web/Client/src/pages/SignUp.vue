@@ -1,0 +1,74 @@
+<template>
+  <div class="login--container p-3">
+    <div class="mb-4">
+      <div class="text-center">
+        <img alt="Vue logo" src="../assets/logo.png" />
+        <h3>Sign Up</h3>
+      </div>
+    </div>
+    <div>
+      <b-form @submit.prevent>
+        <b-form-group class="mb-3" label="Name:">
+          <b-form-input v-model="form.name" type="text"></b-form-input>
+        </b-form-group>
+        <b-form-group class="mb-3" label="Email:">
+          <b-form-input v-model="form.email" type="email"></b-form-input>
+        </b-form-group>
+        <b-form-group class="mb-3" label="Password:">
+          <b-form-input v-model="form.password" type="password"></b-form-input>
+        </b-form-group>
+        <b-form-group class="mb-4" label="Confirm Password:">
+          <b-form-input
+            v-model="form.confirmPassword"
+            type="password"
+          ></b-form-input>
+        </b-form-group>
+        <b-button class="w-100 mb-4" variant="primary" @click="register"
+          >Sign Up</b-button
+        >
+        <div class="w-100 p-auto text-center">
+          <div><a href="/sign-in">Already have an account?</a></div>
+        </div>
+      </b-form>
+    </div>
+  </div>
+</template>
+
+<script>
+import HomeService from "../services/home";
+
+export default {
+  data() {
+    return {
+      form: {
+        name: null,
+        email: null,
+        password: null,
+        confirmPassword: null,
+      },
+    };
+  },
+  methods: {
+    async register() {
+      try {
+        await HomeService.signUp(this.form);
+        this.router.push({ name: "signIn" });
+      } catch (err) {
+        console.error(err);
+      }
+    },
+  },
+};
+</script>
+
+<style scoped>
+.login--container {
+  min-width: 350px;
+  min-height: 400px;
+  position: absolute;
+  top: 50%;
+  left: 53%;
+  transform: translate(-50%, -50%);
+  padding: 10px;
+}
+</style>

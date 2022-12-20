@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Astroid.Entity;
 using Astroid.Web.Models;
-using System.Security.Claims;
 using Astroid.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
@@ -14,11 +12,6 @@ public class HomeController : BaseController
 {
 	public HomeController(AstroidDb db) : base(db) { }
 
-	[HttpGet("asd")]
-	public async Task<IActionResult> ind()
-	{
-		return Ok("asd");
-	}
 	[HttpPost("sign-up")]
 	public async Task<IActionResult> SignUp(AMSignUp model)
 	{
@@ -32,6 +25,7 @@ public class HomeController : BaseController
 			Id = Guid.NewGuid(),
 			Name = model.Name,
 			Email = model.Email,
+			CreatedDate = DateTime.UtcNow
 		};
 		user.PasswordHash = ACrypto.Hash(model.Password, user.Id.ToString());
 		await Db.AddAsync(user);

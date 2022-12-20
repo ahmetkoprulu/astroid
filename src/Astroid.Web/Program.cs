@@ -84,22 +84,13 @@ builder.Services
 		{
 			options.Cookie.Name = ACWeb.Authentication.DefaultSchema;
 			options.Cookie.Path = "/";
-			options.Cookie.SameSite = SameSiteMode.None;
+			options.Cookie.SameSite = SameSiteMode.Strict;
 			options.LoginPath = new PathString(ACWeb.Authentication.SignInPath);
 			options.LogoutPath = new PathString(ACWeb.Authentication.SignOutPath);
 			options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 		}
 	);
 builder.Services.AddAuthorization();
-// builder.Services.AddSession(options =>
-// {
-// 	options.IdleTimeout = TimeSpan.FromDays(1);
-// 	options.Cookie.Name = ACWeb.Authentication.SessionKey;
-// 	// options.Cookie.IsEssential = true;
-// 	// options.Cookie.HttpOnly = true;
-// 	options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-// 	options.Cookie.SameSite = SameSiteMode.Strict;
-// });
 
 // In production, the Vue files will be served from this directory
 builder.Services.AddSpaStaticFiles(configuration => configuration.RootPath = "wwwroot/dist");
@@ -136,7 +127,7 @@ app.UseEndpoints(e =>
 	{
 		e.MapToVueCliProxy(
 			"{*path}",
-			new SpaOptions { SourcePath = "Client" },
+			new SpaOptions { SourcePath = "./" },
 			npmScript: "serve",
 			regex: "Compiled successfully",
 			forceKill: true
