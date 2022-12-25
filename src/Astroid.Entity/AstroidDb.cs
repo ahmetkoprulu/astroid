@@ -11,7 +11,10 @@ public class AstroidDb : DbContext
 
 	#region DbSets
 
+	public DbSet<ADBot> Bots { get; set; }
 	public DbSet<ADUser> Users { get; set; }
+	public DbSet<ADExchange> Exchanges { get; set; }
+	public DbSet<ADExchangeProvider> ExchangeProviders { get; set; }
 
 	#endregion DbSets
 

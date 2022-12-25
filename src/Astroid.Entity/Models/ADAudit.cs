@@ -3,15 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Astroid.Entity;
 
-[Table("UserProviders")]
-
-public class ADUser : IEntity
+[Table("Audits")]
+public class ADAudit : IEntity
 {
 	[Key]
 	public Guid Id { get; set; }
-	public string Name { get; set; }
-	public string Email { get; set; }
-	public string PasswordHash { get; set; }
+	public Guid UserId { get; set; }
+	public string Data { get; set; }
 	public DateTime CreatedDate { get; set; }
-	public bool IsRemoved { get; set; }
+	public DateTime ModifiedDate { get; set; }
 }
