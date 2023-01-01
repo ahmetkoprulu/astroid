@@ -3,6 +3,7 @@ using System;
 using Astroid.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Astroid.Entity.Migrations
 {
     [DbContext(typeof(AstroidDb))]
-    partial class AstroidDbModelSnapshot : ModelSnapshot
+    [Migration("20230101161926_RenamedSettingsColumnToProperties")]
+    partial class RenamedSettingsColumnToProperties
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -163,7 +166,7 @@ namespace Astroid.Entity.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("UserProviders");
                 });
 
             modelBuilder.Entity("Astroid.Entity.ADExchange", b =>

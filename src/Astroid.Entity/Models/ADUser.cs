@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Astroid.Entity;
 
-[Table("UserProviders")]
+[Table("Users")]
 
 public class ADUser : IEntity
 {
