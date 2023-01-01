@@ -49,7 +49,7 @@ public class BaseController : Controller
 	#region Return Types
 
 	[NonAction]
-	protected IActionResult Success(object data, string message = "") => StatusCode(200, AMReturn.Ok(data, message));
+	protected IActionResult Success(object? data, string message = "") => StatusCode(200, AMReturn.Ok(data, message));
 
 	[NonAction]
 	protected IActionResult Success(AMReturn data) => StatusCode(200, data);

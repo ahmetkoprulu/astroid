@@ -1,14 +1,21 @@
 <template>
-  <b-overlay :show="busy" :opacity="1" variant="white">
-    <div class="trading-container" v-if="!busy">
+  <b-overlay style="height: 100vh" :show="loading" :opacity="1" variant="white">
+    <div class="trading-container" v-if="!loading">
       <header>
-        <Navbar />
+        <!-- <Navbar /> -->
         <Sidebar />
       </header>
       <main>
-        <div class="container-fluid p-5" style="margin-top: 62px">
-          <router-view></router-view>
-        </div>
+        <b-overlay
+          style="height: 100vh"
+          :show="$busy"
+          :opacity="1"
+          variant="white"
+        >
+          <div class="container-fluid md:px-6">
+            <router-view></router-view>
+          </div>
+        </b-overlay>
       </main>
     </div>
   </b-overlay>
@@ -18,24 +25,24 @@
 import { Vue } from "../main";
 import UserService from "../services/users";
 
-import Navbar from "../components/layout/Navbar.vue";
+// import Navbar from "../components/layout/Navbar.vue";
 import Sidebar from "../components/layout/Sidebar.vue";
 
 export default {
   data() {
     return {
-      busy: true,
+      loading: true,
     };
   },
   components: {
-    Navbar,
+    // Navbar,
     Sidebar,
   },
   async mounted() {
     var response = await UserService.userInfo();
     Vue.prototype.$user = response.data.data;
 
-    this.busy = false;
+    this.loading = false;
   },
 };
 </script>

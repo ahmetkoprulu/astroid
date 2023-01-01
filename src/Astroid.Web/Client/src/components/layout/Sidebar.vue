@@ -1,7 +1,12 @@
 <template>
   <nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse">
     <div class="position-sticky">
-      <div class="mx-3 mt-4">
+      <a class="navbar-brand d-flex text-dark mx-3 my-4" href="/">
+        <img src="../../assets/logo.png" width="35" height="35" alt="" />
+        <span class="mt-1">Astroid</span>
+      </a>
+
+      <div class="mx-3">
         <div class="nav-item" v-for="route in routes" :key="route.name">
           <RouterLink
             :to="resolveRoute(route).fullPath"
@@ -19,11 +24,7 @@
             >
               <span class="nav-item-content">
                 <div class="nav-item-icon-container">
-                  <b-icon
-                    :icon="route.meta.icon"
-                    font-scale="1.3"
-                    variant="dark"
-                  />
+                  <b-icon :icon="route.meta.icon" font-scale="1.3" />
                 </div>
                 <span>{{
                   (route.meta && route.meta.title) || route.name
@@ -74,11 +75,10 @@ export default {
   top: 0;
   bottom: 0;
   left: 0;
-  padding: 58px 0 0; /* Height of navbar */
   box-shadow: 0 2px 5px 0 rgb(0 0 0 / 5%), 0 2px 10px 0 rgb(0 0 0 / 5%);
   width: 240px;
   z-index: 600;
-  background-color: #fbfbfb;
+  background-color: rgba(249, 250, 251, var(--tw-bg-opacity));
 }
 
 @media (max-width: 991.98px) {
@@ -146,7 +146,7 @@ export default {
 
 .nav-item-row:hover .nav-item-content {
   background-color: #eee;
-  color: var(--mui-c-primary-600);
+  color: var(--mui-c-violet-600) !important;
 }
 
 /* OPEN */
@@ -166,11 +166,11 @@ export default {
 /* ACTIVE */
 
 .nav-item-row.router-active {
-  color: var(--mui-c-primary-600);
+  color: var(--mui-c-violet-600) !important;
 }
 
 .nav-item > .nav-item-row.router-active .nav-item-content {
-  background: rgba(29, 78, 216, 0.08);
+  background: #44054f15;
   border-radius: 6px;
 }
 
@@ -190,7 +190,7 @@ export default {
 
 .nav-item-row.router-active.child,
 .nav-item-row.router-exact {
-  color: var(--mui-c-primary-600);
+  color: var(--mui-c-violet-600);
 }
 
 .nav-item .nav-item .nav-item-row.router-active.child:before,

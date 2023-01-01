@@ -97,7 +97,6 @@ builder.Services.AddSpaStaticFiles(configuration => configuration.RootPath = "ww
 
 var app = builder.Build();
 var conf = app.Configuration.Get<AConfAppSettings>();
-
 // using var db = app.Services.GetRequiredService<AstroidDb>();
 // db.Database.EnsureCreated();
 
@@ -135,5 +134,7 @@ app.UseEndpoints(e =>
 	}
 });
 app.UseCors();
+
+await app.SeedDatabase();
 
 app.Run();

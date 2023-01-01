@@ -1,6 +1,4 @@
-<template>
-  <div>Markets</div>
-</template>
+<template></template>
 
 <script>
 export default {};

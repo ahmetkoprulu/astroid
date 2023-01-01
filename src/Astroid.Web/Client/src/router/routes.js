@@ -5,7 +5,10 @@ import Index from "../pages/Index.vue";
 //Trading Pages
 import Trading from "../pages/Trading.vue";
 import Dashboard from "../pages/Dashboard.vue";
-import Markets from "../pages/Markets.vue";
+
+import Markets from "../pages/Markets/List.vue";
+import MarketSave from "../pages/Markets/Save.vue";
+
 import Positions from "../pages/Positions.vue";
 
 export const routes = [
@@ -40,14 +43,24 @@ export const routes = [
 				}
 			},
 			{
-				name: "markets",
+				name: "market-list",
 				path: "markets",
 				component: Markets,
 				meta: {
 					title: "Markets",
 					visible: true,
 					icon: "arrow-left-right"
-				}
+				},
+			},
+			{
+				name: "market-save",
+				path: "markets/save/:id?",
+				component: MarketSave,
+				meta: {
+					title: "Save Market",
+					visible: false,
+					icon: "arrow-left-right"
+				},
 			},
 			{
 				name: "positions",
@@ -57,6 +70,15 @@ export const routes = [
 					title: "Positions",
 					visible: true,
 					icon: "list-nested"
+				}
+			},
+			{
+				name: "bots",
+				path: "bots",
+				meta: {
+					title: "Bots",
+					visible: true,
+					icon: "gear-wide-connected"
 				}
 			}
 		]

@@ -8,11 +8,15 @@
     "lint:frontend": "vue-cli-service lint"
   },
   "dependencies": {
+    "@riophae/vue-treeselect": "^0.4.0",
     "bootstrap": "^4.6.0",
     "bootstrap-vue": "^2.23.1",
     "core-js": "^3.6.5",
+    "moment": "^2.24.0",
+    "vee-validate": "^3.0.11",
     "vue": "^2.6.11",
-    "vue-router": "^3.2.0"
+    "vue-router": "^3.2.0",
+    "vue-sweetalert2": "^5.0.5"
   },
   "devDependencies": {
     "@vue/cli-plugin-babel": "~4.5.4",

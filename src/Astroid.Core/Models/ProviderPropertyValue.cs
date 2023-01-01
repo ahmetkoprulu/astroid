@@ -5,15 +5,15 @@ namespace Astroid.Core;
 public class ProviderPropertyValue
 {
 	public string DisplayName { get; set; }
-	public string Description { get; set; }
-	public object Value { get; set; }
-	public object DefaultValue { get; set; }
-	public string Property { get; set; }
+	public string? Description { get; set; }
+	public object? Value { get; set; }
+	public object? DefaultValue { get; set; }
+	public string? Property { get; set; }
 	public PropertyTypes Type { get; set; } = PropertyTypes.UnTyped;
-	public string Group { get; set; }
+	public string? Group { get; set; }
 	public bool Encrypted { get; set; }
 	public bool Required { get; set; }
-	public string Data { get; set; }
+	public string? Data { get; set; }
 	public int Order { get; set; }
 
 	public ProviderPropertyValue() { }

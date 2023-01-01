@@ -14,7 +14,7 @@ public class ExchangerFactory
 
 		if (Activator.CreateInstance(type) is not ExchangeProviderBase instance) return null;
 
-		instance.Context(exchange.Settings);
+		instance.Context(exchange.PropertiesJson);
 		return instance;
 	}
 

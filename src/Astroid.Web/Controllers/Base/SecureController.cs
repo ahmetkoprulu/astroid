@@ -12,6 +12,25 @@ namespace Astroid.Web;
 [Authorize(AuthenticationSchemes = ACWeb.Authentication.DefaultSchema)]
 public class SecureController : BaseController
 {
+	private ADUser _CurrentUser { get; set; }
+	public ADUser CurrentUser
+	{
+		get
+		{
+			if (_CurrentUser != null)
+				return _CurrentUser;
+
+			var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+			if (string.IsNullOrEmpty(userId))
+				throw new Exception("User not found");
+
+			_CurrentUser = Db.Users.First(x => x.Id == Guid.Parse(userId));
+
+			return _CurrentUser;
+		}
+	}
+
+
 	public SecureController(AstroidDb db) : base(db)
 	{
 	}

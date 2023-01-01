@@ -16,7 +16,7 @@
         <b-icon icon="list" variant="dark" />
       </button>
 
-      <a class="navbar-brand d-flex" href="#">
+      <a class="navbar-brand d-flex text-violet" href="/">
         <img src="../../assets/logo.png" width="35" height="35" alt="" />
         <span class="mt-1">Astroid</span>
       </a>

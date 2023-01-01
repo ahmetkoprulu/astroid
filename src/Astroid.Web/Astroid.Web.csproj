@@ -4,6 +4,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <NoWarn>CS8618</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -11,9 +12,11 @@
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="7.0.0" />
     <PackageReference Include="VueCliMiddleware" Version="6.0.0" />   
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="Mapster" Version="7.2.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Astroid.Core/Astroid.Core.csproj" />
     <ProjectReference Include="../Astroid.Entity/Astroid.Entity.csproj" />
+    <ProjectReference Include="../Astroid.Providers/Astroid.Providers.csproj" />
   </ItemGroup>
 </Project>
