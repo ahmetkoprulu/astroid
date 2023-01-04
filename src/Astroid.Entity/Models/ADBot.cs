@@ -9,7 +9,7 @@ public class ADBot : IEntity
 {
 	[Key]
 	public Guid Id { get; set; }
-	public Guid Name { get; set; }
+	public string Label { get; set; }
 	public string Description { get; set; } = string.Empty;
 	public Guid ExchangeId { get; set; }
 	// public SignalSourceType SignalSourceType { get; set; }

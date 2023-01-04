@@ -10,7 +10,7 @@ public class ADExchange : IEntity
 {
 	[Key]
 	public Guid Id { get; set; }
-	public string Name { get; set; }
+	public string Label { get; set; }
 	public string Description { get; set; }
 
 	[Column(nameof(Properties))]
