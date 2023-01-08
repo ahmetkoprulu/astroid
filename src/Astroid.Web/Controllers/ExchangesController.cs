@@ -26,11 +26,29 @@ public class ExchangesController : SecureController
 		return Success(model.ForJson(x => new AMExchange
 		{
 			Id = x.Id,
-			Name = x.Name,
+			Name = x.Label,
 			Description = x.Description,
 			ProviderId = x.Provider.Id,
 			ProviderName = x.Provider.Title
 		}));
+	}
+
+	[HttpGet]
+	public async Task<IActionResult> Get()
+	{
+		var exchanges = await Db.Exchanges
+			.AsNoTracking()
+			.Include(x => x.Provider)
+			.Select(x => new AMExchange
+			{
+				Id = x.Id,
+				Name = x.Label,
+				ProviderId = x.Provider.Id,
+				ProviderName = x.Provider.Title
+			})
+			.ToListAsync();
+
+		return Success(exchanges);
 	}
 
 	[HttpGet("{id}")]
@@ -49,7 +67,7 @@ public class ExchangesController : SecureController
 		return Success(new AMExchange
 		{
 			Id = exchange.Id,
-			Name = exchange.Name,
+			Name = exchange.Label,
 			Description = exchange.Description,
 			ProviderId = exchange.Provider.Id,
 			ProviderName = exchange.Provider.Title,
@@ -60,7 +78,7 @@ public class ExchangesController : SecureController
 	[HttpPost("save")]
 	public async Task<IActionResult> Save([FromBody] AMExchange model)
 	{
-		var isNameExists = await Db.Exchanges.AnyAsync(x => x.Name == model.Name && x.Id != model.Id);
+		var isNameExists = await Db.Exchanges.AnyAsync(x => x.Label == model.Name && x.Id != model.Id);
 		if (isNameExists) BadRequest("Exchange name already exists");
 
 		if (model.Id == Guid.Empty)
@@ -68,7 +86,7 @@ public class ExchangesController : SecureController
 			var exchange = new ADExchange
 			{
 				Id = Guid.NewGuid(),
-				Name = model.Name,
+				Label = model.Name,
 				Description = model.Description,
 				Properties = model.Properties,
 				ProviderId = model.ProviderId,
@@ -84,7 +102,7 @@ public class ExchangesController : SecureController
 			if (exchange == null)
 				return NotFound("Exchange not found");
 
-			exchange.Name = model.Name;
+			exchange.Label = model.Name;
 			exchange.Description = model.Description;
 			exchange.Properties = model.Properties;
 			exchange.ProviderId = model.ProviderId;

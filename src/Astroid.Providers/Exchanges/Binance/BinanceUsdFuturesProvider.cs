@@ -47,7 +47,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
 
 		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
-		var stopPrice = bot.IsStopLossActivated ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
+		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
 		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
 
 		if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)
@@ -85,7 +85,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private decimal? CalculateTakeProfit(decimal? activation, decimal lastPrice, PositionType type)
 	{
 		if (activation == null || activation < 5) return null;
-
+		// TODO: Fix calculation in perspective of the entry price
 		if (type == PositionType.Long) return lastPrice * (1 + activation / 100);
 
 		return lastPrice * (1 - activation / 100);

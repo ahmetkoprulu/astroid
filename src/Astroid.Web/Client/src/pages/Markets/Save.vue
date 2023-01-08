@@ -1,6 +1,6 @@
 <template>
   <div>
-    <page-header title="Create Market" :actions="actions" />
+    <page-header title="Save Market" :actions="actions" />
     <b-form-group label="Label">
       <b-form-input type="text" v-model="model.name" />
     </b-form-group>

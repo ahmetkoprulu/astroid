@@ -47,7 +47,7 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
 
 		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
-		var stopPrice = bot.IsStopLossActivated ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
+		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
 		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
 
 		if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)

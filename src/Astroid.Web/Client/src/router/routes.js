@@ -9,6 +9,9 @@ import Dashboard from "../pages/Dashboard.vue";
 import Markets from "../pages/Markets/List.vue";
 import MarketSave from "../pages/Markets/Save.vue";
 
+import Bots from "../pages/Bots/List.vue";
+import BotSave from "../pages/Bots/Save.vue";
+
 import Positions from "../pages/Positions.vue";
 
 export const routes = [
@@ -59,8 +62,26 @@ export const routes = [
 				meta: {
 					title: "Save Market",
 					visible: false,
-					icon: "arrow-left-right"
 				},
+			},
+			{
+				name: "bot-list",
+				path: "bots",
+				component: Bots,
+				meta: {
+					title: "Bots",
+					visible: true,
+					icon: "gear-wide-connected"
+				}
+			},
+			{
+				name: "bot-save",
+				path: "bots/save/:id?",
+				component: BotSave,
+				meta: {
+					title: "Save Bot",
+					visible: false,
+				}
 			},
 			{
 				name: "positions",
@@ -70,15 +91,6 @@ export const routes = [
 					title: "Positions",
 					visible: true,
 					icon: "list-nested"
-				}
-			},
-			{
-				name: "bots",
-				path: "bots",
-				meta: {
-					title: "Bots",
-					visible: true,
-					icon: "gear-wide-connected"
 				}
 			}
 		]
