@@ -43,21 +43,22 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 
 	public override async Task ExecuteOrder(ADBot bot, OrderRequest order)
 	{
-		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(order.Ticker);
-		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
-
-		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
-		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
-		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
-
 		if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)
-			await OpenLong(order.Ticker, quantity, stopPrice, profitPrice);
+		{
+			await OpenLong(order.Ticker, order.Leverage, bot);
+		}
 		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Long)
+		{
 			await CloseLong(order.Ticker);
+		}
 		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Short)
-			await OpenShort(order.Ticker, quantity, stopPrice, profitPrice);
+		{
+			await OpenShort(order.Ticker, order.Leverage, bot);
+		}
 		else if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Short)
+		{
 			await CloseShort(order.Ticker);
+		}
 	}
 
 	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
@@ -73,33 +74,47 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 		return Math.Round(usdQuantity / lastPrice, 3);
 	}
 
-	private decimal? CalculateStopLoss(decimal? activation, decimal lastPrice, PositionType type)
+	private decimal? CalculateStopLoss(decimal? activation, decimal entryPrice, int leverage, PositionType type)
 	{
 		if (activation == null || activation < 5) return null;
 
-		if (type == PositionType.Long) return lastPrice * (1 - activation / 100);
+		entryPrice /= 100;
 
-		return lastPrice * (1 + activation / 100);
+		if (type == PositionType.Long) return entryPrice * (100 - activation / leverage);
+
+		return entryPrice * (100 + activation / leverage);
 	}
 
-	private decimal? CalculateTakeProfit(decimal? activation, decimal lastPrice, PositionType type)
+	private decimal? CalculateTakeProfit(decimal? activation, decimal entryPrice, int leverage, PositionType type)
 	{
 		if (activation == null || activation < 5) return null;
 
-		if (type == PositionType.Long) return lastPrice * (1 + activation / 100);
+		entryPrice /= 100;
 
-		return lastPrice * (1 - activation / 100);
+		if (type == PositionType.Long) return entryPrice * (100 + activation / leverage);
+
+		return entryPrice * (100 - activation / leverage);
 	}
 
-	private async Task OpenLong(string ticker, decimal quantity, decimal? stopPrice = null, decimal? profitPrice = null)
+	private async Task OpenLong(string ticker, int leverage, ADBot bot)
 	{
+		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
+
+		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(ticker);
+		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
+
+		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
+		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, leverage, PositionType.Long) : null;
+		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, leverage, PositionType.Long) : null;
+
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
 				ticker,
 				OrderSide.Buy,
 				FuturesOrderType.Market,
 				quantity,
-				positionSide: PositionSide.Long
+				positionSide: PositionSide.Long,
+				workingType: WorkingType.Contract
 			);
 
 		if (!orderResponse.Success) throw new Exception($"Failed Placing Order: {orderResponse?.Error?.Message}");
@@ -111,12 +126,11 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 					ticker,
 					OrderSide.Sell,
 					FuturesOrderType.StopMarket,
-					null,
+					quantity,
 					positionSide: PositionSide.Long,
 					stopPrice: stopPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
-					reduceOnly: true,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -131,12 +145,11 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 					ticker,
 					OrderSide.Sell,
 					FuturesOrderType.TakeProfitMarket,
-					null,
+					quantity,
 					positionSide: PositionSide.Long,
-					stopPrice: stopPrice,
+					stopPrice: profitPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
-					reduceOnly: true,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -163,15 +176,25 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 			);
 	}
 
-	private async Task OpenShort(string ticker, decimal quantity, decimal? stopPrice = null, decimal? profitPrice = null)
+	private async Task OpenShort(string ticker, int leverage, ADBot bot)
 	{
+		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
+
+		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(ticker);
+		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
+
+		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
+		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, leverage, PositionType.Short) : null;
+		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, leverage, PositionType.Short) : null;
+
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
 				ticker,
 				OrderSide.Sell,
 				FuturesOrderType.Market,
 				quantity,
-				positionSide: PositionSide.Short
+				positionSide: PositionSide.Short,
+				workingType: WorkingType.Contract
 			);
 
 		if (!orderResponse.Success) throw new Exception($"Failed Placing Order: {orderResponse?.Error?.Message}");
@@ -185,9 +208,9 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 					FuturesOrderType.StopMarket,
 					quantity,
 					positionSide: PositionSide.Short,
-					stopPrice: Math.Round(stopPrice.Value, 3),
+					stopPrice: stopPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -204,9 +227,9 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 					FuturesOrderType.TakeProfitMarket,
 					quantity,
 					positionSide: PositionSide.Short,
-					stopPrice: Math.Round(profitPrice.Value, 3),
+					stopPrice: profitPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
