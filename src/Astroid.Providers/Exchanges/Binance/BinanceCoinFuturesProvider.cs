@@ -61,41 +61,6 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 		}
 	}
 
-	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
-	{
-		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
-		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
-
-		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
-		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
-
-		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
-
-		return Math.Round(usdQuantity / lastPrice, 3);
-	}
-
-	private decimal? CalculateStopLoss(decimal? activation, decimal entryPrice, int leverage, PositionType type)
-	{
-		if (activation == null || activation < 5) return null;
-
-		entryPrice /= 100;
-
-		if (type == PositionType.Long) return entryPrice * (100 - activation / leverage);
-
-		return entryPrice * (100 + activation / leverage);
-	}
-
-	private decimal? CalculateTakeProfit(decimal? activation, decimal entryPrice, int leverage, PositionType type)
-	{
-		if (activation == null || activation < 5) return null;
-
-		entryPrice /= 100;
-
-		if (type == PositionType.Long) return entryPrice * (100 + activation / leverage);
-
-		return entryPrice * (100 - activation / leverage);
-	}
-
 	private async Task OpenLong(string ticker, int leverage, ADBot bot)
 	{
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
@@ -258,6 +223,60 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 				Math.Abs(position.Quantity),
 				positionSide: PositionSide.Short
 			);
+
+		if (!orderInfo.Success) throw new Exception($"Failed Placing Order: {orderInfo?.Error?.Message}");
+
+	}
+
+	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
+	{
+		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
+		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
+
+		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
+		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
+
+		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
+
+		return Math.Round(usdQuantity / lastPrice, 3);
+	}
+
+	private decimal? GetStopLoss(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		if (!bot.IsStopLossEnabled) return null;
+
+		if (bot.StopLossActivation == null || bot.StopLossActivation <= 0) throw new Exception("Stop Loss Activation is null or less than 0");
+
+		return CalculateStopLoss(bot.StopLossActivation.Value, entryPrice, leverage, precision, type);
+	}
+
+	private decimal? GetTakeProfit(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		if (!bot.IsTakePofitEnabled) return null;
+
+		if (bot.ProfitActivation == null || bot.ProfitActivation.Value <= 0) throw new Exception("Stop Loss Activation is null or less than 0");
+
+		return CalculateTakeProfit(bot.ProfitActivation.Value, entryPrice, leverage, precision, type);
+	}
+
+	private decimal CalculateStopLoss(decimal activation, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		entryPrice /= 100;
+
+		if (type == PositionType.Long) return Math.Round(entryPrice * (100 - activation / leverage), precision);
+
+		return Math.Round(entryPrice * (100 + activation / leverage), precision);
+	}
+
+	private decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		entryPrice /= 100;
+
+		if (type == PositionType.Long) return Math.Round(entryPrice * (100 + activation / leverage), precision);
+
+		return Math.Round(entryPrice * (100 - activation / leverage), precision);
+	}
+
 	private AMSymbolInfo GetSymbolInfo(string ticker)
 	{
 		var symbolInfo = ExhangeInfoStore.GetSymbolInfo(Provider.Name, ticker, GetExchangeInfo);
