@@ -22,9 +22,9 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 
 	private BinanceClient Client { get; set; }
 
-	public override void Context(string settings)
+	public override void Context(string settings, ADExchange exchange)
 	{
-		base.Context(settings);
+		base.Context(settings, exchange);
 
 		var options = new BinanceClientOptions
 		{
@@ -279,7 +279,7 @@ public class BinanceCoinFuturesProvider : ExchangeProviderBase
 
 	private AMSymbolInfo GetSymbolInfo(string ticker)
 	{
-		var symbolInfo = ExhangeInfoStore.GetSymbolInfo(Provider.Name, ticker, GetExchangeInfo);
+		var symbolInfo = ExhangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker, GetExchangeInfo);
 		if (symbolInfo == null) throw new Exception($"Could not find symbol info for {ticker}");
 
 		return symbolInfo;

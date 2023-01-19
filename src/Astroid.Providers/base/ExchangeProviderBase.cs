@@ -8,14 +8,13 @@ namespace Astroid.Providers;
 
 public abstract class ExchangeProviderBase : IDisposable
 {
-	public Guid SourceId { get; set; }
-	public Guid ProviderId { get; set; }
+	protected ADExchange Exchange { get; set; }
 
-	public ExchangeProviderBase() { }
+	protected ExchangeProviderBase() { }
 
-	public virtual void Context(string settings)
+	public virtual void Context(string settings, ADExchange exchange)
 	{
-
+		Exchange = exchange;
 	}
 
 	public abstract Task ExecuteOrder(ADBot bot, OrderRequest order);

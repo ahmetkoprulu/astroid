@@ -8,17 +8,24 @@ public class ExchangerFactory
 {
 	public static ExchangeProviderBase? Create(ADExchange exchange)
 	{
-		var assembly = Assembly.GetExecutingAssembly();
-		var type = assembly.GetType(exchange.Provider.TargetType);
-		if (type == null) return null;
+		if (exchange?.Provider == null) return null;
 
-		if (Activator.CreateInstance(type) is not ExchangeProviderBase instance) return null;
+		ExchangeProviderBase? provider;
+		switch (exchange.Provider.Name)
+		{
+			case "binance-usd-futures":
+				provider = new BinanceUsdFuturesProvider();
+				break;
+			default:
+				return null;
+		}
 
-		instance.Context(exchange.PropertiesJson);
-		return instance;
+		provider.Context(exchange.PropertiesJson, exchange);
+
+		return provider;
 	}
 
-	public static ExchangeProviderBase? Create(string targetType, string settings)
+	public static ExchangeProviderBase? Create(string targetType, ADExchange exchange)
 	{
 		var assembly = Assembly.GetExecutingAssembly();
 		var type = assembly.GetType(targetType);
@@ -26,7 +33,8 @@ public class ExchangerFactory
 
 		if (Activator.CreateInstance(type) is not ExchangeProviderBase instance) return null;
 
-		instance.Context(settings);
+		instance.Context(exchange.PropertiesJson, exchange);
+
 		return instance;
 	}
 }
