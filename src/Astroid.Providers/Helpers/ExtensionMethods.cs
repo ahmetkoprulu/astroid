@@ -18,8 +18,7 @@ public static class ExtensionMethods
 		if (generatedType == null) throw new TypeLoadException($"User provider [{exchange.Provider.Name} - {exchange.Provider.TargetType}] type not found.");
 
 		var providerBase = (ExchangeProviderBase)ActivatorUtilities.CreateInstance(serviceProvider, generatedType);
-		providerBase.Context(exchange.PropertiesJson);
-		providerBase.ProviderId = exchange.ProviderId;
+		providerBase.Context(exchange.PropertiesJson, exchange);
 
 		return providerBase;
 	}

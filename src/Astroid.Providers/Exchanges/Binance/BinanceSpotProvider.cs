@@ -14,7 +14,7 @@ public class BinanceSpotProvider : ExchangeProviderBase
 	[PropertyMetadata("Test Net", Type = PropertyTypes.Boolean, Group = "General")]
 	public bool IsTestNet { get; set; }
 
-	public override void Context(string settings)
+	public override void Context(string settings, ADExchange exchange)
 	{
 		throw new NotImplementedException();
 	}

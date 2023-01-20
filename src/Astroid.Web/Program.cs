@@ -95,6 +95,12 @@ builder.Services.AddAuthorization();
 // In production, the Vue files will be served from this directory
 builder.Services.AddSpaStaticFiles(configuration => configuration.RootPath = "wwwroot/dist");
 
+builder.Logging.ClearProviders();
+if (builder.Environment.IsDevelopment())
+	builder.Logging.AddConsole();
+else
+	builder.Logging.AddFile("Logs/astroid-{Date}.log", fileSizeLimitBytes: 1_000_000, retainedFileCountLimit: 5);
+
 var app = builder.Build();
 var conf = app.Configuration.Get<AConfAppSettings>();
 // using var db = app.Services.GetRequiredService<AstroidDb>();
@@ -108,7 +114,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseStaticFiles();
-app.UseSpaStaticFiles();
+if (app.Environment.IsProduction())
+{
+	app.UseSpaStaticFiles();
+}
 
 // app.UseHttpsRedirection();
 

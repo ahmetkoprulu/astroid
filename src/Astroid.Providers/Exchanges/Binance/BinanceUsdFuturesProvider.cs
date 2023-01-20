@@ -22,9 +22,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private BinanceClient Client { get; set; }
 
-	public override void Context(string settings)
+	public override void Context(string settings, ADExchange exchange)
 	{
-		base.Context(settings);
+		base.Context(settings, exchange);
 
 		var options = new BinanceClientOptions
 		{
@@ -43,63 +43,44 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	public override async Task ExecuteOrder(ADBot bot, OrderRequest order)
 	{
-		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(order.Ticker);
+		if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)
+		{
+			await OpenLong(order.Ticker, order.Leverage, bot);
+		}
+		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Long)
+		{
+			await CloseLong(order.Ticker);
+		}
+		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Short)
+		{
+			await OpenShort(order.Ticker, order.Leverage, bot);
+		}
+		else if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Short)
+		{
+			await CloseShort(order.Ticker);
+		}
+	}
+
+	private async Task OpenLong(string ticker, int leverage, ADBot bot)
+	{
+		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
+
+		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(ticker);
 		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
 
+		var symbolInfo = GetSymbolInfo(ticker);
 		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
-		var stopPrice = bot.IsStopLossEnabled ? CalculateStopLoss(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
-		var profitPrice = bot.IsTakePofitEnabled ? CalculateTakeProfit(bot.ProfitActivation, tickerInfo.Data.LastPrice, order.PositionType) : null;
+		var stopPrice = GetStopLoss(bot, tickerInfo.Data.LastPrice, leverage, symbolInfo.Precision, PositionType.Long);
+		var profitPrice = GetTakeProfit(bot, tickerInfo.Data.LastPrice, symbolInfo.Precision, leverage, PositionType.Long);
 
-		if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)
-			await OpenLong(order.Ticker, quantity, stopPrice, profitPrice);
-		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Long)
-			await CloseLong(order.Ticker);
-		else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Short)
-			await OpenShort(order.Ticker, quantity, stopPrice, profitPrice);
-		else if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Short)
-			await CloseShort(order.Ticker);
-	}
-
-	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
-	{
-		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
-		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
-
-		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
-		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
-
-		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
-
-		return Math.Round(usdQuantity / lastPrice, 3);
-	}
-
-	private decimal? CalculateStopLoss(decimal? activation, decimal lastPrice, PositionType type)
-	{
-		if (activation == null || activation < 5) return null;
-
-		if (type == PositionType.Long) return lastPrice * (1 - activation / 100);
-
-		return lastPrice * (1 + activation / 100);
-	}
-
-	private decimal? CalculateTakeProfit(decimal? activation, decimal lastPrice, PositionType type)
-	{
-		if (activation == null || activation < 5) return null;
-		// TODO: Fix calculation in perspective of the entry price
-		if (type == PositionType.Long) return lastPrice * (1 + activation / 100);
-
-		return lastPrice * (1 - activation / 100);
-	}
-
-	private async Task OpenLong(string ticker, decimal quantity, decimal? stopPrice = null, decimal? profitPrice = null)
-	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
 				ticker,
 				OrderSide.Buy,
 				FuturesOrderType.Market,
 				quantity,
-				positionSide: PositionSide.Long
+				positionSide: PositionSide.Long,
+				workingType: WorkingType.Contract
 			);
 
 		if (!orderResponse.Success) throw new Exception($"Failed Placing Order: {orderResponse?.Error?.Message}");
@@ -111,12 +92,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					ticker,
 					OrderSide.Sell,
 					FuturesOrderType.StopMarket,
-					null,
+					quantity,
 					positionSide: PositionSide.Long,
 					stopPrice: stopPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
-					reduceOnly: true,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -131,12 +111,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					ticker,
 					OrderSide.Sell,
 					FuturesOrderType.TakeProfitMarket,
-					null,
+					quantity,
 					positionSide: PositionSide.Long,
-					stopPrice: stopPrice,
+					stopPrice: profitPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
-					reduceOnly: true,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -161,17 +140,30 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				Math.Abs(position.Quantity),
 				positionSide: PositionSide.Long
 			);
+
+		if (!orderInfo.Success) throw new Exception($"Failed Placing Order: {orderInfo?.Error?.Message}");
 	}
 
-	private async Task OpenShort(string ticker, decimal quantity, decimal? stopPrice = null, decimal? profitPrice = null)
+	private async Task OpenShort(string ticker, int leverage, ADBot bot)
 	{
+		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
+
+		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetTickerAsync(ticker);
+		if (!tickerInfo.Success) throw new Exception($"Could not get ticker info: {tickerInfo?.Error?.Message}");
+
+		var symbolInfo = GetSymbolInfo(ticker);
+		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.LastPrice);
+		var stopPrice = GetStopLoss(bot, tickerInfo.Data.LastPrice, leverage, symbolInfo.Precision, PositionType.Long);
+		var profitPrice = GetTakeProfit(bot, tickerInfo.Data.LastPrice, symbolInfo.Precision, leverage, PositionType.Long);
+
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
 				ticker,
 				OrderSide.Sell,
 				FuturesOrderType.Market,
 				quantity,
-				positionSide: PositionSide.Short
+				positionSide: PositionSide.Short,
+				workingType: WorkingType.Contract
 			);
 
 		if (!orderResponse.Success) throw new Exception($"Failed Placing Order: {orderResponse?.Error?.Message}");
@@ -185,9 +177,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					FuturesOrderType.StopMarket,
 					quantity,
 					positionSide: PositionSide.Short,
-					stopPrice: Math.Round(stopPrice.Value, 3),
+					stopPrice: stopPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -204,9 +196,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					FuturesOrderType.TakeProfitMarket,
 					quantity,
 					positionSide: PositionSide.Short,
-					stopPrice: Math.Round(profitPrice.Value, 3),
+					stopPrice: profitPrice,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Mark,
+					workingType: WorkingType.Contract,
 					priceProtect: true,
 					closePosition: true
 				);
@@ -231,6 +223,84 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				Math.Abs(position.Quantity),
 				positionSide: PositionSide.Short
 			);
+
+		if (!orderInfo.Success) throw new Exception($"Failed Placing Order: {orderInfo?.Error?.Message}");
+
+	}
+
+	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
+	{
+		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
+		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
+
+		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
+		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
+
+		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
+
+		return Math.Round(usdQuantity / lastPrice, 3);
+	}
+
+	private decimal? GetStopLoss(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		if (!bot.IsStopLossEnabled) return null;
+
+		if (bot.StopLossActivation == null || bot.StopLossActivation <= 0) throw new Exception("Stop Loss Activation is null or less than 0");
+
+		return CalculateStopLoss(bot.StopLossActivation.Value, entryPrice, leverage, precision, type);
+	}
+
+	private decimal? GetTakeProfit(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		if (!bot.IsTakePofitEnabled) return null;
+
+		if (bot.ProfitActivation == null || bot.ProfitActivation.Value <= 0) throw new Exception("Stop Loss Activation is null or less than 0");
+
+		return CalculateTakeProfit(bot.ProfitActivation.Value, entryPrice, leverage, precision, type);
+	}
+
+	private decimal CalculateStopLoss(decimal activation, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		entryPrice /= 100;
+
+		if (type == PositionType.Long) return Math.Round(entryPrice * (100 - activation / leverage), precision);
+
+		return Math.Round(entryPrice * (100 + activation / leverage), precision);
+	}
+
+	private decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int leverage, int precision, PositionType type)
+	{
+		entryPrice /= 100;
+
+		if (type == PositionType.Long) return Math.Round(entryPrice * (100 + activation / leverage), precision);
+
+		return Math.Round(entryPrice * (100 - activation / leverage), precision);
+	}
+
+	private AMSymbolInfo GetSymbolInfo(string ticker)
+	{
+		var symbolInfo = ExhangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker, GetExchangeInfo);
+		if (symbolInfo == null) throw new Exception($"Could not find symbol info for {ticker}");
+
+		return symbolInfo;
+	}
+
+	private AMExchangeInfo GetExchangeInfo()
+	{
+		var response = Client.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync().GetAwaiter().GetResult();
+		if (!response.Success) throw new Exception(response?.Error?.Message ?? "Could not get exchange info");
+
+		var exchangeInfo = new AMExchangeInfo
+		{
+			ModifiedAt = DateTime.UtcNow,
+			Symbols = response.Data.Symbols.Select(x => new AMSymbolInfo
+			{
+				Name = x.Name,
+				Precision = x.PricePrecision
+			}).ToList()
+		};
+
+		return exchangeInfo;
 	}
 
 	public override void Dispose()
