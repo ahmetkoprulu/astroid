@@ -2,7 +2,7 @@ using Astroid.Core;
 
 namespace Astroid.Providers;
 
-public class OrderRequest
+public class AMOrderRequest
 {
 	public string Ticker { get; set; }
 	public int Leverage { get; set; }

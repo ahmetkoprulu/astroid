@@ -36,6 +36,15 @@ public enum PositionSizeType : short
 	FixedInAsset = 3
 }
 
+public enum AuditType : short
+{
+	Unknown = 0,
+	OpenOrderPlaced = 10,
+	TakeProfitOrderPlaced = 20,
+	StopLossOrderPlaced = 30,
+	CloseOrderPlaced = 40,
+}
+
 public enum DatabaseProvider
 {
 	Unknown = 0,

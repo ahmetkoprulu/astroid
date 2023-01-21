@@ -8,16 +8,28 @@ namespace Astroid.Providers;
 
 public abstract class ExchangeProviderBase : IDisposable
 {
+	public IServiceProvider ServiceProvider { get; set; }
+	protected AstroidDb Db { get; set; }
 	protected ADExchange Exchange { get; set; }
 
 	protected ExchangeProviderBase() { }
 
-	public virtual void Context(string settings, ADExchange exchange)
+	protected ExchangeProviderBase(IServiceProvider serviceProvider, ADExchange exchange)
 	{
+		ServiceProvider = serviceProvider;
+		// Db = serviceProvider.GetService(typeof(AstroidDb)) as AstroidDb ?? throw new Exception("Db cannot be null");
 		Exchange = exchange;
 	}
 
-	public abstract Task ExecuteOrder(ADBot bot, OrderRequest order);
+	public virtual void Context()
+	{
 
-	public abstract void Dispose();
+	}
+
+	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);
+
+	public virtual void Dispose()
+	{
+		// Db.Dispose();
+	}
 }

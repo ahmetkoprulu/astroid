@@ -13,6 +13,7 @@ namespace Astroid.Web;
 public class BaseController : Controller
 {
 	protected AstroidDb Db { get; set; }
+	protected ILogger Logger { get; set; }
 	// private readonly ILogger<BaseController> _logger = ALogger.Create<BaseController>();
 
 	public BaseController(AstroidDb db) => Db = db;
@@ -45,6 +46,14 @@ public class BaseController : Controller
 		};
 		await HttpContext.SignInAsync(ACWeb.Authentication.DefaultSchema, principle, authProperties);
 	}
+
+	#region Logging
+#pragma warning disable CA2254
+	protected void LogInfo(string? message) => Logger.LogInformation(message);
+	protected void LogDebug(string? message) => Logger.LogDebug(message);
+	protected void LogError(Exception ex, string? message) => Logger.LogError(ex, message);
+
+	#endregion
 
 	#region Return Types
 
