@@ -99,7 +99,7 @@ builder.Logging.ClearProviders();
 if (builder.Environment.IsDevelopment())
 	builder.Logging.AddConsole();
 else
-	builder.Logging.AddFile("Logs/astroid-{Date}.log", fileSizeLimitBytes: 1_000_000, retainedFileCountLimit: 5);
+	builder.Logging.AddFile("Logs/astroid-{Date}.log", retainedFileCountLimit: 5);
 
 var app = builder.Build();
 var conf = app.Configuration.Get<AConfAppSettings>();

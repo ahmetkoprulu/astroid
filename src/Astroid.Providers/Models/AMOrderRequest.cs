@@ -8,5 +8,5 @@ public class AMOrderRequest
 	public int Leverage { get; set; }
 	public OrderType OrderType { get; set; }
 	public PositionType PositionType { get; set; }
-	public string Timestamp { get; set; }
+	public string? Timestamp { get; set; }
 }

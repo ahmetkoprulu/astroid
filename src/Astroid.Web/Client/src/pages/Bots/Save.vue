@@ -47,14 +47,29 @@
         </b-form-group>
       </div>
       <div class="col-lg-6 col-md-12">
-        {{ `http://astroid.com/strategies/${model.key}/open-long` }}
-        <br />
-        {{ `http://astroid.com/strategies/${model.key}/close-long` }}
-        <br />
-        {{ `http://astroid.com/strategies/${model.key}/open-short` }}
-        <br />
-        {{ `http://astroid.com/strategies/${model.key}/close-short` }}
-        <br />
+        <b-form-group label="Open Long">
+          <div>
+            {{ `http://astroid.com/strategies/${model.key}/open-long` }}
+          </div>
+        </b-form-group>
+        <b-form-group label="Close Long">
+          <div>
+            {{ `http://astroid.com/strategies/${model.key}/close-long` }}
+          </div>
+        </b-form-group>
+        <b-form-group label="Open Short">
+          <div>
+            {{ `http://astroid.com/strategies/${model.key}/open-short` }}
+          </div>
+        </b-form-group>
+        <b-form-group label="Close Short">
+          <div>
+            {{ `http://astroid.com/strategies/${model.key}/close-short` }}
+          </div>
+        </b-form-group>
+        <b-form-group label="Message">
+          <textarea v-model="bodyExample" readonly rows="4"></textarea>
+        </b-form-group>
       </div>
     </div>
   </div>
@@ -96,6 +111,7 @@ export default {
       },
       id: null,
       markets: [],
+      bodyExample: JSON.stringify({ ticker: "BTCUSDT", leverage: 20 }, null, 4),
     };
   },
   computed: {
@@ -113,6 +129,7 @@ export default {
     },
   },
   async mounted() {
+    console.log(this.bodyExample);
     this.id = this.$route.params.id;
     await this.getMarketProviders();
 
