@@ -2,22 +2,22 @@
   <div class="login--container p-3">
     <div class="mb-4">
       <div class="text-center">
-        <img alt="Vue logo" src="../assets/logo.png" />
-        <h3>Sign Up</h3>
+        <img alt="Vue logo" src="../assets/logo.png" class="mx-auto" />
+        <div class="h3-light">Sign In</div>
       </div>
     </div>
     <div>
       <b-form @submit.prevent>
-        <b-form-group class="mb-3" label="Name:">
+        <b-form-group class="mb-3" label="Name">
           <b-form-input v-model="form.name" type="text"></b-form-input>
         </b-form-group>
-        <b-form-group class="mb-3" label="Email:">
+        <b-form-group class="mb-3" label="Email">
           <b-form-input v-model="form.email" type="email"></b-form-input>
         </b-form-group>
-        <b-form-group class="mb-3" label="Password:">
+        <b-form-group class="mb-3" label="Password">
           <b-form-input v-model="form.password" type="password"></b-form-input>
         </b-form-group>
-        <b-form-group class="mb-4" label="Confirm Password:">
+        <b-form-group class="mb-4" label="Confirm Password">
           <b-form-input
             v-model="form.confirmPassword"
             type="password"
@@ -70,5 +70,10 @@ export default {
   left: 53%;
   transform: translate(-50%, -50%);
   padding: 10px;
+}
+
+.h3-light {
+  font-size: 1.75rem;
+  font-weight: 400;
 }
 </style>

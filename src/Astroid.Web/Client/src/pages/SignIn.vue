@@ -2,18 +2,18 @@
   <div class="login--container p-3">
     <div class="mb-4">
       <div class="text-center">
-        <img alt="Vue logo" src="../assets/logo.png" />
+        <img alt="Astroid Logo" src="../assets/logo.png" class="mx-auto" />
         <div class="h3-light">Sign In</div>
       </div>
     </div>
     <div>
       <b-form @submit.prevent>
-        <b-form-group class="mb-3" label="Email:">
+        <b-form-group class="mb-3" label="Email">
           <b-form-input v-model="form.email" type="email"></b-form-input>
         </b-form-group>
         <b-form-group class="mb-4">
           <div slot="label" class="d-flex justify-content-between">
-            <label>Password:</label>
+            <label>Password</label>
             <a href="/">Forgot?</a>
           </div>
           <b-form-input v-model="form.password" type="password"></b-form-input>

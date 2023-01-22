@@ -1,7 +1,7 @@
 <template>
   <nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse">
     <div class="position-sticky">
-      <a class="navbar-brand d-flex text-dark mx-3 my-4" href="/">
+      <a class="navbar-brand d-flex text-dark mx-4 my-4" href="/">
         <img src="../../assets/logo.png" width="35" height="35" alt="" />
         <span class="mt-1">Astroid</span>
       </a>
@@ -34,10 +34,24 @@
           </RouterLink>
         </div>
       </div>
+
+      <div class="mx-3 mt-5">
+        <div class="nav-item" @click="signOut">
+          <a href="#" class="nav-item-row">
+            <span class="nav-item-content">
+              <div class="nav-item-icon-container">
+                <i class="fa-solid fa-right-from-bracket fa-flip-horizontal" />
+              </div>
+              Sign Out
+            </span>
+          </a>
+        </div>
+      </div>
     </div>
   </nav>
 </template>
 <script>
+import UserService from "@/services/home.js";
 export default {
   computed: {
     routes() {
@@ -65,6 +79,10 @@ export default {
         name: route.name,
       });
       return resolvedRoute.route;
+    },
+    async signOut() {
+      var response = await UserService.signOut();
+      if (response.data.success) this.$router.push({ name: "signIn" });
     },
   },
 };

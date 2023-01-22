@@ -9,4 +9,7 @@ export default {
 	async signIn(data) {
 		return HTTP.post(`${URL}/sign-in`, data);
 	},
+	async signOut() {
+		return HTTP.get(`${URL}/sign-out`);
+	}
 };
