@@ -52,7 +52,7 @@ export default {
     async register() {
       try {
         await HomeService.signUp(this.form);
-        this.router.push({ name: "signIn" });
+        this.$router.push({ name: "signIn" });
       } catch (err) {
         console.error(err);
       }

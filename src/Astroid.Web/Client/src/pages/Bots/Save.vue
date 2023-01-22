@@ -49,22 +49,22 @@
       <div class="col-lg-6 col-md-12">
         <b-form-group label="Open Long">
           <div>
-            {{ `http://astroid.com/strategies/${model.key}/open-long` }}
+            {{ `http://astroid.com.tr/strategies/${model.key}/open-long` }}
           </div>
         </b-form-group>
         <b-form-group label="Close Long">
           <div>
-            {{ `http://astroid.com/strategies/${model.key}/close-long` }}
+            {{ `http://astroid.com.tr/strategies/${model.key}/close-long` }}
           </div>
         </b-form-group>
         <b-form-group label="Open Short">
           <div>
-            {{ `http://astroid.com/strategies/${model.key}/open-short` }}
+            {{ `http://astroid.com.tr/strategies/${model.key}/open-short` }}
           </div>
         </b-form-group>
         <b-form-group label="Close Short">
           <div>
-            {{ `http://astroid.com/strategies/${model.key}/close-short` }}
+            {{ `http://astroid.com.tr/strategies/${model.key}/close-short` }}
           </div>
         </b-form-group>
         <b-form-group label="Message">

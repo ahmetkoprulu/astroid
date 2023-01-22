@@ -3,7 +3,11 @@
 </template>
 
 <script>
-export default {};
+export default {
+  mounted() {
+    this.$router.push({ name: "market-list" });
+  },
+};
 </script>
 
 <style></style>

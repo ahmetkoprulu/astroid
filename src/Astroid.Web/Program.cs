@@ -103,8 +103,11 @@ else
 
 var app = builder.Build();
 var conf = app.Configuration.Get<AConfAppSettings>();
-// using var db = app.Services.GetRequiredService<AstroidDb>();
-// db.Database.EnsureCreated();
+
+// Ensure the database is created.
+using var scope = app.Services.CreateScope();
+using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+db.Database.EnsureCreated();
 
 if (app.Environment.IsDevelopment())
 {

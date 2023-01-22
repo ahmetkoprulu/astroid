@@ -1,6 +1,7 @@
 using Astroid.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using MySql.EntityFrameworkCore.Extensions;
 
 namespace Astroid.Entity;
 
@@ -34,15 +35,13 @@ public class AstroidDb : DbContext
 			switch (Provider)
 			{
 				case DatabaseProvider.PostgreSql:
-					optionsBuilder
-						.UseNpgsql(ConnectionString, options =>
-						{
-							options.CommandTimeout(30);
-						});
+					optionsBuilder.UseNpgsql(ConnectionString, options => { options.CommandTimeout(30); });
 					AppContext.SetSwitch("Npgsql.DisableDateTimeInfinityConversions", true);
 					AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 					break;
 				case DatabaseProvider.MySql:
+					optionsBuilder.UseMySQL(ConnectionString, options => options.CommandTimeout(30));
+					break;
 				case DatabaseProvider.Unknown:
 				default:
 					throw new InvalidDataException(nameof(Provider));
