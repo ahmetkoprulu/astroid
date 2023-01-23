@@ -9,6 +9,9 @@ using VueCliMiddleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var environmantName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+builder.Environment.EnvironmentName = environmantName ?? "Development";
+
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
 	var remoteConfig = context.Configuration.Get<AConfAppSettings>();
@@ -46,7 +49,6 @@ builder.WebHost.ConfigureKestrel((context, options) =>
 
 static X509Certificate2 LoadCertificate(AConfEndpoint config, Uri url)
 {
-	return null;
 	if (config.Certificate == null) return null;
 	if (config.Certificate.StoreName != null && config.Certificate.StoreLocation != null)
 	{
@@ -66,6 +68,13 @@ static X509Certificate2 LoadCertificate(AConfEndpoint config, Uri url)
 
 	throw new InvalidOperationException("No valid certificate configuration found for the current endpoint.");
 }
+
+// Configurations
+builder.Configuration.SetBasePath(builder.Environment.ContentRootPath);
+if (builder.Environment.IsProduction())
+	builder.Configuration.AddJsonFile("config.prod.json", optional: true, reloadOnChange: true);
+else
+	builder.Configuration.AddJsonFile("config.dev.json", optional: true, reloadOnChange: true);
 
 // Dependency Injections
 builder.Services.AddDbContext<AstroidDb>();
@@ -95,20 +104,22 @@ builder.Services.AddAuthorization();
 // In production, the Vue files will be served from this directory
 builder.Services.AddSpaStaticFiles(configuration => configuration.RootPath = "wwwroot/dist");
 
+// Logging
 builder.Logging.ClearProviders();
-if (builder.Environment.IsDevelopment())
-	builder.Logging.AddConsole();
-else
+builder.Logging.AddConsole();
+if (builder.Environment.IsProduction())
 	builder.Logging.AddFile("Logs/astroid-{Date}.log", retainedFileCountLimit: 5);
 
 var app = builder.Build();
 var conf = app.Configuration.Get<AConfAppSettings>();
 
-// Ensure the database is created.
+// Ensure the database is created and seeded.
 using var scope = app.Services.CreateScope();
 using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 db.Database.EnsureCreated();
+await app.SeedDatabase();
 
+// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
 	app.UseDeveloperExceptionPage();
@@ -116,13 +127,13 @@ if (app.Environment.IsDevelopment())
 	app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 if (app.Environment.IsProduction())
 {
+	app.UseHsts();
 	app.UseSpaStaticFiles();
 }
-
-// app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlerMiddleware>();
 
@@ -145,8 +156,12 @@ app.UseEndpoints(e =>
 		);
 	}
 });
-app.UseCors();
 
-await app.SeedDatabase();
+app.UseSpa(spa =>
+{
+	spa.Options.SourcePath = "wwwroot/dist";
+});
+
+app.UseCors();
 
 app.Run();

@@ -1,7 +1,13 @@
 {
   "Endpoints": [
+    { "Url": "http://localhost:5001" },
     {
-      "Url": "http://localhost:5000"
+      "Url": "https://localhost:5000",
+      "Certificate": {
+        "File": "devcert.pfx",
+        "Password": "809a6a207ca74f2ba5241deff57bfe56",
+        "Thumbprint": "41B2D015AC5EF5D9F3D4A6FE5834ED350E777D9B"
+      }
     }
   ],
   "Frontend": {
@@ -10,9 +16,9 @@
     "secure": false
   },
   "Database": {
-    "ConnectionStringPostgres": "Server=localhost;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;",
-    "ConnectionString": "Server=localhost;Port=3306;Database=astroid;User Id=root;Password=1234;",
-    "DatabaseProvider": 3
+    "ConnectionString": "Server=localhost;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;",
+    "ConnectionStringMariaDb": "Server=localhost;Port=3306;Database=astroid;User Id=root;Password=1234;",
+    "DatabaseProvider": 2
   },
   "Logging": {
     "LogLevel": {

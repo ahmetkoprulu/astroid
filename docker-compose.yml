@@ -1,0 +1,38 @@
+version: "3.4"
+
+networks:
+  internal:
+    driver: bridge
+
+services:
+  astroid_web:
+    image: ahmetkoprulu/astroid:0.0.1
+    depends_on:
+      - "astroid_db"
+    container_name: astroid_web
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASTROID_DB_CONNECTION_STRING=Server=astroid_db;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;
+      - ASTROID_DB_PROVIDER=2
+    networks:
+      - internal
+
+  astroid_db:
+    image: postgres:latest
+    container_name: astroid_db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=1234567890
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - astroid_data:/var/lib/postgresql/data/
+    networks:
+      - internal
+
+volumes:
+  astroid_data:

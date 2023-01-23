@@ -23,9 +23,11 @@ public class AstroidDb : DbContext
 	public AstroidDb(DbContextOptions<AstroidDb> options, IConfiguration config) : base(options)
 	{
 		var settings = config.Get<AConfAppSettings>() ?? new();
+		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_DB_CONNECTION_STRING");
+		var dbProviderEnvVariable = Environment.GetEnvironmentVariable("ASTROID_DB_PROVIDER");
 
-		ConnectionString = settings.Database.ConnectionString!;
-		Provider = settings.Database.DatabaseProvider;
+		ConnectionString = connStringEnvVariable ?? settings.Database.ConnectionString!;
+		Provider = dbProviderEnvVariable != null ? Enum.Parse<DatabaseProvider>(dbProviderEnvVariable) : settings.Database.DatabaseProvider;
 	}
 
 	protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

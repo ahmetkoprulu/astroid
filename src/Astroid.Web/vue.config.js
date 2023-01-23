@@ -14,17 +14,17 @@ module.exports = {
 			},
 		},
 	},
-	chainWebpack: (config) => {
-		config.plugin("copy").use(require("copy-webpack-plugin"), [
-			[
-				{
-					from: path.resolve(__dirname, "./Client/public"),
-					to: path.resolve(__dirname, "dist"),
-					toType: "dir",
-					ignore: [".DS_Store"],
-				},
-			],
-		]);
-	},
-	outputDir: "../wwwroot",
+	// chainWebpack: (config) => {
+	// 	config.plugin("copy").use(require("copy-webpack-plugin"), [
+	// 		[
+	// 			{
+	// 				from: path.resolve(__dirname, "./Client/public"),
+	// 				to: path.resolve(__dirname, "dist"),
+	// 				toType: "dir",
+	// 				ignore: [".DS_Store"],
+	// 			},
+	// 		],
+	// 	]);
+	// },
+	outputDir: "./wwwroot/dist",
 };
