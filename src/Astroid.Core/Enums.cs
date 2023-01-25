@@ -43,6 +43,7 @@ public enum AuditType : short
 	TakeProfitOrderPlaced = 20,
 	StopLossOrderPlaced = 30,
 	CloseOrderPlaced = 40,
+	UnhandledException = 50,
 }
 
 public enum DatabaseProvider

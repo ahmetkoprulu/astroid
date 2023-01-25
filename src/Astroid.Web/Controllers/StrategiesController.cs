@@ -39,7 +39,7 @@ public class StrategiesController : BaseController
 		orderRequest.PositionType = PositionType.Long;
 
 		var result = await exchanger.ExecuteOrder(bot, orderRequest);
-		if (!result.Success) LogInfo(result.Message);
+		if (!result.Success) LogError(null, result.Message);
 
 		result.Audits.ForEach(x =>
 		{

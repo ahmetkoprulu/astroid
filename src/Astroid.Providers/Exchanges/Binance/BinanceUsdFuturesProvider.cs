@@ -73,6 +73,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		catch (Exception ex)
 		{
 			result.WithMessage(ex.Message);
+			result.AddAudit(AuditType.UnhandledException, ex.Message, data: JsonConvert.SerializeObject(new { order.Ticker, order.OrderType, order.PositionType }));
 		}
 
 		return result;
@@ -102,7 +103,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				FuturesOrderType.Market,
 				quantity,
 				positionSide: PositionSide.Long,
-				workingType: WorkingType.Mark
+				workingType: WorkingType.Mark,
+				newClientOrderId: Guid.NewGuid().ToString()
 			);
 
 		if (!orderResponse.Success)

@@ -51,7 +51,8 @@ public class BaseController : Controller
 #pragma warning disable CA2254
 	protected void LogInfo(string? message) => Logger.LogInformation(message);
 	protected void LogDebug(string? message) => Logger.LogDebug(message);
-	protected void LogError(Exception ex, string? message) => Logger.LogError(ex, message);
+	protected void LogError(Exception? ex, string? message) => Logger.LogError(ex, message);
+	protected void LogCritical(Exception? ex, string? message) => Logger.LogCritical(ex, message);
 
 	#endregion
 
