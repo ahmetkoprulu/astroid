@@ -1022,6 +1022,22 @@ export default {
         console.error(error);
       }
     },
+    addTableFilter(filterField, filterValue) {
+      console.log("addTableFilter: " + filterField + " - " + filterValue);
+      let filter = this.filters.find((x) => x.Column === filterField);
+      if (!filter) {
+        filter = { Column: filterField, Value: filterValue };
+        this.filters.push(filter);
+        console.log(this.filters);
+      } else {
+        filter.Value = filterValue;
+      }
+      if (!filterValue) {
+        if (filter) {
+          this.filters = this.filters.filter((x) => x !== filter);
+        }
+      }
+    },
   },
 };
 </script>

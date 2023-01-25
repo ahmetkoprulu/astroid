@@ -18,6 +18,7 @@ public class ExchangesController : SecureController
 		model ??= new MPViewDataList<ADExchange>();
 
 		model = await Db.Exchanges
+			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
 			.Include(x => x.Provider)
 			.OrderByDescending(x => x.CreatedDate)

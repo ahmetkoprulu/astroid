@@ -4,10 +4,10 @@
     <!-- card shadow-sm -->
     <div class="">
       <v-table
+        ref="table"
         :columns="columns"
         :requestFunction="requestFunction"
         :refreshButton="false"
-        ref="table"
       >
         <template #column-label="props" cols="2">
           <router-link :to="{ name: 'bot-save', params: { id: props.row.id } }">

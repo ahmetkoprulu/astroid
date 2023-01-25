@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Text.Json.Serialization;
 
 namespace Astroid.Web
 {
@@ -44,6 +42,9 @@ namespace Astroid.Web
 		public string Column { get; set; }
 		public object Value { get; set; }
 		public MPEFilterOperator Operator { get; set; }
+
+		[JsonConstructor]
+		public MPFilterValue() { }
 
 		public MPFilterValue(string column = null, object value = null, MPEFilterOperator opr = MPEFilterOperator.Equal)
 		{

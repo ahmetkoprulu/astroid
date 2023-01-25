@@ -19,6 +19,7 @@ public class BotsController : SecureController
 		model ??= new MPViewDataList<ADBot>();
 
 		model = await Db.Bots
+			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
 			.OrderByDescending(x => x.CreatedDate)
 			.ViewDataListAsync<ADBot>(model);

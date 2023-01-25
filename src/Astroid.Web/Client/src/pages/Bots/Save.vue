@@ -49,22 +49,30 @@
       <div class="col-lg-6 col-md-12">
         <b-form-group label="Open Long">
           <div>
-            {{ `http://astroid.com.tr/strategies/${model.key}/open-long` }}
+            {{
+              `https://trade.ahmetkoprulu.com/api/strategies/${model.key}/open-long`
+            }}
           </div>
         </b-form-group>
         <b-form-group label="Close Long">
           <div>
-            {{ `http://astroid.com.tr/strategies/${model.key}/close-long` }}
+            {{
+              `https://trade.ahmetkoprulu.com/strategies/${model.key}/close-long`
+            }}
           </div>
         </b-form-group>
         <b-form-group label="Open Short">
           <div>
-            {{ `http://astroid.com.tr/strategies/${model.key}/open-short` }}
+            {{
+              `https://trade.ahmetkoprulu.com/strategies/${model.key}/open-short`
+            }}
           </div>
         </b-form-group>
         <b-form-group label="Close Short">
           <div>
-            {{ `http://astroid.com.tr/strategies/${model.key}/close-short` }}
+            {{
+              `https://trade.ahmetkoprulu.com/strategies/${model.key}/close-short`
+            }}
           </div>
         </b-form-group>
         <b-form-group label="Message">
@@ -111,7 +119,11 @@ export default {
       },
       id: null,
       markets: [],
-      bodyExample: JSON.stringify({ ticker: "BTCUSDT", leverage: 20 }, null, 4),
+      bodyExample: JSON.stringify(
+        { ticker: "BTCUSDT", leverage: 20, orderType: "open-short" },
+        null,
+        4
+      ),
     };
   },
   computed: {
@@ -129,7 +141,6 @@ export default {
     },
   },
   async mounted() {
-    console.log(this.bodyExample);
     this.id = this.$route.params.id;
     await this.getMarketProviders();
 
@@ -151,7 +162,6 @@ export default {
       try {
         const response = await Service.save(this.model);
         if (response.status !== 200) {
-          console.log(response);
           return;
         }
         this.$router.push({ name: "bot-list" });
