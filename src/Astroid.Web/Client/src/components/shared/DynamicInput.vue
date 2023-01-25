@@ -4,7 +4,7 @@
     v-slot="{ errors }"
     :name="property.title"
   >
-    <template v-if="property.type === $consts.propertyTypes.Dropdown">
+    <template v-if="property.type === $consts.PROPERTY_TYPES.Dropdown">
       <v-select
         :options="dataItems(property.data)"
         v-model="property.value"
@@ -12,11 +12,11 @@
       />
     </template>
 
-    <template v-else-if="property.type === $consts.propertyTypes.Boolean">
+    <template v-else-if="property.type === $consts.PROPERTY_TYPES.Boolean">
       <v-checkbox v-model="property.value" label="Yes" />
     </template>
 
-    <!-- <template v-else-if="property.type === $consts.propertyTypes.KeyValue">
+    <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.KeyValue">
       <v-key-value-input
         v-model="property.value"
         keyName="SourceProperty"
@@ -26,7 +26,7 @@
       />
     </template> -->
 
-    <!-- <template v-else-if="property.type === $consts.propertyTypes.Json">
+    <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.Json">
       <div>
         <textarea
           class="form-control text-monospace"

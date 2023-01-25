@@ -38,6 +38,7 @@ public class ExchangesController : SecureController
 	public async Task<IActionResult> Get()
 	{
 		var exchanges = await Db.Exchanges
+			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
 			.Include(x => x.Provider)
 			.Select(x => new AMExchange
@@ -59,6 +60,7 @@ public class ExchangesController : SecureController
 			return BadRequest("Invalid exchange id");
 
 		var exchange = await Db.Exchanges
+			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
 			.Include(x => x.Provider)
 			.FirstOrDefaultAsync(x => x.Id == id);
@@ -121,7 +123,7 @@ public class ExchangesController : SecureController
 		if (id == Guid.Empty)
 			return BadRequest("Invalid exchange id");
 
-		var exchange = await Db.Exchanges.FirstOrDefaultAsync(x => x.Id == id);
+		var exchange = await Db.Exchanges.FirstOrDefaultAsync(x => x.Id == id && x.UserId == CurrentUser.Id);
 		if (exchange == null)
 			return NotFound("Exchange not found");
 

@@ -11,6 +11,7 @@ import MarketSave from "../pages/Markets/Save.vue";
 
 import Bots from "../pages/Bots/List.vue";
 import BotSave from "../pages/Bots/Save.vue";
+import BotAudits from "../pages/Bots/Audits.vue";
 
 import Positions from "../pages/Positions.vue";
 
@@ -80,6 +81,15 @@ export const routes = [
 				component: BotSave,
 				meta: {
 					title: "Save Bot",
+					visible: false,
+				}
+			},
+			{
+				name: "bot-audits",
+				path: "bots/:id/audits",
+				component: BotAudits,
+				meta: {
+					title: "Bot Audits",
 					visible: false,
 				}
 			},

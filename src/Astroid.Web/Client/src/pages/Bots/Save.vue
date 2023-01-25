@@ -119,11 +119,7 @@ export default {
       },
       id: null,
       markets: [],
-      bodyExample: JSON.stringify(
-        { ticker: "BTCUSDT", leverage: 20, orderType: "open-short" },
-        null,
-        4
-      ),
+      bodyExample: JSON.stringify({ ticker: "BTCUSDT", leverage: 20 }, null, 4),
     };
   },
   computed: {

@@ -54,6 +54,9 @@ import Select from "@/components/shared/Select.vue";
 import DynamicInput from "@/components/shared/DynamicInput.vue";
 import Checkbox from "@/components/shared/Checkbox.vue";
 import DateTime from "@/components/shared/Date/DateTime.vue";
+import Dropdown from "@/components/shared/Dropdown/Dropdown.vue";
+import DropdownItem from "@/components/shared/Dropdown/DropdownItem.vue";
+import DropdownDivider from "@/components/shared/Dropdown/DropdownDivider.vue";
 
 Vue.component("page-header", PageHeader);
 Vue.component("v-table", Table);
@@ -61,6 +64,9 @@ Vue.component("v-select", Select);
 Vue.component("v-dynamic-input", DynamicInput);
 Vue.component("v-checkbox", Checkbox);
 Vue.component("v-datetime", DateTime);
+Vue.component("v-dropdown", Dropdown);
+Vue.component("v-dropdown-item", DropdownItem);
+Vue.component("v-dropdown-divider", DropdownDivider);
 
 // Filters
 Vue.filter("hideInvalidDate", function (value) {

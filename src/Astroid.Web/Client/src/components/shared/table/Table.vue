@@ -1023,12 +1023,10 @@ export default {
       }
     },
     addTableFilter(filterField, filterValue) {
-      console.log("addTableFilter: " + filterField + " - " + filterValue);
       let filter = this.filters.find((x) => x.Column === filterField);
       if (!filter) {
         filter = { Column: filterField, Value: filterValue };
         this.filters.push(filter);
-        console.log(this.filters);
       } else {
         filter.Value = filterValue;
       }
@@ -1037,6 +1035,8 @@ export default {
           this.filters = this.filters.filter((x) => x !== filter);
         }
       }
+
+      return this.filters;
     },
   },
 };

@@ -1,4 +1,4 @@
-export const propertyTypes = {
+export const PROPERTY_TYPES = {
 	UnTyped: 0,
 	Text: 1,
 	Number: 2,
@@ -17,4 +17,13 @@ export const propertyTypes = {
 	DynamicSettings: 23
 }
 
-export default { propertyTypes }
+export const AUDIT_TYPE_DESCRIPTIONS = {
+	0: "Unknown",
+	10: "Open Position",
+	20: "Take Profit",
+	30: "Stop Loss",
+	40: "Close Position",
+	50: "Exception",
+}
+
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS }

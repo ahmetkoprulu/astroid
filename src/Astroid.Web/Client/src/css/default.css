@@ -9,7 +9,9 @@ body {
   background: #fff !important;
   color: #374151;
 }
-
+.pull-right {
+  float: right !important;
+}
 @font-face {
   font-family: "Inter";
   src: url("/site/fonts/Inter/Inter-Regular.ttf") format("truetype");

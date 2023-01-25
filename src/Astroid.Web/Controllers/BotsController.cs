@@ -39,6 +39,7 @@ public class BotsController : SecureController
 			return BadRequest("Invalid exchange id");
 
 		var bot = await Db.Bots
+			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
 			.FirstOrDefaultAsync(x => x.Id == id);
 		if (bot == null)
@@ -122,7 +123,7 @@ public class BotsController : SecureController
 		if (id == Guid.Empty)
 			return BadRequest("Invalid exchange id");
 
-		var bot = await Db.Bots.FirstOrDefaultAsync(x => x.Id == id);
+		var bot = await Db.Bots.Where(x => x.UserId == CurrentUser.Id).FirstOrDefaultAsync(x => x.Id == id);
 		if (bot == null)
 			return NotFound("Exchange not found");
 
