@@ -20,7 +20,35 @@
           label="Position Size"
           description="In ratio of avaible balance"
         >
-          <b-form-input type="number" v-model="model.positionSize" />
+          <b-input-group>
+            <b-form-input
+              type="number"
+              class="w-75"
+              v-model="model.positionSize"
+            />
+            <b-input-group-append>
+              <b-dropdown variant="secondary" size="sm" boundary="window">
+                <template #button-content>
+                  <i
+                    :class="`mr-1 ${
+                      positionSizeTypeIcons[model.positionSizeType]
+                    }`"
+                  />
+                </template>
+                <b-dropdown-item
+                  :active="isDropdownItemActive(key)"
+                  v-for="[key, value] in Object.entries(
+                    $consts.POSITION_SIZE_TYPES
+                  )"
+                  :key="key"
+                  @click="model.positionSizeType = Number.parseInt(key)"
+                >
+                  <i :class="`mr-1 ${positionSizeTypeIcons[key]}`" />
+                  {{ value }}
+                </b-dropdown-item>
+              </b-dropdown>
+            </b-input-group-append>
+          </b-input-group>
         </b-form-group>
         <b-form-group label="Take Profit">
           <b-form-checkbox v-model="model.isTakePofitEnabled" switch />
@@ -105,11 +133,17 @@ export default {
           variant: "primary",
         },
       ],
+      positionSizeTypeIcons: {
+        1: "fa-solid fa-percent",
+        2: "fa-solid fa-dollar-sign",
+        3: "fa-solid fa-coins",
+      },
       model: {
         label: null,
         description: null,
         exchangeId: null,
         positionSize: 10,
+        positionSizeType: 1,
         isTakePofitEnabled: false,
         profitActivation: 1.3,
         isStopLossActivated: false,
@@ -178,6 +212,9 @@ export default {
           }
         }
       );
+    },
+    isDropdownItemActive(value) {
+      return value == this.model.positionSizeType;
     },
   },
 };

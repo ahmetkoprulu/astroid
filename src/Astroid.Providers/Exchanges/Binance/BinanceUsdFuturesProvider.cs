@@ -302,8 +302,12 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return result;
 	}
 
-	private decimal ConvertUsdtToCoin(decimal ratio, decimal lastPrice)
+	private decimal ConvertUsdtToCoin(decimal size, PositionSizeType type, int precision, decimal lastPrice)
 	{
+		if (type == PositionSizeType.FixedInAsset) return Math.Round(size, precision);
+
+		if (type == PositionSizeType.FixedInUsd) return Math.Round(size / lastPrice, precision);
+
 		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
 		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
 
@@ -312,7 +316,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
 
-		return Math.Round(usdQuantity / lastPrice, 3);
+		return Math.Round(usdQuantity / lastPrice, precision);
 	}
 
 	private decimal? GetStopLoss(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)

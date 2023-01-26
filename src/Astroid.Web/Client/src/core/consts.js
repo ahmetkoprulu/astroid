@@ -26,4 +26,10 @@ export const AUDIT_TYPE_DESCRIPTIONS = {
 	50: "Exception",
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS }
+export const POSITION_SIZE_TYPES = {
+	1: "Percentage",
+	2: "Fixed In USD",
+	3: "Fixed In Asset",
+}
+
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES }
