@@ -92,7 +92,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var symbolInfo = GetSymbolInfo(ticker);
-		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.MarkPrice);
+		var quantity = ConvertUsdtToCoin(bot.PositionSize, bot.PositionSizeType, 3, tickerInfo.Data.MarkPrice);
 		var stopPrice = GetStopLoss(bot, tickerInfo.Data.MarkPrice, leverage, symbolInfo.Precision, PositionType.Long);
 		var profitPrice = GetTakeProfit(bot, tickerInfo.Data.MarkPrice, leverage, symbolInfo.Precision, PositionType.Long);
 
@@ -101,7 +101,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				ticker,
 				OrderSide.Buy,
 				FuturesOrderType.Market,
-				quantity,
+				quantity * leverage,
 				positionSide: PositionSide.Long,
 				workingType: WorkingType.Mark,
 				newClientOrderId: Guid.NewGuid().ToString()
@@ -203,7 +203,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var symbolInfo = GetSymbolInfo(ticker);
-		var quantity = ConvertUsdtToCoin(bot.PositionSize, tickerInfo.Data.MarkPrice);
+		var quantity = ConvertUsdtToCoin(bot.PositionSize, bot.PositionSizeType, 3, tickerInfo.Data.MarkPrice);
 		var stopPrice = GetStopLoss(bot, tickerInfo.Data.MarkPrice, leverage, symbolInfo.Precision, PositionType.Short);
 		var profitPrice = GetTakeProfit(bot, tickerInfo.Data.MarkPrice, leverage, symbolInfo.Precision, PositionType.Short);
 
@@ -212,7 +212,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				ticker,
 				OrderSide.Sell,
 				FuturesOrderType.Market,
-				quantity,
+				quantity * leverage,
 				positionSide: PositionSide.Short,
 				workingType: WorkingType.Mark
 			);
@@ -314,7 +314,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
 		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
 
-		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(ratio) / 100;
+		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(size) / 100;
 
 		return Math.Round(usdQuantity / lastPrice, precision);
 	}
