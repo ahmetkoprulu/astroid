@@ -5,6 +5,7 @@ using Astroid.Entity;
 using Astroid.Web;
 using Astroid.Web.Middleware;
 using Microsoft.AspNetCore.SpaServices;
+using Microsoft.EntityFrameworkCore;
 using VueCliMiddleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -116,7 +117,8 @@ var conf = app.Configuration.Get<AConfAppSettings>();
 // Ensure the database is created and seeded.
 using var scope = app.Services.CreateScope();
 using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-db.Database.EnsureCreated();
+db.Database.Migrate();
+
 await app.SeedDatabase();
 
 // Configure the HTTP request pipeline.

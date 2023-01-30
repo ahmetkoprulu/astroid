@@ -22,7 +22,6 @@ WORKDIR /source/
 RUN dotnet restore src/Astroid.Web/Astroid.Web.csproj
 RUN dotnet publish src/Astroid.Web/Astroid.Web.csproj --output /astroid/ --configuration Release
 
-RUN npm run build:frontend
 COPY src/Astroid.Web/wwwroot /astroid
 
 # copy devcert.pfx to /astroid
