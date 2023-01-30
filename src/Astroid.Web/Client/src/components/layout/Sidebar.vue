@@ -14,8 +14,7 @@
             custom
           >
             <a
-              :href="href"
-              @click="(e) => onButtonClick(e, href)"
+              @click="(e) => onButtonClick(e, route, href)"
               class="nav-item-row"
               :class="[
                 isActive && 'router-active',
@@ -83,6 +82,12 @@ export default {
     async signOut() {
       var response = await UserService.signOut();
       if (response.data.success) this.$router.push({ name: "signIn" });
+    },
+    onButtonClick(e, route, href) {
+      e.preventDefault();
+      if (window.location.pathname == href) return;
+
+      this.$router.push(route);
     },
   },
 };
