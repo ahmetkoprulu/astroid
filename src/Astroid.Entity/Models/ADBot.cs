@@ -14,8 +14,10 @@ public class ADBot : IEntity
 	public Guid ExchangeId { get; set; }
 	// public SignalSourceType SignalSourceType { get; set; }
 	public OrderEntryType OrderType { get; set; }
+	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; }
 	public decimal PositionSize { get; set; }
+	// public bool IsIncreasablePositionSize { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
 	// public decimal? ProfitSize { get; set; }
 	public decimal? ProfitActivation { get; set; }

@@ -50,6 +50,25 @@
             </b-input-group-append>
           </b-input-group>
         </b-form-group>
+        <b-form-group label="Order Mode">
+          <b-form-radio-group
+            id="btn-radios-2"
+            v-model="model.orderMode"
+            button-variant="outline-secondary"
+            size="sm"
+            buttons
+          >
+            <template v-for="option in orderTypeOptions">
+              <b-form-radio
+                :value="option.value"
+                :key="option.text"
+                style="width: 100px"
+              >
+                <i :class="orderModeIcons[option.value]" /> {{ option.text }}
+              </b-form-radio>
+            </template>
+          </b-form-radio-group>
+        </b-form-group>
         <b-form-group label="Take Profit">
           <b-form-checkbox v-model="model.isTakePofitEnabled" switch />
         </b-form-group>
@@ -138,11 +157,17 @@ export default {
         2: "fa-solid fa-dollar-sign",
         3: "fa-solid fa-coins",
       },
+      orderModeIcons: {
+        1: "fa-solid fa-arrow-up",
+        2: "fa-solid fa-arrows-up-down",
+        3: "fa-solid fa-arrow-down-up-across-line",
+      },
       model: {
         label: null,
         description: null,
         exchangeId: null,
         positionSize: 10,
+        orderMode: 2,
         positionSizeType: 1,
         isTakePofitEnabled: false,
         profitActivation: 1.3,
@@ -169,8 +194,20 @@ export default {
         };
       });
     },
+    orderTypeOptions() {
+      return Object.entries(this.$consts.ORDER_MODE_TYPES)
+        .slice(1)
+        .map(([key, value]) => {
+          return {
+            text: value,
+            value: Number.parseInt(key),
+            icon: this.orderModeIcons[key],
+          };
+        });
+    },
   },
   async mounted() {
+    this.$busy = true;
     this.id = this.$route.params.id;
     await this.getMarketProviders();
 
@@ -180,13 +217,12 @@ export default {
     } else {
       this.model.key = window.crypto.randomUUID();
     }
+    this.$busy = false;
   },
   methods: {
     async getMarketProviders() {
-      this.$busy = true;
       const response = await MarketService.getAll();
       this.markets = response.data.data;
-      this.$busy = false;
     },
     async save() {
       try {
@@ -219,5 +255,3 @@ export default {
   },
 };
 </script>
-
-<style></style>

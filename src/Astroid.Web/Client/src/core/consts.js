@@ -32,4 +32,11 @@ export const POSITION_SIZE_TYPES = {
 	3: "Fixed In Asset",
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES }
+export const ORDER_MODE_TYPES = {
+	0: "Unknown",
+	1: "One Way",
+	2: "Two Way",
+	3: "Swing"
+}
+
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES }

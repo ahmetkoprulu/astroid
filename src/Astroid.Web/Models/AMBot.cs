@@ -11,6 +11,7 @@ public class AMBot
 	public string? Description { get; set; }
 	public Guid ExchangeId { get; set; }
 	public OrderEntryType OrderType { get; set; } = OrderEntryType.Market;
+	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; } = PositionSizeType.Ratio;
 	public decimal PositionSize { get; set; }
 	public bool IsTakePofitEnabled { get; set; }

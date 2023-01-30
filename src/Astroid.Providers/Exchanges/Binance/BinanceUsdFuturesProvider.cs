@@ -9,6 +9,7 @@ using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Astroid.Providers.Extentions;
+using Binance.Net.Objects.Models.Futures;
 
 namespace Astroid.Providers;
 
@@ -81,6 +82,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> OpenLong(string ticker, int leverage, ADBot bot, AMProviderResult result)
 	{
+		IEnumerable<BinancePositionDetailsUsdt>? positions = null;
+		if (bot.OrderMode != OrderMode.TwoWay)
+			positions = await GetPositions();
+
+		if (bot.OrderMode != OrderMode.TwoWay)
+		{
+			var position = await GetPosition(ticker, PositionSide.Short, positions);
+			if (bot.OrderMode == OrderMode.OneWay && position != null)
+			{
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				return result;
+			}
+			else if (bot.OrderMode == OrderMode.Swing && position != null)
+				await CloseShort(ticker, result, true, position.Quantity);
+		}
+
 		if (leverage > 0)
 			await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
 
@@ -154,20 +171,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return result;
 	}
 
-	private async Task<AMProviderResult> CloseLong(string ticker, AMProviderResult result)
+	private async Task<AMProviderResult> CloseLong(string ticker, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
-		var response = await Client.UsdFuturesApi.Account.GetPositionInformationAsync();
-		if (!response.Success)
+		if (!force)
 		{
-			result.WithMessage($"Failed getting position information: {response?.Error?.Message}").AddAudit(AuditType.CloseOrderPlaced, $"Failed getting position information: {response?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
-			return result;
-		}
+			var position = await GetPosition(ticker, PositionSide.Long);
+			if (position == null)
+			{
+				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
+				return result;
+			}
 
-		var position = response.Data.FirstOrDefault(x => x.Symbol == ticker && x.PositionSide == PositionSide.Long && x.Quantity != 0);
-		if (position == null)
-		{
-			result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
-			return result;
+			quantity = position.Quantity;
 		}
 
 		var orderInfo = await Client.UsdFuturesApi.Trading
@@ -175,23 +190,39 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				ticker,
 				OrderSide.Sell,
 				FuturesOrderType.Market,
-				Math.Abs(position.Quantity),
+				Math.Abs(quantity),
 				positionSide: PositionSide.Long
 			);
 
 		if (!orderInfo.Success)
-		{
-			result.WithMessage($"Failed placing close order: {orderInfo?.Error?.Message}.").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing close order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
-			return result;
-		}
+			throw new Exception($"Failed placing close order: {orderInfo?.Error?.Message}.");
 
-		result.WithSuccess().WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
+		if (!force) result.WithSuccess();
+		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
 
 		return result;
 	}
 
 	private async Task<AMProviderResult> OpenShort(string ticker, int leverage, ADBot bot, AMProviderResult result)
 	{
+		IEnumerable<BinancePositionDetailsUsdt>? positions = null;
+		if (bot.OrderMode != OrderMode.TwoWay)
+			positions = await GetPositions();
+
+		if (bot.OrderMode != OrderMode.TwoWay)
+		{
+			var position = await GetPosition(ticker, PositionSide.Long, positions);
+			if (bot.OrderMode == OrderMode.OneWay && position != null)
+			{
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				return result;
+			}
+			else if (bot.OrderMode == OrderMode.Swing && position != null)
+			{
+				await CloseLong(ticker, result, true, position.Quantity);
+			}
+		}
+
 		if (leverage > 0)
 			await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
 
@@ -266,20 +297,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return result;
 	}
 
-	private async Task<AMProviderResult> CloseShort(string ticker, AMProviderResult result)
+	private async Task<AMProviderResult> CloseShort(string ticker, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
-		var response = await Client.UsdFuturesApi.Account.GetPositionInformationAsync();
-		if (!response.Success)
+		if (!force)
 		{
-			result.WithMessage($"Failed getting position information: {response?.Error?.Message}").AddAudit(AuditType.CloseOrderPlaced, $"Failed getting position information: {response?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
-			return result;
-		}
+			var position = await GetPosition(ticker, PositionSide.Short);
+			if (position == null)
+			{
+				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
+				return result;
+			}
 
-		var position = response.Data.FirstOrDefault(x => x.Symbol == ticker && x.PositionSide == PositionSide.Short && x.Quantity != 0);
-		if (position == null)
-		{
-			result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
-			return result;
+			quantity = position.Quantity;
 		}
 
 		var orderInfo = await Client.UsdFuturesApi.Trading
@@ -287,19 +316,39 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				ticker,
 				OrderSide.Buy,
 				FuturesOrderType.Market,
-				Math.Abs(position.Quantity),
+				Math.Abs(quantity),
 				positionSide: PositionSide.Short
 			);
 
 		if (!orderInfo.Success)
 		{
-			result.WithMessage($"Failed placing close order: {orderInfo?.Error?.Message}.").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing close order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
+			result.WithMessage($"Failed placing close order: {orderInfo?.Error?.Message}.").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing close order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
 			return result;
 		}
 
-		result.WithSuccess().WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
+		if (!force) result.WithSuccess();
+		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
 
 		return result;
+	}
+
+	private async Task<BinancePositionDetailsUsdt?> GetPosition(string ticker, PositionSide side, IEnumerable<BinancePositionDetailsUsdt>? positions = null)
+	{
+		if (positions == null)
+			positions = await GetPositions();
+
+		var position = positions.FirstOrDefault(x => x.Symbol == ticker && x.PositionSide == side && x.Quantity != 0);
+
+		return position;
+	}
+
+	private async Task<IEnumerable<BinancePositionDetailsUsdt>> GetPositions()
+	{
+		var response = await Client.UsdFuturesApi.Account.GetPositionInformationAsync();
+		if (!response.Success)
+			throw new Exception($"Failed getting position information: {response?.Error?.Message}");
+
+		return response.Data;
 	}
 
 	private decimal ConvertUsdtToCoin(decimal size, PositionSizeType type, int precision, decimal lastPrice)
@@ -387,24 +436,4 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		Client.Dispose();
 		GC.SuppressFinalize(this);
 	}
-
-	// public async Task Swing()
-	// {
-	// 			var positions = await client.UsdFuturesApi.Account.GetPositionInformationAsync();
-	// 	var position = positions.Data.Where(x => x.Symbol == "BTCUSDT").First();
-	// 	var tickerInfo = await client.UsdFuturesApi.Market.Get24HrPriceChangeStatisticsAsync("BTCUSDT");
-
-	// 	var profitPrice = tickerInfo.Data.LastPrice * (decimal)1.1;
-	// 	var stopPrice = tickerInfo.Data.LastPrice * (decimal)0.9;
-
-	// 	if (position.PositionSide == PositionSide.Long)
-	// 	{
-	// 		await CloseLong("BTCUSDT", position.PositionAmt);
-	// 		await OpenShort("BTCUSDT", position.PositionAmt, stopPrice, profitPrice);
-	// 	}
-	// 	else if (position.PositionSide == PositionSide.Short)
-	// 	{
-	// 		await CloseShort("BTCUSDT", position.PositionAmt);
-	// 		await OpenLong("BTCUSDT", position.PositionAmt, stopPrice, profitPrice);
-	// }
 }

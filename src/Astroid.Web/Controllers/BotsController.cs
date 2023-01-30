@@ -52,6 +52,7 @@ public class BotsController : SecureController
 			Description = bot.Description,
 			ExchangeId = bot.ExchangeId,
 			OrderType = bot.OrderType,
+			OrderMode = bot.OrderMode,
 			PositionSizeType = bot.PositionSizeType,
 			PositionSize = bot.PositionSize,
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
@@ -78,6 +79,7 @@ public class BotsController : SecureController
 				Description = model.Description,
 				ExchangeId = model.ExchangeId,
 				OrderType = model.OrderType,
+				OrderMode = model.OrderMode,
 				PositionSizeType = model.PositionSizeType,
 				PositionSize = model.PositionSize,
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
@@ -86,7 +88,8 @@ public class BotsController : SecureController
 				StopLossActivation = model.StopLossActivation,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
-				UserId = CurrentUser.Id
+				UserId = CurrentUser.Id,
+				IsEnabled = model.IsEnabled
 			};
 
 			await Db.Bots.AddAsync(bot);
@@ -101,6 +104,7 @@ public class BotsController : SecureController
 			bot.Description = model.Description;
 			bot.ExchangeId = model.ExchangeId;
 			bot.OrderType = model.OrderType;
+			bot.OrderMode = model.OrderMode;
 			bot.PositionSizeType = model.PositionSizeType;
 			bot.PositionSize = model.PositionSize;
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;

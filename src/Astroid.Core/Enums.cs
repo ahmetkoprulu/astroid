@@ -28,6 +28,14 @@ public enum OrderEntryType : short
 	Limit = 2
 }
 
+public enum OrderMode : short
+{
+	Unknown = 0,
+	OneWay = 1,
+	TwoWay = 2,
+	Swing = 3
+}
+
 public enum PositionSizeType : short
 {
 	Unknown = 0,
