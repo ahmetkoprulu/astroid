@@ -135,6 +135,8 @@ public class BotsController : SecureController
 		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == key);
 		if (bot == null) throw new Exception($"Bot {key} not found");
 
+		if (!bot.IsEnabled) return BadRequest("Bot is disabled");
+
 		var exchange = await Db.Exchanges
 			.AsNoTracking()
 			.Include(x => x.Provider)
