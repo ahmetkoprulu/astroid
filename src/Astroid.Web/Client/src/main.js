@@ -147,7 +147,12 @@ Vue.filter("replaceEmptyValue", t =>
 //Prototypes
 Vue.prototype.$consts = Consts;
 Vue.prototype.$helpers = Helpers;
-Vue.prototype.$busy = false;
+
+const busy = Vue.observable({ busy: false });
+Object.defineProperty(Vue.prototype, '$busy', {
+	get() { return busy.busy; },
+	set(value) { busy.busy = value; }
+});
 
 Vue.config.productionTip = false
 
