@@ -17,9 +17,8 @@ public class ADBot : IEntity
 	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; }
 	public decimal PositionSize { get; set; }
-	// public bool IsIncreasablePositionSize { get; set; }
+	public bool IsPositionSizeExpandable { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
-	// public decimal? ProfitSize { get; set; }
 	public decimal? ProfitActivation { get; set; }
 	public bool IsStopLossEnabled { get; set; }
 	public decimal? StopLossActivation { get; set; }

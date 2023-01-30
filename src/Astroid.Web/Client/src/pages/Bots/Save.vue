@@ -16,10 +16,7 @@
             placeholder="Select a market"
           />
         </b-form-group>
-        <b-form-group
-          label="Position Size"
-          description="In ratio of avaible balance"
-        >
+        <b-form-group label="Position Size">
           <b-input-group>
             <b-form-input
               type="number"
@@ -49,6 +46,12 @@
               </b-dropdown>
             </b-input-group-append>
           </b-input-group>
+        </b-form-group>
+        <b-form-group
+          label="Position Size Expandable"
+          description="Orders will increase position size if position of same side already exists"
+        >
+          <b-form-checkbox v-model="model.isPositionSizeExpandable" switch />
         </b-form-group>
         <b-form-group label="Order Mode">
           <b-form-radio-group
@@ -138,6 +141,7 @@ export default {
         description: null,
         exchangeId: null,
         positionSize: 10,
+        isPositionSizeExpandable: true,
         orderMode: 2,
         positionSizeType: 1,
         isTakePofitEnabled: false,

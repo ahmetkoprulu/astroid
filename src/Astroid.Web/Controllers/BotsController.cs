@@ -62,6 +62,7 @@ public class BotsController : SecureController
 			OrderMode = bot.OrderMode,
 			PositionSizeType = bot.PositionSizeType,
 			PositionSize = bot.PositionSize,
+			IsPositionSizeExpandable = bot.IsPositionSizeExpandable,
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
 			ProfitActivation = bot.ProfitActivation,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
@@ -89,6 +90,7 @@ public class BotsController : SecureController
 				OrderMode = model.OrderMode,
 				PositionSizeType = model.PositionSizeType,
 				PositionSize = model.PositionSize,
+				IsPositionSizeExpandable = model.IsPositionSizeExpandable,
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
 				ProfitActivation = model.ProfitActivation,
 				IsStopLossEnabled = model.IsStopLossEnabled,
@@ -114,6 +116,7 @@ public class BotsController : SecureController
 			bot.OrderMode = model.OrderMode;
 			bot.PositionSizeType = model.PositionSizeType;
 			bot.PositionSize = model.PositionSize;
+			bot.IsPositionSizeExpandable = model.IsPositionSizeExpandable;
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
 			bot.ProfitActivation = model.ProfitActivation;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;

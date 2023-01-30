@@ -83,8 +83,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task<AMProviderResult> OpenLong(string ticker, int leverage, ADBot bot, AMProviderResult result)
 	{
 		IEnumerable<BinancePositionDetailsUsdt>? positions = null;
-		if (bot.OrderMode != OrderMode.TwoWay)
+		if (bot.OrderMode != OrderMode.TwoWay || !bot.IsPositionSizeExpandable)
 			positions = await GetPositions();
+
+		if (!bot.IsPositionSizeExpandable)
+		{
+			var position = await GetPosition(ticker, PositionSide.Long, positions);
+			if (position != null)
+			{
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				return result;
+			}
+		}
 
 		if (bot.OrderMode != OrderMode.TwoWay)
 		{
@@ -206,8 +216,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task<AMProviderResult> OpenShort(string ticker, int leverage, ADBot bot, AMProviderResult result)
 	{
 		IEnumerable<BinancePositionDetailsUsdt>? positions = null;
-		if (bot.OrderMode != OrderMode.TwoWay)
+		if (bot.OrderMode != OrderMode.TwoWay || !bot.IsPositionSizeExpandable)
 			positions = await GetPositions();
+
+		if (!bot.IsPositionSizeExpandable)
+		{
+			var position = await GetPosition(ticker, PositionSide.Short, positions);
+			if (position != null)
+			{
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
+				return result;
+			}
+		}
 
 		if (bot.OrderMode != OrderMode.TwoWay)
 		{

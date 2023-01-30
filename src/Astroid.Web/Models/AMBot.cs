@@ -14,6 +14,7 @@ public class AMBot
 	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; } = PositionSizeType.Ratio;
 	public decimal PositionSize { get; set; }
+	public bool IsPositionSizeExpandable { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
 	public decimal? ProfitActivation { get; set; }
 	public bool IsStopLossEnabled { get; set; }
