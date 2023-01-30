@@ -6,12 +6,19 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
 using Astroid.Web.Helpers;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Astroid.Web;
 
 public class BotsController : SecureController
 {
-	public BotsController(AstroidDb db) : base(db) { }
+	private readonly IServiceProvider ServiceProvider;
+
+	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ILogger<BotsController> logger) : base(db)
+	{
+		ServiceProvider = serviceProvider;
+		Logger = logger;
+	}
 
 	[HttpPost("list")]
 	public async Task<IActionResult> List([FromBody] MPViewDataList<ADBot> model)
@@ -119,6 +126,41 @@ public class BotsController : SecureController
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange saved successfully");
+	}
+
+	[AllowAnonymous]
+	[HttpPost("{key}/execute")]
+	public async Task<IActionResult> Execute(string key, [FromBody] AMOrderRequest orderRequest)
+	{
+		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == key);
+		if (bot == null) throw new Exception($"Bot {key} not found");
+
+		var exchange = await Db.Exchanges
+			.AsNoTracking()
+			.Include(x => x.Provider)
+			.FirstOrDefaultAsync(x => x.Id == bot.ExchangeId);
+		if (exchange == null) throw new Exception($"Exchange {bot.ExchangeId} not found");
+
+		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
+		if (exchanger == null) throw new Exception($"Exchanger type {exchange.Provider.Name} not found");
+
+		if (orderRequest == null || string.IsNullOrEmpty(orderRequest.Ticker)) throw new Exception("Ticker is required");
+
+		if (string.IsNullOrEmpty(orderRequest.Type)) throw new Exception("Order type is required");
+
+		var result = await exchanger.ExecuteOrder(bot, orderRequest);
+		if (!result.Success) LogError(null, result.Message);
+
+		result.Audits.ForEach(x =>
+		{
+			x.UserId = exchange.UserId;
+			x.ActorId = bot.Id;
+			Db.Audits.Add(x);
+		});
+
+		await Db.SaveChangesAsync();
+
+		return Success(null, "Order executed successfully");
 	}
 
 	[HttpDelete("{id}")]

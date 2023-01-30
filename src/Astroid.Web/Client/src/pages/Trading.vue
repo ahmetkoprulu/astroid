@@ -9,6 +9,7 @@
         <b-overlay
           style="height: 100vh"
           :show="$busy"
+          no-fade
           :opacity="1"
           variant="white"
         >

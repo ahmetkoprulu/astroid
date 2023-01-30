@@ -94,37 +94,7 @@
         </b-form-group>
       </div>
       <div class="col-lg-6 col-md-12">
-        <b-form-group label="Open Long">
-          <div>
-            {{
-              `https://trade.ahmetkoprulu.com/api/strategies/${model.key}/open-long`
-            }}
-          </div>
-        </b-form-group>
-        <b-form-group label="Close Long">
-          <div>
-            {{
-              `https://trade.ahmetkoprulu.com/strategies/${model.key}/close-long`
-            }}
-          </div>
-        </b-form-group>
-        <b-form-group label="Open Short">
-          <div>
-            {{
-              `https://trade.ahmetkoprulu.com/strategies/${model.key}/open-short`
-            }}
-          </div>
-        </b-form-group>
-        <b-form-group label="Close Short">
-          <div>
-            {{
-              `https://trade.ahmetkoprulu.com/strategies/${model.key}/close-short`
-            }}
-          </div>
-        </b-form-group>
-        <b-form-group label="Message">
-          <textarea v-model="bodyExample" readonly rows="4"></textarea>
-        </b-form-group>
+        <WebhookInfo :bot-key="model.key" />
       </div>
     </div>
   </div>
@@ -134,6 +104,7 @@
 import Service from "@/services/bots";
 import MarketService from "@/services/markets";
 
+import WebhookInfo from "@/components/Bots/WebhookInfo.vue";
 export default {
   data() {
     return {
@@ -252,6 +223,9 @@ export default {
     isDropdownItemActive(value) {
       return value == this.model.positionSizeType;
     },
+  },
+  components: {
+    WebhookInfo,
   },
 };
 </script>
