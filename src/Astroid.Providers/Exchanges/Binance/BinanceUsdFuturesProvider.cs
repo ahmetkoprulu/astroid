@@ -205,7 +205,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			);
 
 		if (!orderInfo.Success)
-			throw new Exception($"Failed placing close order: {orderInfo?.Error?.Message}.");
+		{
+			result.WithMessage($"Failed Placing Order: {orderInfo?.Error?.Message}").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = "Sell", PositionType = "Long" }));
+			return result;
+		}
 
 		if (!force) result.WithSuccess();
 		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));

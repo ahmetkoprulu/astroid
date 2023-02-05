@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>CS8618</NoWarn>
+    <NoWarn>CS8601</NoWarn>
     <SpaRoot>Client/</SpaRoot>
   </PropertyGroup>
 

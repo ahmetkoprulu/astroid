@@ -6,10 +6,11 @@
     <Nullable>enable</Nullable>
     <NoWarn>CS8618dz</NoWarn>
     <NoWarn>CA1822</NoWarn>
+    <NoWarn>CS8601</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="$(NSJsonVersion)" />
-        <PackageReference Include="Binance.Net" Version="8.2.0" />
+    <PackageReference Include="Binance.Net" Version="8.2.0" />
   </ItemGroup>
     <ItemGroup>
     <ProjectReference Include="../Astroid.Core/Astroid.Core.csproj" />

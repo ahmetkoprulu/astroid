@@ -5,22 +5,22 @@
     </b-form-group>
     <b-form-group label="Open Long">
       <pre class="code">
-		{ "symbol": "BTCUSDT", "leverage": 20, "type": "open-long"}
+		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-long"}
       </pre>
     </b-form-group>
     <b-form-group label="Close Long">
       <pre class="code">
-		{ "symbol": "BTCUSDT", "type": "close-long"}
+		{ "ticker": "BTCUSDT", "type": "close-long"}
       </pre>
     </b-form-group>
     <b-form-group label="Open Short">
       <pre class="code">
-		{ "symbol": "BTCUSDT", "leverage": 20, "type": "open-short"}
+		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-short"}
       </pre>
     </b-form-group>
     <b-form-group label="Close Short">
       <pre class="code">
-		{ "symbol": "BTCUSDT", "type": "close-short"}
+		{ "ticker": "BTCUSDT", "type": "close-short"}
       </pre>
     </b-form-group>
   </div>

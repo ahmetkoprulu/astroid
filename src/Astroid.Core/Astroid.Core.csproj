@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>CS8618</NoWarn>
+    <NoWarn>CS8601</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.1-dev-00077" />
