@@ -16,6 +16,26 @@
             placeholder="Select a market"
           />
         </b-form-group>
+        <b-form-group label="Order Type">
+          <v-radio-group
+            v-model="model.orderType"
+            :options="orderEntryTypeOptions"
+          />
+        </b-form-group>
+        <div v-if="model.orderType === 2">
+          <b-form-group label="Deviation Type">
+            <v-radio-group
+              v-model="model.limitSettings.deviationType"
+              :options="limitDeviationOptions"
+            />
+          </b-form-group>
+          <b-form-group label="Order Book Offset">
+            <b-form-input
+              type="number"
+              v-model="model.limitSettings.orderBookOffset"
+            />
+          </b-form-group>
+        </div>
         <b-form-group label="Position Size">
           <b-input-group>
             <b-form-input
@@ -24,7 +44,7 @@
               v-model="model.positionSize"
             />
             <b-input-group-append>
-              <b-dropdown variant="secondary" size="sm" boundary="window">
+              <b-dropdown variant="primary" size="sm" boundary="window">
                 <template #button-content>
                   <i
                     :class="`mr-1 ${
@@ -48,29 +68,16 @@
           </b-input-group>
         </b-form-group>
         <b-form-group
-          label="Position Size Expandable"
+          label="Expandable Position Size"
           description="Orders will increase position size if position of same side already exists"
         >
           <b-form-checkbox v-model="model.isPositionSizeExpandable" switch />
         </b-form-group>
         <b-form-group label="Order Mode">
-          <b-form-radio-group
-            id="btn-radios-2"
+          <v-radio-group
             v-model="model.orderMode"
-            button-variant="outline-secondary"
-            size="sm"
-            buttons
-          >
-            <template v-for="option in orderTypeOptions">
-              <b-form-radio
-                :value="option.value"
-                :key="option.text"
-                style="width: 100px"
-              >
-                <i :class="orderModeIcons[option.value]" /> {{ option.text }}
-              </b-form-radio>
-            </template>
-          </b-form-radio-group>
+            :options="orderTypeOptions"
+          />
         </b-form-group>
         <b-form-group label="Take Profit">
           <b-form-checkbox v-model="model.isTakePofitEnabled" switch />
@@ -127,27 +134,33 @@ export default {
         },
       ],
       positionSizeTypeIcons: {
-        1: "fa-solid fa-percent",
-        2: "fa-solid fa-dollar-sign",
-        3: "fa-solid fa-coins",
+        1: "fa-solid fa-percent fa-fw",
+        2: "fa-solid fa-dollar-sign fa-fw",
+        3: "fa-solid fa-coins fa-fw",
       },
       orderModeIcons: {
-        1: "fa-solid fa-arrow-up",
-        2: "fa-solid fa-arrows-up-down",
-        3: "fa-solid fa-arrow-down-up-across-line",
+        1: "fa-solid fa-arrow-up fa-fw",
+        2: "fa-solid fa-arrows-up-down fa-fw",
+        3: "fa-solid fa-arrow-down-up-across-line fa-fw",
+      },
+      orderEntryTypeIcons: {
+        1: "fa-solid fa-chart-line fa-fw",
+        2: "fa-solid fa-list fa-fw",
       },
       model: {
         label: null,
         description: null,
         exchangeId: null,
+        orderType: 1,
         positionSize: 10,
         isPositionSizeExpandable: true,
         orderMode: 2,
         positionSizeType: 1,
+        limitSettings: { deviationType: 2 },
         isTakePofitEnabled: false,
-        profitActivation: 1.3,
+        profitActivation: 0.1,
         isStopLossActivated: false,
-        stopLossActivation: 0.9,
+        stopLossActivation: 0.1,
         key: "",
         isEnabled: false,
       },
@@ -179,6 +192,28 @@ export default {
             icon: this.orderModeIcons[key],
           };
         });
+    },
+    orderEntryTypeOptions() {
+      return Object.entries(this.$consts.ORDER_ENTRY_TYPES)
+        .slice(1)
+        .map(([key, value]) => {
+          return {
+            text: value,
+            value: Number.parseInt(key),
+            icon: this.orderEntryTypeIcons[key],
+          };
+        });
+    },
+    limitDeviationOptions() {
+      return Object.entries(this.$consts.LIMIT_DEVIATION_TYPES).map(
+        ([key, value]) => {
+          return {
+            text: value,
+            value: Number.parseInt(key),
+            disabled: key == 1,
+          };
+        }
+      );
     },
   },
   async mounted() {

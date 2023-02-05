@@ -39,4 +39,16 @@ export const ORDER_MODE_TYPES = {
 	3: "Swing"
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES }
+export const ORDER_ENTRY_TYPES = {
+	0: "Unknown",
+	1: "Market",
+	2: "Limit",
+}
+
+export const LIMIT_DEVIATION_TYPES = {
+	1: "Last Price",
+	2: "Ask Price",
+	3: "Bid Price",
+}
+
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_DEVIATION_TYPES }

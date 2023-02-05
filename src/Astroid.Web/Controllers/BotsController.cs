@@ -68,7 +68,8 @@ public class BotsController : SecureController
 			IsStopLossEnabled = bot.IsStopLossEnabled,
 			StopLossActivation = bot.StopLossActivation,
 			Key = bot.Key,
-			IsEnabled = bot.IsEnabled
+			IsEnabled = bot.IsEnabled,
+			LimitSettings = bot.LimitSettings
 		});
 	}
 
@@ -98,7 +99,8 @@ public class BotsController : SecureController
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
 				UserId = CurrentUser.Id,
-				IsEnabled = model.IsEnabled
+				IsEnabled = model.IsEnabled,
+				LimitSettings = model.LimitSettings
 			};
 
 			await Db.Bots.AddAsync(bot);
@@ -124,6 +126,7 @@ public class BotsController : SecureController
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;
 			bot.ModifiedDate = DateTime.Now;
+			bot.LimitSettings = model.LimitSettings;
 		}
 
 		await Db.SaveChangesAsync();

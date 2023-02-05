@@ -63,6 +63,13 @@ public enum DatabaseProvider
 	InMemory = 9
 }
 
+public enum DeviationType
+{
+	LastPrice = 0,
+	AskPrice = 1,
+	BidPrice = 2,
+}
+
 public enum PropertyTypes : short
 {
 	UnTyped = 0,

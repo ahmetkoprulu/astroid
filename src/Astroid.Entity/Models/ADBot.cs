@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Astroid.Core;
+using Astroid.Entity.Extentions;
 
 namespace Astroid.Entity;
 
@@ -18,6 +19,14 @@ public class ADBot : IEntity
 	public PositionSizeType PositionSizeType { get; set; }
 	public decimal PositionSize { get; set; }
 	public bool IsPositionSizeExpandable { get; set; }
+	[NotMapped]
+	public LimitSettings LimitSettings
+	{
+		get => this.GetAs<LimitSettings>(LimitSettingsJson);
+		set => LimitSettingsJson = this.SetAs(value);
+	}
+	[Column(nameof(LimitSettings))]
+	public string LimitSettingsJson { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
 	public decimal? ProfitActivation { get; set; }
 	public bool IsStopLossEnabled { get; set; }

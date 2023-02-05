@@ -57,6 +57,7 @@ import DateTime from "@/components/shared/Date/DateTime.vue";
 import Dropdown from "@/components/shared/Dropdown/Dropdown.vue";
 import DropdownItem from "@/components/shared/Dropdown/DropdownItem.vue";
 import DropdownDivider from "@/components/shared/Dropdown/DropdownDivider.vue";
+import RadioGroup from "@/components/shared/RadioGroup.vue";
 
 Vue.component("page-header", PageHeader);
 Vue.component("v-table", Table);
@@ -67,6 +68,7 @@ Vue.component("v-datetime", DateTime);
 Vue.component("v-dropdown", Dropdown);
 Vue.component("v-dropdown-item", DropdownItem);
 Vue.component("v-dropdown-divider", DropdownDivider);
+Vue.component("v-radio-group", RadioGroup);
 
 // Filters
 Vue.filter("hideInvalidDate", function (value) {

@@ -1,5 +1,6 @@
 using Astroid.Core;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace Astroid.Entity.Extentions;
 
@@ -26,5 +27,24 @@ public static class ContextExtentionMethods
 			CreatedDate = DateTime.UtcNow,
 		};
 		db.Audits.Add(audit);
+	}
+
+	public static T GetAs<T>(this IEntity _, string json, bool returnDefault = false) where T : new()
+	{
+		try
+		{
+			if (string.IsNullOrEmpty(json)) return new T();
+			return JsonConvert.DeserializeObject<T>(json);
+		}
+		catch
+		{
+			//ignored
+		}
+		return returnDefault ? default : new T();
+	}
+
+	public static string SetAs<T>(this IEntity _, T obj) where T : new()
+	{
+		return JsonConvert.SerializeObject(obj);
 	}
 }

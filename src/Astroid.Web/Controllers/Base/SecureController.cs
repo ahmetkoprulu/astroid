@@ -24,7 +24,9 @@ public class SecureController : BaseController
 			if (string.IsNullOrEmpty(userId))
 				throw new Exception("User not found");
 
-			_CurrentUser = Db.Users.First(x => x.Id == Guid.Parse(userId));
+			_CurrentUser = Db.Users.FirstOrDefault(x => x.Id == Guid.Parse(userId));
+			if (_CurrentUser == null)
+				throw new Exception("Current user not found");
 
 			return _CurrentUser;
 		}
