@@ -12,7 +12,7 @@
           'btn-outline-primary': opt.value === value,
           'btn-outline-secondary': opt.value !== value,
         }"
-        style="width: 100px"
+        :style="{ width: width }"
       >
         <input
           v-model="value"
@@ -46,6 +46,10 @@ export default {
     size: {
       type: String,
       default: "sm",
+    },
+    width: {
+      type: String,
+      default: "100px",
     },
   },
 };

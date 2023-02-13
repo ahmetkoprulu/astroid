@@ -23,18 +23,36 @@
           />
         </b-form-group>
         <div v-if="model.orderType === 2">
-          <b-form-group label="Deviation Type">
+          <b-form-group label="Valorization Type">
             <v-radio-group
-              v-model="model.limitSettings.deviationType"
+              v-model="model.limitSettings.valorizationType"
               :options="limitDeviationOptions"
+              width="120px"
             />
           </b-form-group>
-          <b-form-group label="Order Book Offset">
+          <b-form-group
+            label="Order Book Offset"
+            v-if="model.limitSettings.valorizationType !== 1"
+          >
             <b-form-input
               type="number"
               v-model="model.limitSettings.orderBookOffset"
             />
           </b-form-group>
+          <div v-else>
+            <b-form-group label="Deviation">
+              <b-form-input
+                type="number"
+                v-model="model.limitSettings.deviation"
+              />
+            </b-form-group>
+            <!-- <b-form-group label="Order Timeout">
+              <b-form-input
+                type="number"
+                v-model="model.limitSettings.orderTimeout"
+              />
+            </b-form-group> -->
+          </div>
         </div>
         <b-form-group label="Position Size">
           <b-input-group>
@@ -147,6 +165,10 @@ export default {
         1: "fa-solid fa-chart-line fa-fw",
         2: "fa-solid fa-list fa-fw",
       },
+      valorizationTypeIcons: {
+        1: "fa-solid fa-tag fa-fw",
+        2: "fa-solid fa-book-open fa-fw",
+      },
       model: {
         label: null,
         description: null,
@@ -156,7 +178,7 @@ export default {
         isPositionSizeExpandable: true,
         orderMode: 2,
         positionSizeType: 1,
-        limitSettings: { deviationType: 2 },
+        limitSettings: { valorizationType: 2 },
         isTakePofitEnabled: false,
         profitActivation: 0.1,
         isStopLossActivated: false,
@@ -205,12 +227,12 @@ export default {
         });
     },
     limitDeviationOptions() {
-      return Object.entries(this.$consts.LIMIT_DEVIATION_TYPES).map(
+      return Object.entries(this.$consts.LIMIT_VALORIZATION_TYPES).map(
         ([key, value]) => {
           return {
             text: value,
             value: Number.parseInt(key),
-            disabled: key == 1,
+            icon: this.valorizationTypeIcons[key],
           };
         }
       );

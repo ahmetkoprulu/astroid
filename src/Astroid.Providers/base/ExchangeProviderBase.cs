@@ -11,6 +11,7 @@ public abstract class ExchangeProviderBase : IDisposable
 	public IServiceProvider ServiceProvider { get; set; }
 	protected AstroidDb Db { get; set; }
 	protected ADExchange Exchange { get; set; }
+	public string CorrelationId { get; set; }
 
 	protected ExchangeProviderBase() { }
 
@@ -19,6 +20,7 @@ public abstract class ExchangeProviderBase : IDisposable
 		ServiceProvider = serviceProvider;
 		// Db = serviceProvider.GetService(typeof(AstroidDb)) as AstroidDb ?? throw new Exception("Db cannot be null");
 		Exchange = exchange;
+		CorrelationId = GenerateCorrelationId();
 	}
 
 	public virtual void Context()
@@ -81,6 +83,15 @@ public abstract class ExchangeProviderBase : IDisposable
 				// Unable to convert complex value
 			}
 		}
+	}
+
+	// Generate 10 character correlation id
+	public string GenerateCorrelationId()
+	{
+		var random = new Random();
+		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		return new string(Enumerable.Repeat(chars, 15)
+			.Select(s => s[random.Next(s.Length)]).ToArray());
 	}
 
 	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);

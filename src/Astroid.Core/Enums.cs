@@ -63,11 +63,11 @@ public enum DatabaseProvider
 	InMemory = 9
 }
 
-public enum DeviationType
+public enum ValorizationType
 {
-	LastPrice = 0,
-	AskPrice = 1,
-	BidPrice = 2,
+	Unknown = 0,
+	LastPrice = 1,
+	OrderBook = 2,
 }
 
 public enum PropertyTypes : short
