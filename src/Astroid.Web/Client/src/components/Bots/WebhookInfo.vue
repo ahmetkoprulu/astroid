@@ -1,26 +1,30 @@
 <template>
   <div>
     <b-form-group label="Webhook">
-      {{ `https://trade.ahmetkoprulu.com/api/bots/${botKey}/execute` }}
+      {{ `https://trade.ahmetkoprulu.com/api/bots/execute` }}
     </b-form-group>
     <b-form-group label="Open Long">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-long"}
+		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-long", "key": "{{
+          botKey
+        }}" }
       </pre>
     </b-form-group>
     <b-form-group label="Close Long">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "type": "close-long"}
+		{ "ticker": "BTCUSDT", "type": "close-long", "key": "{{ botKey }}" }
       </pre>
     </b-form-group>
     <b-form-group label="Open Short">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-short"}
+		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-short", "key": "{{
+          botKey
+        }}" }
       </pre>
     </b-form-group>
     <b-form-group label="Close Short">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "type": "close-short"}
+		{ "ticker": "BTCUSDT", "type": "close-short", "key": "{{ botKey }}" }
       </pre>
     </b-form-group>
   </div>

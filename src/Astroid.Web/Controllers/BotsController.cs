@@ -135,11 +135,11 @@ public class BotsController : SecureController
 	}
 
 	[AllowAnonymous]
-	[HttpPost("{key}/execute")]
-	public async Task<IActionResult> Execute(string key, [FromBody] AMOrderRequest orderRequest)
+	[HttpPost("execute")]
+	public async Task<IActionResult> Execute([FromBody] AMOrderRequest orderRequest)
 	{
-		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == key);
-		if (bot == null) throw new Exception($"Bot {key} not found");
+		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == orderRequest.Key);
+		if (bot == null) throw new Exception($"Bot {orderRequest.Key} not found");
 
 		if (!bot.IsEnabled) return BadRequest("Bot is disabled");
 
