@@ -74,7 +74,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		catch (Exception ex)
 		{
 			result.WithMessage(ex.Message);
-			result.AddAudit(AuditType.UnhandledException, ex.Message, data: JsonConvert.SerializeObject(new { order.Ticker, order.OrderType, order.PositionType }));
+			result.AddAudit(AuditType.UnhandledException, ex.Message, CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, order.OrderType, order.PositionType }));
 		}
 
 		return result;
@@ -91,7 +91,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Long, positions);
 			if (position != null)
 			{
-				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
 				return result;
 			}
 		}
@@ -101,7 +101,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Short, positions);
 			if (bot.OrderMode == OrderMode.OneWay && position != null)
 			{
-				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
 				return result;
 			}
 			else if (bot.OrderMode == OrderMode.Swing && position != null)
@@ -114,7 +114,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(ticker);
 		if (!tickerInfo.Success)
 		{
-			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
 			return result;
 		}
 
@@ -130,7 +130,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var openPosition = await GetPosition(ticker, PositionSide.Long);
 		if (openPosition == null)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Open position not found. Could not execure TP/SL orders.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"Open position not found. Could not execure TP/SL orders.", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
 			return result;
 		}
 
@@ -182,7 +182,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Long);
 			if (position == null)
 			{
-				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
+				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
 				return result;
 			}
 
@@ -200,12 +200,12 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderInfo.Success)
 		{
-			result.WithMessage($"Failed Placing Order: {orderInfo?.Error?.Message}").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = "Sell", PositionType = "Long" }));
+			result.WithMessage($"Failed Placing Order: {orderInfo?.Error?.Message}").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing order: {orderInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = "Sell", PositionType = "Long" }));
 			return result;
 		}
 
 		if (!force) result.WithSuccess();
-		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
+		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Long" }));
 
 		return result;
 	}
@@ -221,7 +221,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Short, positions);
 			if (position != null)
 			{
-				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
 				return result;
 			}
 		}
@@ -231,7 +231,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Long, positions);
 			if (bot.OrderMode == OrderMode.OneWay && position != null)
 			{
-				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {ticker} - {position.PositionSide}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Long" }));
 				return result;
 			}
 			else if (bot.OrderMode == OrderMode.Swing && position != null)
@@ -246,7 +246,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(ticker);
 		if (!tickerInfo.Success)
 		{
-			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker }));
+			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker }));
 			return result;
 		}
 
@@ -261,7 +261,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var openPosition = await GetPosition(ticker, PositionSide.Short);
 		if (openPosition == null)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Open position not found. Could not execure TP/SL orders.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"Open position not found. Could not execure TP/SL orders.", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Sell", PositionType = "Short" }));
 			return result;
 		}
 
@@ -315,7 +315,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var position = await GetPosition(ticker, PositionSide.Short);
 			if (position == null)
 			{
-				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
+				result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
 				return result;
 			}
 
@@ -333,12 +333,12 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderInfo.Success)
 		{
-			result.WithMessage($"Failed placing close order: {orderInfo?.Error?.Message}.").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing close order: {orderInfo?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
+			result.WithMessage($"Failed placing close order: {orderInfo?.Error?.Message}.").AddAudit(AuditType.CloseOrderPlaced, $"Failed placing close order: {orderInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
 			return result;
 		}
 
 		if (!force) result.WithSuccess();
-		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
+		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, OrderType = "Buy", PositionType = "Short" }));
 
 		return result;
 	}
@@ -357,7 +357,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderResponse.Success)
 		{
-			result.WithMessage($"Failed Market Order Placing Order: {orderResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed placing market order: {orderResponse?.Error?.Message}", data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
+			result.WithMessage($"Failed Market Order Placing Order: {orderResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed placing market order: {orderResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
 			return false;
 		}
 
