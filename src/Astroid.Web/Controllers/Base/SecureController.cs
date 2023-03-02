@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Astroid.Core;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
+using Astroid.Core.Cache;
 
 namespace Astroid.Web;
 
@@ -32,8 +33,10 @@ public class SecureController : BaseController
 		}
 	}
 
+	public ICacheService Cache { get; set; }
 
-	public SecureController(AstroidDb db) : base(db)
+	public SecureController(AstroidDb db, ICacheService cache) : base(db)
 	{
+		Cache = cache;
 	}
 }

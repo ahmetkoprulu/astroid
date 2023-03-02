@@ -85,8 +85,7 @@ public abstract class ExchangeProviderBase : IDisposable
 		}
 	}
 
-	// Generate 10 character correlation id
-	public string GenerateCorrelationId()
+	public static string GenerateCorrelationId()
 	{
 		var random = new Random();
 		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";

@@ -6,12 +6,13 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
 using Astroid.Web.Helpers;
+using Astroid.Core.Cache;
 
 namespace Astroid.Web;
 
 public class AuditsController : SecureController
 {
-	public AuditsController(AstroidDb db) : base(db) { }
+	public AuditsController(AstroidDb db, ICacheService cache) : base(db, cache) { }
 
 	[HttpPost("list")]
 	public async Task<IActionResult> List([FromQuery(Name = "bot")] Guid botId, [FromBody] MPViewDataList<ADAudit> model)

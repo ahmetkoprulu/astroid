@@ -47,6 +47,7 @@ public enum PositionSizeType : short
 public enum AuditType : short
 {
 	Unknown = 0,
+	OrderRequest = 1,
 	OpenOrderPlaced = 10,
 	TakeProfitOrderPlaced = 20,
 	StopLossOrderPlaced = 30,

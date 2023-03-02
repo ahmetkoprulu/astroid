@@ -34,14 +34,14 @@ public class InMemoryCache : ICacheService
 		_cache.Dispose();
 	}
 
-	public object? AcuireLock(string key)
+	public object? AcquireLock(string key)
 	{
 		lock (Locks)
 		{
-			var exist = Locks.ContainsKey(key);
-			if (exist) return null;
+			var exist = Locks.TryGetValue(key, out var @lock);
+			if (exist) return @lock;
 
-			var @lock = new object();
+			@lock = new object();
 			Locks.Add(key, @lock);
 
 			return @lock;

@@ -2,12 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using Astroid.Entity;
 using Astroid.Web.Models;
 using System.Security.Claims;
+using Astroid.Core.Cache;
 
 namespace Astroid.Web;
 
 public class UsersController : SecureController
 {
-	public UsersController(AstroidDb db) : base(db) { }
+	public UsersController(AstroidDb db, ICacheService cache) : base(db, cache) { }
 
 	[HttpGet("user-info")]
 	public IActionResult GetUserInfo()

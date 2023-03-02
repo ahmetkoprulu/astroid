@@ -1,11 +1,13 @@
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using Astroid.Core;
+using Astroid.Core.Cache;
 using Astroid.Entity;
 using Astroid.Web;
 using Astroid.Web.Middleware;
 using Microsoft.AspNetCore.SpaServices;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using VueCliMiddleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -79,6 +81,7 @@ else
 
 // Dependency Injections
 builder.Services.AddDbContext<AstroidDb>();
+builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
 
 // Add services to the container.
 builder.Services.AddControllers();

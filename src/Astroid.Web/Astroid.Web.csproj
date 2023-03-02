@@ -13,7 +13,6 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="7.0.0" />
     <PackageReference Include="VueCliMiddleware" Version="6.0.0" />   
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="Mapster" Version="7.2.0" />
   </ItemGroup>
   <ItemGroup>

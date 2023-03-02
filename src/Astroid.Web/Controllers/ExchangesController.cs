@@ -5,12 +5,13 @@ using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Web.Helpers;
 using Astroid.Providers.Extentions;
+using Astroid.Core.Cache;
 
 namespace Astroid.Web;
 
 public class ExchangesController : SecureController
 {
-	public ExchangesController(AstroidDb db) : base(db) { }
+	public ExchangesController(AstroidDb db, ICacheService cache) : base(db, cache) { }
 
 	[HttpPost("list")]
 	public async Task<IActionResult> List([FromBody] MPViewDataList<ADExchange> model)

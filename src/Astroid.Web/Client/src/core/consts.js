@@ -19,6 +19,7 @@ export const PROPERTY_TYPES = {
 
 export const AUDIT_TYPE_DESCRIPTIONS = {
 	0: "Unknown",
+	1: "Order Request",
 	10: "Open Position",
 	20: "Take Profit",
 	30: "Stop Loss",

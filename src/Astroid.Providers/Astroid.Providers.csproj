@@ -9,7 +9,6 @@
     <NoWarn>CS8601</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Newtonsoft.Json" Version="$(NSJsonVersion)" />
     <PackageReference Include="Binance.Net" Version="8.2.0" />
   </ItemGroup>
     <ItemGroup>

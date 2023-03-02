@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
 using Astroid.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
+using Astroid.Core.Cache;
 
 namespace Astroid.Web;
 
@@ -14,7 +15,7 @@ public class BotsController : SecureController
 {
 	private readonly IServiceProvider ServiceProvider;
 
-	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ILogger<BotsController> logger) : base(db)
+	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ILogger<BotsController> logger) : base(db, cache)
 	{
 		ServiceProvider = serviceProvider;
 		Logger = logger;
@@ -143,6 +144,13 @@ public class BotsController : SecureController
 
 		if (!bot.IsEnabled) return BadRequest("Bot is disabled");
 
+		if (Cache.IsLocked($"lock:bot:{bot.Id}"))
+		{
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
+			return BadRequest("Bot is busy");
+		}
+
+		var _ = Cache.AcquireLock($"lock:bot:{bot.Id}");
 		var exchange = await Db.Exchanges
 			.AsNoTracking()
 			.Include(x => x.Provider)
@@ -156,17 +164,29 @@ public class BotsController : SecureController
 
 		if (string.IsNullOrEmpty(orderRequest.Type)) throw new Exception("Order type is required");
 
-		var result = await exchanger.ExecuteOrder(bot, orderRequest);
-		if (!result.Success) LogError(null, result.Message);
-
-		result.Audits.ForEach(x =>
+		try
 		{
-			x.UserId = exchange.UserId;
-			x.ActorId = bot.Id;
-			Db.Audits.Add(x);
-		});
+			var result = await exchanger.ExecuteOrder(bot, orderRequest);
+			if (!result.Success) LogError(null, result.Message);
 
-		await Db.SaveChangesAsync();
+			result.Audits.ForEach(x =>
+			{
+				x.UserId = exchange.UserId;
+				x.ActorId = bot.Id;
+				Db.Audits.Add(x);
+			});
+
+			await Db.SaveChangesAsync();
+		}
+		catch (Exception ex)
+		{
+			LogError(ex, ex.Message);
+			return Error(ex.Message);
+		}
+		finally
+		{
+			Cache.ReleaseLock($"lock:bot:{bot.Id}");
+		}
 
 		return Success(null, "Order executed successfully");
 	}
@@ -185,5 +205,23 @@ public class BotsController : SecureController
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange deleted successfully");
+	}
+
+	[NonAction]
+	public async Task AddAudit(AuditType type, Guid userId, Guid botId, string description)
+	{
+		var audit = new ADAudit
+		{
+			Id = Guid.NewGuid(),
+			UserId = userId,
+			ActorId = botId,
+			Type = type,
+			Description = description,
+			CorrelationId = ExchangeProviderBase.GenerateCorrelationId(),
+			CreatedDate = DateTime.UtcNow,
+		};
+
+		await Db.Audits.AddAsync(audit);
+		await Db.SaveChangesAsync();
 	}
 }

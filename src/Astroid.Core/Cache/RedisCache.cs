@@ -36,7 +36,7 @@ public class RedisCache : ICacheService
 		_database.KeyDelete(key);
 	}
 
-	public object? AcuireLock(string key)
+	public object? AcquireLock(string key)
 	{
 		throw new NotImplementedException();
 	}
