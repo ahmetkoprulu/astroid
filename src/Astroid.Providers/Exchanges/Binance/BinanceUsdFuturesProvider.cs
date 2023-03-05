@@ -405,9 +405,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var i = 0;
+		var orderBookPrices = IncreaseTickSize(pSide == PositionSide.Long ? orderBook.Data.Asks : orderBook.Data.Bids, precision + 1);
 		while (i < settings.OrderBookOffset)
 		{
-			price = pSide == PositionSide.Long ? orderBook.Data.Asks.ElementAt(i).Price : orderBook.Data.Bids.ElementAt(i).Price;
+			price = orderBookPrices.ElementAt(i).Price;
 			var orderResponse = await Client.UsdFuturesApi.Trading
 				.PlaceOrderAsync(
 					ticker,
@@ -416,11 +417,12 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					quantity,
 					price,
 					positionSide: pSide,
-					timeInForce: TimeInForce.FillOrKill,
-					workingType: WorkingType.Mark
+					timeInForce: TimeInForce.ImmediateOrCancel,
+					workingType: WorkingType.Contract
 				);
 
-			if (orderResponse.Success)
+			var openPosition = await GetPosition(ticker, PositionSide.Long);
+			if (openPosition != null)
 			{
 				result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed OBO limit order at try {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, EntryPrice = price, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
 				return true;
@@ -469,7 +471,33 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(usdQuantity / lastPrice, precision);
 	}
 
-	private decimal? GetStopLoss(ADBot bot, decimal entryPrice, int leverage, int precision, PositionType type)
+	static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)
+	{
+		Dictionary<decimal, BinanceOrderBookEntry> aggregated_bids = new();
+		var tickSize = 1.0m / (decimal)Math.Pow(10, precision - 1);
+
+		foreach (var bid in bids)
+		{
+			var rounded_price = bid.Price - (bid.Price % tickSize);
+
+			if (aggregated_bids.ContainsKey(rounded_price))
+			{
+				aggregated_bids[rounded_price].Quantity += bid.Quantity;
+			}
+			else
+			{
+				aggregated_bids[rounded_price] = new BinanceOrderBookEntry
+				{
+					Price = rounded_price,
+					Quantity = bid.Quantity
+				};
+			}
+		}
+
+		var smoothed_bids = new List<BinanceOrderBookEntry>(aggregated_bids.Values);
+
+		return smoothed_bids;
+	}
 	{
 		if (!bot.IsStopLossEnabled) return null;
 
