@@ -7,6 +7,7 @@ public class AMOrderRequest
 	public string Ticker { get; set; }
 	public int Leverage { get; set; }
 	public string? Type { get; set; }
+	public int Risk { get; set; } = 1;
 	public string Key { get; set; }
 
 	public OrderType OrderType

@@ -17,7 +17,7 @@ public class ADBot : IEntity
 	public OrderEntryType OrderType { get; set; }
 	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; }
-	public decimal PositionSize { get; set; }
+	public decimal? PositionSize { get; set; }
 	public bool IsPositionSizeExpandable { get; set; }
 	[NotMapped]
 	public LimitSettings LimitSettings
