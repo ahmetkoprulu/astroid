@@ -3,28 +3,24 @@
     <b-form-group label="Webhook">
       {{ `https://trade.ahmetkoprulu.com/api/bots/execute` }}
     </b-form-group>
-    <b-form-group label="Open Long">
+    <b-form-group label="Open Orders">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-long", "key": "{{
-          botKey
-        }}" }
+		{ 
+      "ticker": "BTCUSDT", 
+      "leverage": 20, 
+      "risk": "1 | 2 | ... | n", 
+      "type": "open-long | open-short", 
+      "key": "{{ botKey }}" 
+    }
       </pre>
     </b-form-group>
-    <b-form-group label="Close Long">
+    <b-form-group label="Close Orders">
       <pre class="code">
-		{ "ticker": "BTCUSDT", "type": "close-long", "key": "{{ botKey }}" }
-      </pre>
-    </b-form-group>
-    <b-form-group label="Open Short">
-      <pre class="code">
-		{ "ticker": "BTCUSDT", "leverage": 20, "type": "open-short", "key": "{{
-          botKey
-        }}" }
-      </pre>
-    </b-form-group>
-    <b-form-group label="Close Short">
-      <pre class="code">
-		{ "ticker": "BTCUSDT", "type": "close-short", "key": "{{ botKey }}" }
+		{ 
+      "ticker": "BTCUSDT", 
+      "type": "close-long | close-short", 
+      "key": "{{ botKey }}" 
+    }
       </pre>
     </b-form-group>
   </div>

@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="7.0.0" />
     <PackageReference Include="VueCliMiddleware" Version="6.0.0" />   
     <PackageReference Include="Mapster" Version="7.2.0" />
