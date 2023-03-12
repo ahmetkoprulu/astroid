@@ -67,6 +67,8 @@ public class BotsController : SecureController
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
 			ProfitActivation = bot.ProfitActivation,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
+			StopLossPrice = bot.StopLossPrice,
+			StopLossCallbackRate = bot.StopLossCallbackRate,
 			StopLossActivation = bot.StopLossActivation,
 			Key = bot.Key,
 			IsEnabled = bot.IsEnabled,
@@ -96,6 +98,8 @@ public class BotsController : SecureController
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
 				ProfitActivation = model.ProfitActivation,
 				IsStopLossEnabled = model.IsStopLossEnabled,
+				StopLossPrice = model.StopLossPrice,
+				StopLossCallbackRate = model.StopLossCallbackRate,
 				StopLossActivation = model.StopLossActivation,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
@@ -123,6 +127,8 @@ public class BotsController : SecureController
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
 			bot.ProfitActivation = model.ProfitActivation;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
+			bot.StopLossPrice = model.StopLossPrice;
+			bot.StopLossCallbackRate = model.StopLossCallbackRate;
 			bot.StopLossActivation = model.StopLossActivation;
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;

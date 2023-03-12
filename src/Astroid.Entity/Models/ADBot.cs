@@ -30,7 +30,9 @@ public class ADBot : IEntity
 	public bool IsTakePofitEnabled { get; set; }
 	public decimal? ProfitActivation { get; set; }
 	public bool IsStopLossEnabled { get; set; }
+	public decimal? StopLossPrice { get; set; }
 	public decimal? StopLossActivation { get; set; }
+	public decimal? StopLossCallbackRate { get; set; }
 	public string Key { get; set; }
 	public bool IsEnabled { get; set; }
 	public Guid UserId { get; set; }

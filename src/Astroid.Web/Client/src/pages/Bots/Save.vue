@@ -2,10 +2,15 @@
   <div>
     <page-header title="Save Bot" :actions="actions" />
     <div class="row">
-      <div class="col-lg-6 col-md-12">
-        <b-form-group label="Label">
-          <b-form-input type="text" v-model="model.label" />
-        </b-form-group>
+      <div class="col-lg-4 col-md-12">
+        <div class="d-flex space-between">
+          <b-form-group label="Label">
+            <b-form-input type="text" v-model="model.label" />
+          </b-form-group>
+          <b-form-group label="Enabled">
+            <b-form-checkbox class="w-25" v-model="model.isEnabled" switch />
+          </b-form-group>
+        </div>
         <b-form-group label="Description">
           <b-form-textarea v-model="model.description" rows="2" max-rows="6" />
         </b-form-group>
@@ -89,7 +94,7 @@
           label="Expandable Position Size"
           description="Orders will increase position size if position of same side already exists"
         >
-          <b-form-checkbox v-model="model.isPositionSizeExpandable" switch />
+          <b-form-checkbox v-model="model.isPositionSizeExpandable" />
         </b-form-group>
         <b-form-group label="Order Mode">
           <v-radio-group
@@ -111,17 +116,31 @@
           <b-form-checkbox v-model="model.isStopLossEnabled" switch />
         </b-form-group>
         <b-form-group
-          label="Loss Activation"
+          label="Stop Price"
           description="In ratio of entry price"
           v-if="model.isStopLossEnabled"
         >
-          <b-form-input type="number" v-model="model.stopLossActivation" />
+          <b-form-input type="number" v-model="model.stopLossPrice" />
         </b-form-group>
-        <b-form-group label="Enabled">
-          <b-form-checkbox v-model="model.isEnabled" switch />
-        </b-form-group>
+        <div class="d-flex">
+          <b-form-group
+            class="w-50 mr-2"
+            label="Callback Rate"
+            description="Percentage of price change to trigger"
+            v-if="model.isStopLossEnabled"
+          >
+            <b-form-input type="number" v-model="model.stopLossCallbackRate" />
+          </b-form-group>
+          <b-form-group
+            class="w-50"
+            label="Activation Price"
+            v-if="model.isStopLossEnabled"
+          >
+            <b-form-input type="number" v-model="model.stopLossActivation" />
+          </b-form-group>
+        </div>
       </div>
-      <div class="col-lg-6 col-md-12">
+      <div class="col-lg-8 col-md-12">
         <WebhookInfo :bot-key="model.key" />
       </div>
     </div>
@@ -187,6 +206,8 @@ export default {
         profitActivation: null,
         isStopLossActivated: false,
         stopLossActivation: null,
+        stopLossCallbackRate: 0,
+        stopLossPrice: 0,
         key: "",
         isEnabled: false,
       },
