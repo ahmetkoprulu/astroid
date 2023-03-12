@@ -402,7 +402,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var i = 0;
-		var orderBookPrices = IncreaseTickSize(pSide == PositionSide.Long ? orderBook.Data.Asks : orderBook.Data.Bids, precision + 1);
+		var orderBookPrices = pSide == PositionSide.Long ? orderBook.Data.Asks : orderBook.Data.Bids;
 		while (i < settings.OrderBookOffset)
 		{
 			price = orderBookPrices.ElementAt(i).Price;
@@ -418,7 +418,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					workingType: WorkingType.Contract
 				);
 
-			var openPosition = await GetPosition(ticker, PositionSide.Long);
+			var openPosition = await GetPosition(ticker, pSide);
 			if (openPosition != null)
 			{
 				result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed OBO limit order at try {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, EntryPrice = price, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
@@ -461,6 +461,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var wallet = usdtBalanceInfo.AvailableBalance / order.Risk;
 
+		//TODO: cover position size zero case
 		if (!bot.PositionSize.HasValue)
 		{
 			if (bot.StopLossActivation == 0 || order.Leverage == 0) throw new Exception("Stoploss or leverage is not set");
