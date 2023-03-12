@@ -113,7 +113,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return result;
 		}
 
-		bot.StopLossActivation ??= 1;
+		if (!bot.StopLossActivation.HasValue || bot.StopLossActivation <= 0) bot.StopLossActivation = 1;
+
 		var symbolInfo = GetSymbolInfo(order.Ticker);
 		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, tickerInfo.Data.Price);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
@@ -244,7 +245,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return result;
 		}
 
-		bot.StopLossActivation ??= 1;
+		if (!bot.StopLossActivation.HasValue || bot.StopLossActivation <= 0) bot.StopLossActivation = 1;
+
 		var symbolInfo = GetSymbolInfo(order.Ticker);
 		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, tickerInfo.Data.Price);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
@@ -461,8 +463,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var wallet = usdtBalanceInfo.AvailableBalance / order.Risk;
 
-		//TODO: cover position size zero case
-		if (!bot.PositionSize.HasValue)
+		if (!bot.PositionSize.HasValue || bot.PositionSize <= 0)
 		{
 			if (bot.StopLossActivation == 0 || order.Leverage == 0) throw new Exception("Stoploss or leverage is not set");
 
@@ -523,7 +524,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	{
 		if (!bot.IsTakePofitEnabled) return null;
 
-		if (bot.ProfitActivation == null || bot.ProfitActivation.Value <= 0) bot.ProfitActivation = bot.StopLossActivation * 3;
+		if (!bot.ProfitActivation.HasValue || bot.ProfitActivation.Value <= 0) bot.ProfitActivation = bot.StopLossActivation * 3;
 
 		return CalculateTakeProfit(bot.ProfitActivation!.Value, entryPrice, precision, type);
 	}
