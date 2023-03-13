@@ -15,7 +15,7 @@ public class AMBot
 	public decimal? PositionSize { get; set; } = null;
 	public bool IsPositionSizeExpandable { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
-	public decimal? ProfitActivation { get; set; }
+	public List<TakeProfitTarget> TakeProfitTargets { get; set; } = new();
 	public bool IsStopLossEnabled { get; set; }
 	public decimal? StopLossPrice { get; set; }
 	public decimal? StopLossActivation { get; set; }

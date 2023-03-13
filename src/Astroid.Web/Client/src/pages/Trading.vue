@@ -13,7 +13,7 @@
           :opacity="1"
           variant="white"
         >
-          <div class="container-fluid md:px-6">
+          <div class="container-fluid">
             <router-view></router-view>
           </div>
         </b-overlay>

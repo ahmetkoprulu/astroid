@@ -2,13 +2,17 @@
   <div>
     <page-header title="Save Bot" :actions="actions" />
     <div class="row">
-      <div class="col-lg-4 col-md-12">
-        <div class="d-flex space-between">
-          <b-form-group label="Label">
+      <div class="col-lg-5 col-md-12">
+        <div class="d-flex justify-content-between">
+          <b-form-group label="Label" class="w-100 mr-3">
             <b-form-input type="text" v-model="model.label" />
           </b-form-group>
           <b-form-group label="Enabled">
-            <b-form-checkbox class="w-25" v-model="model.isEnabled" switch />
+            <b-form-checkbox
+              v-model="model.isEnabled"
+              switch
+              style="margin-top: 7px"
+            />
           </b-form-group>
         </div>
         <b-form-group label="Description">
@@ -105,12 +109,24 @@
         <b-form-group label="Take Profit">
           <b-form-checkbox v-model="model.isTakePofitEnabled" switch />
         </b-form-group>
-        <b-form-group
-          label="Profit Target"
-          description="In ratio of entry price"
-          v-if="model.isTakePofitEnabled"
-        >
-          <b-form-input type="number" v-model="model.profitActivation" />
+        <b-form-group v-if="model.isTakePofitEnabled">
+          <template #label>
+            <div class="d-flex justify-content-between">
+              <span>Profit Targets</span>
+              <a
+                href="javascript:;"
+                @click="
+                  model.takeProfitTargets.push({
+                    activation: null,
+                    share: null,
+                  })
+                "
+              >
+                <i class="fas fa-plus fa-fw" />
+              </a>
+            </div>
+          </template>
+          <MultipleTakeProfit v-model="model.takeProfitTargets" />
         </b-form-group>
         <b-form-group label="Stop Loss">
           <b-form-checkbox v-model="model.isStopLossEnabled" switch />
@@ -140,7 +156,7 @@
           </b-form-group>
         </div>
       </div>
-      <div class="col-lg-8 col-md-12">
+      <div class="col-lg-7 col-md-12">
         <WebhookInfo :bot-key="model.key" />
       </div>
     </div>
@@ -151,6 +167,7 @@
 import Service from "@/services/bots";
 import MarketService from "@/services/markets";
 
+import MultipleTakeProfit from "@/components/Bots/MultipleTakeProfit.vue";
 import WebhookInfo from "@/components/Bots/WebhookInfo.vue";
 export default {
   data() {
@@ -203,11 +220,11 @@ export default {
           deviation: 1,
         },
         isTakePofitEnabled: false,
-        profitActivation: null,
+        takeProfitTargets: [],
         isStopLossActivated: false,
         stopLossActivation: null,
-        stopLossCallbackRate: 0,
-        stopLossPrice: 0,
+        stopLossCallbackRate: null,
+        stopLossPrice: null,
         key: "",
         isEnabled: false,
       },
@@ -312,6 +329,7 @@ export default {
   },
   components: {
     WebhookInfo,
+    MultipleTakeProfit,
   },
 };
 </script>

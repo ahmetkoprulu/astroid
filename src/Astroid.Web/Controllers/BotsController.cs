@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Astroid.Entity;
 using Astroid.Web.Models;
 using Astroid.Core;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
 using Astroid.Web.Helpers;
@@ -65,7 +64,7 @@ public class BotsController : SecureController
 			PositionSize = bot.PositionSize,
 			IsPositionSizeExpandable = bot.IsPositionSizeExpandable,
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
-			ProfitActivation = bot.ProfitActivation,
+			TakeProfitTargets = bot.TakeProfitTargets,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
 			StopLossPrice = bot.StopLossPrice,
 			StopLossCallbackRate = bot.StopLossCallbackRate,
@@ -96,7 +95,7 @@ public class BotsController : SecureController
 				PositionSize = model.PositionSize,
 				IsPositionSizeExpandable = model.IsPositionSizeExpandable,
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
-				ProfitActivation = model.ProfitActivation,
+				TakeProfitTargets = model.TakeProfitTargets,
 				IsStopLossEnabled = model.IsStopLossEnabled,
 				StopLossPrice = model.StopLossPrice,
 				StopLossCallbackRate = model.StopLossCallbackRate,
@@ -125,7 +124,7 @@ public class BotsController : SecureController
 			bot.PositionSize = model.PositionSize;
 			bot.IsPositionSizeExpandable = model.IsPositionSizeExpandable;
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
-			bot.ProfitActivation = model.ProfitActivation;
+			bot.TakeProfitTargets = model.TakeProfitTargets;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
 			bot.StopLossPrice = model.StopLossPrice;
 			bot.StopLossCallbackRate = model.StopLossCallbackRate;

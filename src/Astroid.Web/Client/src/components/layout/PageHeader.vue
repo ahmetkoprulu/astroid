@@ -1,46 +1,37 @@
 <template>
-  <div class="sticky top-0 z-80 mb-6">
-    <div
-      class="flex items-center flex-wrap lg:flex-nowrap gap-x-3 lg:gap-4 w-full md:px-0 relative"
-    >
-      <div class="flex items-center gap-3">
-        <p class="font-bold h3 mb-0 mr-6 order-1">{{ title }}</p>
-      </div>
-      <!-- Right Corner -->
-      <div
-        class="flex-1 flex items-center justify-end gap-3 py-4 lg:py-5 order-2 lg:order-3"
-      >
-        <div class="relative">
-          <span
-            v-for="(action, index) in filteredActions"
-            :key="'btn-action-' + index"
-          >
-            <router-link
-              v-if="action.url"
-              :to="action.url"
-              v-b-tooltip="action.tooltip"
-              :class="`ml-2 button ${action.variant}`"
-            >
-              <i class="mr-2" :class="action.icon"></i>
-              {{ getValue(action.title) }}
-            </router-link>
-            <b-button
-              v-else
-              class="ml-2 header-item"
-              :variant="action.variant || buttonType"
-              @click="action.event"
-              v-b-tooltip="action.tooltip"
-              :loading="getValue(action.loading)"
-              :disabled="getValue(action.loading)"
-            >
-              <i class="mr-2" :class="action.icon"></i>
-              {{ getValue(action.title) }}
-            </b-button>
-          </span>
-        </div>
-      </div>
+  <div class="sticky page-header mb-4">
+    <div class="">
+      <p class="font-bold h3 mb-0 mr-6 order-1">{{ title }}</p>
     </div>
-    <div class="w-full border-b border-gray-300"></div>
+    <!-- Right Corner -->
+    <div class="">
+      <span
+        v-for="(action, index) in filteredActions"
+        :key="'btn-action-' + index"
+      >
+        <router-link
+          v-if="action.url"
+          :to="action.url"
+          v-b-tooltip="action.tooltip"
+          :class="`ml-2 button ${action.variant}`"
+        >
+          <i class="mr-2" :class="action.icon"></i>
+          {{ getValue(action.title) }}
+        </router-link>
+        <b-button
+          v-else
+          class="ml-2 header-item"
+          :variant="action.variant || buttonType"
+          @click="action.event"
+          v-b-tooltip="action.tooltip"
+          :loading="getValue(action.loading)"
+          :disabled="getValue(action.loading)"
+        >
+          <i class="mr-2" :class="action.icon"></i>
+          {{ getValue(action.title) }}
+        </b-button>
+      </span>
+    </div>
   </div>
 </template>
 
@@ -89,4 +80,23 @@ export default {
   },
 };
 </script>
-<style scoped></style>
+<style scoped>
+.sticky {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #fff;
+}
+
+.page-header {
+  background-color: #fff;
+  box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.1);
+  padding-top: 24px;
+  padding-bottom: 24px;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+</style>

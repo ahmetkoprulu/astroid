@@ -133,25 +133,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, openPosition, symbolInfo, quantity, result);
-
-		var profitPrice = GetTakeProfit(bot, tickerInfo.Data.Price, symbolInfo.PricePrecision, PositionType.Long);
-		if (profitPrice != null)
-		{
-			var profitOrderResponse = await Client.UsdFuturesApi.Trading
-				.PlaceOrderAsync(
-					order.Ticker,
-					OrderSide.Sell,
-					FuturesOrderType.TakeProfitMarket,
-					quantity,
-					positionSide: PositionSide.Long,
-					stopPrice: profitPrice,
-					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Contract,
-					priceProtect: true,
-					closePosition: true
-				);
-			result.AddAudit(AuditType.TakeProfitOrderPlaced, profitOrderResponse.Success ? $"Placed take profit order successfully." : $"Failed placing take profit order: {profitOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, openPosition.EntryPrice, Activation = profitPrice }));
-		}
+		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, openPosition, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -248,26 +230,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, openPosition, symbolInfo, quantity, result);
-
-		var profitPrice = GetTakeProfit(bot, openPosition.EntryPrice, symbolInfo.PricePrecision, PositionType.Short);
-		if (profitPrice != null)
-		{
-			var profitOrderResponse = await Client.UsdFuturesApi.Trading
-				.PlaceOrderAsync(
-					order.Ticker,
-					OrderSide.Buy,
-					FuturesOrderType.TakeProfitMarket,
-					quantity,
-					positionSide: PositionSide.Short,
-					stopPrice: profitPrice,
-					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Contract,
-					priceProtect: true,
-					closePosition: true
-				);
-
-			result.AddAudit(AuditType.TakeProfitOrderPlaced, profitOrderResponse.Success ? $"Placed take profit order successfully." : $"Failed placing take profit order: {profitOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, openPosition.EntryPrice, Activation = profitPrice }));
-		}
+		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, openPosition, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -334,6 +297,44 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			);
 
 		result.AddAudit(AuditType.StopLossOrderPlaced, stopOrderResponse.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {stopOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice, Activation = stopPrice }));
+	}
+
+	private async Task PlaceTakeProfitOrders(ADBot bot, AMOrderRequest order, BinancePositionDetailsUsdt position, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
+	{
+		if (bot.TakeProfitTargets.Count == 0) bot.TakeProfitTargets.Add(new TakeProfitTarget { Activation = bot.StopLossPrice!.Value * 3, Share = 100 });
+
+		var oSide = order.PositionType == PositionType.Long ? OrderSide.Sell : OrderSide.Buy;
+		var pSide = order.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
+
+		for (int i = 0; i < bot.TakeProfitTargets.Count; i++)
+		{
+			var tpTarget = bot.TakeProfitTargets[i];
+			if (!(tpTarget.Share > 0) || !(tpTarget.Activation > 0))
+			{
+				result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order at target {i + 1}: Share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice }));
+				continue;
+			}
+
+			var closePosition = i + 1 == bot.TakeProfitTargets.Count;
+			var qShare = Math.Round(quantity * tpTarget.Share.Value / 100, symbol.QuantityPrecision);
+			var tpPrice = CalculateTakeProfit(tpTarget.Activation!.Value, position.EntryPrice, symbol.PricePrecision, order.PositionType);
+
+			var profitOrderResponse = await Client.UsdFuturesApi.Trading
+				.PlaceOrderAsync(
+					order.Ticker,
+					oSide,
+					FuturesOrderType.TakeProfitMarket,
+					qShare,
+					positionSide: pSide,
+					stopPrice: tpPrice,
+					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
+					workingType: WorkingType.Contract,
+					priceProtect: true,
+					closePosition: closePosition
+				);
+
+			result.AddAudit(AuditType.TakeProfitOrderPlaced, profitOrderResponse.Success ? $"Placed take profit order at target {i + 1} successfully." : $"Failed placing take profit order at target {i + 1}: {profitOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice, Activation = tpPrice }));
+		}
 	}
 
 	private async Task<bool> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
@@ -512,15 +513,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (bot.StopLossPrice == null || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
 		return CalculateStopLoss(bot.StopLossPrice.Value, entryPrice, precision, type);
-	}
-
-	private decimal? GetTakeProfit(ADBot bot, decimal entryPrice, int precision, PositionType type)
-	{
-		if (!bot.IsTakePofitEnabled) return null;
-
-		if (!bot.ProfitActivation.HasValue || bot.ProfitActivation.Value <= 0) bot.ProfitActivation = bot.StopLossPrice * 3;
-
-		return CalculateTakeProfit(bot.ProfitActivation!.Value, entryPrice, precision, type);
 	}
 
 	private decimal? CalculateStopActivation(ADBot bot, decimal entryPrice, int precision, PositionType type)

@@ -5,22 +5,24 @@
     </b-form-group>
     <b-form-group label="Open Orders">
       <pre class="code">
-		{ 
-      "ticker": "BTCUSDT", 
-      "leverage": 20, 
-      "risk": "1 | 2 | ... | n", 
-      "type": "open-long | open-short", 
-      "key": "{{ botKey }}" 
-    }
+
+{ 
+  "ticker": "BTCUSDT", 
+  "leverage": 20, 
+  "risk": "1 | 2 | ... | n", 
+  "type": "open-long | open-short", 
+  "key": "{{ botKey }}" 
+}
       </pre>
     </b-form-group>
     <b-form-group label="Close Orders">
       <pre class="code">
-		{ 
-      "ticker": "BTCUSDT", 
-      "type": "close-long | close-short", 
-      "key": "{{ botKey }}" 
-    }
+
+{ 
+  "ticker": "BTCUSDT", 
+  "type": "close-long | close-short", 
+  "key": "{{ botKey }}" 
+}
       </pre>
     </b-form-group>
   </div>

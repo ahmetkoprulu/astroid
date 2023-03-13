@@ -19,16 +19,11 @@ public class ADBot : IEntity
 	public PositionSizeType PositionSizeType { get; set; }
 	public decimal? PositionSize { get; set; }
 	public bool IsPositionSizeExpandable { get; set; }
-	[NotMapped]
-	public LimitSettings LimitSettings
-	{
-		get => this.GetAs<LimitSettings>(LimitSettingsJson);
-		set => LimitSettingsJson = this.SetAs(value);
-	}
 	[Column(nameof(LimitSettings))]
 	public string LimitSettingsJson { get; set; }
 	public bool IsTakePofitEnabled { get; set; }
-	public decimal? ProfitActivation { get; set; }
+	[Column(nameof(TakeProfitTargets))]
+	public string TakeProfitTargetsJson { get; set; }
 	public bool IsStopLossEnabled { get; set; }
 	public decimal? StopLossPrice { get; set; }
 	public decimal? StopLossActivation { get; set; }
@@ -38,4 +33,18 @@ public class ADBot : IEntity
 	public Guid UserId { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public DateTime ModifiedDate { get; set; }
+
+	[NotMapped]
+	public List<TakeProfitTarget> TakeProfitTargets
+	{
+		get => this.GetAs<List<TakeProfitTarget>>(TakeProfitTargetsJson);
+		set => TakeProfitTargetsJson = this.SetAs(value);
+	}
+
+	[NotMapped]
+	public LimitSettings LimitSettings
+	{
+		get => this.GetAs<LimitSettings>(LimitSettingsJson);
+		set => LimitSettingsJson = this.SetAs(value);
+	}
 }
