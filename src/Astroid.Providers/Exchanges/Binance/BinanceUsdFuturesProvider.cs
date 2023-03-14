@@ -272,31 +272,45 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task PlaceStopLossOrder(ADBot bot, AMOrderRequest order, BinancePositionDetailsUsdt position, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
-		var oType = bot.StopLossCallbackRate > 0 ? FuturesOrderType.TrailingStopMarket : FuturesOrderType.StopMarket;
 		var oSide = order.PositionType == PositionType.Long ? OrderSide.Sell : OrderSide.Buy;
 		var pSide = order.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
 
-		var cRate = bot.StopLossCallbackRate > 0 ? bot.StopLossCallbackRate : null;
-		var activation = CalculateStopActivation(bot, position.EntryPrice, symbol.PricePrecision, order.PositionType);
 		var stopPrice = GetStopLoss(bot, position.EntryPrice, symbol.PricePrecision, order.PositionType);
 
 		var stopOrderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
 				order.Ticker,
 				oSide,
-				oType,
+				FuturesOrderType.StopMarket,
 				quantity,
 				positionSide: pSide,
 				stopPrice: stopPrice,
-				activationPrice: activation,
-				callbackRate: cRate,
 				timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
 				workingType: WorkingType.Contract,
 				priceProtect: true,
-				closePosition: oType == FuturesOrderType.TrailingStopMarket ? null : true
+				closePosition: true
 			);
-
 		result.AddAudit(AuditType.StopLossOrderPlaced, stopOrderResponse.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {stopOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice, Activation = stopPrice }));
+
+		if (bot.StopLossCallbackRate > 0)
+		{
+			var cRate = bot.StopLossCallbackRate > 0 ? bot.StopLossCallbackRate : null;
+			var activation = CalculateStopActivation(bot, position.EntryPrice, symbol.PricePrecision, order.PositionType);
+			var trailiginStopOrder = await Client.UsdFuturesApi.Trading
+				.PlaceOrderAsync(
+					order.Ticker,
+					oSide,
+					FuturesOrderType.TrailingStopMarket,
+					quantity,
+					positionSide: pSide,
+					activationPrice: activation,
+					callbackRate: cRate,
+					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
+					workingType: WorkingType.Contract,
+					priceProtect: true
+				);
+			result.AddAudit(AuditType.StopLossOrderPlaced, trailiginStopOrder.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {trailiginStopOrder?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice, Activation = stopPrice }));
+		}
 	}
 
 	private async Task PlaceTakeProfitOrders(ADBot bot, AMOrderRequest order, BinancePositionDetailsUsdt position, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
