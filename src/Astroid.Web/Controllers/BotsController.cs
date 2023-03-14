@@ -144,35 +144,50 @@ public class BotsController : SecureController
 	[HttpPost("execute")]
 	public async Task<IActionResult> Execute([FromBody] AMOrderRequest orderRequest)
 	{
-		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == orderRequest.Key);
-		if (bot == null) throw new Exception($"Bot {orderRequest.Key} not found");
+		var key = orderRequest?.Key ?? string.Empty;
+		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Key == key);
+		if (bot == null) return BadRequest($"Bot {key} not found");
 
-		if (!bot.IsEnabled) return BadRequest("Bot is disabled");
-
-		if (Cache.IsLocked($"lock:bot:{bot.Id}"))
+		if (!bot.IsEnabled)
 		{
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
-			return BadRequest("Bot is busy");
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Bot is disabled");
+			return BadRequest("Bot is disabled");
 		}
 
-		var _ = Cache.AcquireLock($"lock:bot:{bot.Id}");
+		if (orderRequest == null || string.IsNullOrEmpty(orderRequest.Ticker) || string.IsNullOrEmpty(orderRequest.Type))
+		{
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Invalid request model");
+			return BadRequest($"Invalid request model");
+		}
+
 		var exchange = await Db.Exchanges
 			.AsNoTracking()
 			.Include(x => x.Provider)
 			.FirstOrDefaultAsync(x => x.Id == bot.ExchangeId);
-		if (exchange == null) throw new Exception($"Exchange {bot.ExchangeId} not found");
+		if (exchange == null)
+		{
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchange {bot.ExchangeId} not found");
+			return BadRequest($"Exchange {bot.ExchangeId} not found");
+		}
 
 		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
-		if (exchanger == null) throw new Exception($"Exchanger type {exchange.Provider.Name} not found");
-
-		if (orderRequest == null || string.IsNullOrEmpty(orderRequest.Ticker)) throw new Exception("Ticker is required");
-
-		if (string.IsNullOrEmpty(orderRequest.Type)) throw new Exception("Order type is required");
+		if (exchanger == null)
+		{
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
+			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
+		}
 
 		try
 		{
+			if (Cache.IsLocked($"lock:bot:{bot.Id}"))
+			{
+				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
+				return BadRequest("Bot is busy");
+			}
+
+			var _ = Cache.AcquireLock($"lock:bot:{bot.Id}");
 			var result = await exchanger.ExecuteOrder(bot, orderRequest);
-			if (!result.Success) LogError(null, result.Message);
+			if (!result.Success) LogError(null, result.Message ?? string.Empty);
 
 			result.Audits.ForEach(x =>
 			{
@@ -194,6 +209,61 @@ public class BotsController : SecureController
 		}
 
 		return Success(null, "Order executed successfully");
+	}
+
+	[HttpPut("{id}/margin-type")]
+	public async Task<IActionResult> SetMarginType(Guid id, [FromQuery(Name = "type")] MarginType type, [FromQuery(Name = "tickers")] string tickers)
+	{
+		if (id == Guid.Empty)
+			return BadRequest("Invalid exchange id");
+
+		if (string.IsNullOrEmpty(tickers))
+			return BadRequest("Invalid tickers");
+
+		var bot = await Db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id && x.UserId == CurrentUser.Id);
+		if (bot == null) return BadRequest($"Bot {id} not found");
+
+		var exchange = await Db.Exchanges
+			.AsNoTracking()
+			.Include(x => x.Provider)
+			.FirstOrDefaultAsync(x => x.Id == bot.ExchangeId);
+		if (exchange == null)
+		{
+			await AddAudit(AuditType.ChangeMarginType, bot.UserId, bot.Id, $"Exchange {bot.ExchangeId} not found");
+			return BadRequest($"Exchange {bot.ExchangeId} not found");
+		}
+
+		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
+		if (exchanger == null)
+		{
+			await AddAudit(AuditType.ChangeMarginType, exchange.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
+			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
+		}
+
+		try
+		{
+			var tickerList = tickers.Split(',').ToList();
+			var result = await exchanger.ChangeTickersMarginType(tickerList, type);
+			if (!result.Success) LogError(null, result.Message ?? string.Empty);
+
+			result.Audits.ForEach(x =>
+			{
+				x.UserId = exchange.UserId;
+				x.ActorId = bot.Id;
+				Db.Audits.Add(x);
+			});
+
+			await Db.SaveChangesAsync();
+		}
+		catch (Exception ex)
+		{
+			LogError(ex, ex.Message);
+			return Error(ex.Message);
+		}
+
+		await Db.SaveChangesAsync();
+
+		return Success("Margin type saved successfully");
 	}
 
 	[HttpDelete("{id}")]

@@ -301,21 +301,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task PlaceTakeProfitOrders(ADBot bot, AMOrderRequest order, BinancePositionDetailsUsdt position, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
-		if (bot.TakeProfitTargets.Count == 0) bot.TakeProfitTargets.Add(new TakeProfitTarget { Activation = bot.StopLossPrice!.Value * 3, Share = 100 });
+		var targets = bot.TakeProfitTargets;
+		if (targets.Count == 0) targets.Add(new TakeProfitTarget { Activation = bot.StopLossPrice!.Value * 3, Share = 100 });
 
 		var oSide = order.PositionType == PositionType.Long ? OrderSide.Sell : OrderSide.Buy;
 		var pSide = order.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
 
-		for (int i = 0; i < bot.TakeProfitTargets.Count; i++)
+		for (int i = 0; i < targets.Count; i++)
 		{
-			var tpTarget = bot.TakeProfitTargets[i];
+			var tpTarget = targets[i];
 			if (!(tpTarget.Share > 0) || !(tpTarget.Activation > 0))
 			{
 				result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order at target {i + 1}: Share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, position.EntryPrice }));
 				continue;
 			}
 
-			var closePosition = i + 1 == bot.TakeProfitTargets.Count;
+			var closePosition = i + 1 == targets.Count;
 			var qShare = Math.Round(quantity * tpTarget.Share.Value / 100, symbol.QuantityPrecision);
 			var tpPrice = CalculateTakeProfit(tpTarget.Activation!.Value, position.EntryPrice, symbol.PricePrecision, order.PositionType);
 
@@ -564,6 +565,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		};
 
 		return exchangeInfo;
+	}
+
+	public override async Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType marginType)
+	{
+		var result = new AMProviderResult();
+		foreach (var ticker in tickers) await ChangeMarginType(ticker.ToUpper(), marginType, result);
+
+		return result.WithSuccess();
+	}
+
+	private async Task ChangeMarginType(string ticker, MarginType marginType, AMProviderResult result)
+	{
+		var response = await Client.UsdFuturesApi.Account.ChangeMarginTypeAsync(ticker, (FuturesMarginType)marginType);
+
+		if (!response.Success) result.AddAudit(AuditType.ChangeMarginType, $"Could not change margin type for {ticker} to {marginType}: {response?.Error?.Message}", CorrelationId);
+		else result.AddAudit(AuditType.ChangeMarginType, $"Changed margin type for {ticker} to {marginType} successfully", CorrelationId);
 	}
 
 	public override void Dispose()

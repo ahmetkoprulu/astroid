@@ -44,6 +44,12 @@ public enum PositionSizeType : short
 	FixedInAsset = 3
 }
 
+public enum MarginType : short
+{
+	Isolated = 0,
+	Cross = 1
+}
+
 public enum AuditType : short
 {
 	Unknown = 0,
@@ -52,6 +58,7 @@ public enum AuditType : short
 	TakeProfitOrderPlaced = 20,
 	StopLossOrderPlaced = 30,
 	CloseOrderPlaced = 40,
+	ChangeMarginType = 41,
 	UnhandledException = 50,
 }
 

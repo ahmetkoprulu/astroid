@@ -9,15 +9,15 @@
         :requestFunction="requestFunction"
         :refreshButton="false"
       >
-        <template #column-label="props" cols="2">
+        <template #column-label="props">
           <router-link :to="{ name: 'bot-save', params: { id: props.row.id } }">
             {{ props.row.label }}
           </router-link>
         </template>
-        <template #column-createdDate="props" cols="2">
+        <template #column-createdDate="props">
           <v-datetime v-model="props.row.createdDate" />
         </template>
-        <template #column-actions="props" cols="2">
+        <template #column-actions="props">
           <v-dropdown class="pull-right">
             <v-dropdown-item
               @click="
@@ -28,7 +28,10 @@
                   })
               "
             >
-              <i class="fa-solid fa-pen-to-square"></i> Edit
+              <i class="fa-solid fa-pen-to-square" /> Edit
+            </v-dropdown-item>
+            <v-dropdown-item @click="showChangeMarginTypeModal(props.row.id)">
+              <i class="fa-solid fa-shuffle" /> Change Margin Type
             </v-dropdown-item>
             <v-dropdown-item
               @click="
@@ -51,11 +54,14 @@
         </template>
       </v-table>
     </div>
+    <ChangeMarginTypeModal ref="changeMarginTypeModal" />
   </div>
 </template>
 
 <script>
 import Service from "../../services/bots";
+import ChangeMarginTypeModal from "../../components/Bots/ChangeMarginTypeModal";
+
 export default {
   data() {
     return {
@@ -81,6 +87,12 @@ export default {
     async remove(id) {
       console.log(id);
     },
+    async showChangeMarginTypeModal(id) {
+      this.$refs.changeMarginTypeModal.show(id);
+    },
+  },
+  components: {
+    ChangeMarginTypeModal,
   },
 };
 </script>

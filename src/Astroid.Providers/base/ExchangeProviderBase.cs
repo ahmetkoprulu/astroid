@@ -94,6 +94,7 @@ public abstract class ExchangeProviderBase : IDisposable
 	}
 
 	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);
+	public abstract Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType type);
 
 	public virtual void Dispose()
 	{

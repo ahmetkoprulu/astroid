@@ -15,4 +15,7 @@ export default {
 	async delete(id) {
 		return HTTP.delete(`${URL}/${id}`);
 	},
+	async changeMarginType(id, marginType, tickers) {
+		return HTTP.put(`${URL}/${id}/margin-type?type=${marginType}&tickers=${tickers}`);
+	}
 };

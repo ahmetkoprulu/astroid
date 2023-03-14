@@ -24,6 +24,7 @@ export const AUDIT_TYPE_DESCRIPTIONS = {
 	20: "Take Profit",
 	30: "Stop Loss",
 	40: "Close Position",
+	41: "Change Margin Type",
 	50: "Exception",
 }
 
