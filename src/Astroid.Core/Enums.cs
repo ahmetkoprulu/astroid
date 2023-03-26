@@ -62,6 +62,21 @@ public enum AuditType : short
 	UnhandledException = 50,
 }
 
+public enum ChannelType : short
+{
+	Mail,
+	Sms,
+}
+
+public enum NotificationStatus : short
+{
+	Pending,
+	Sent,
+	Failed,
+	WaitingForService,
+	Cancelled
+}
+
 public enum DatabaseProvider
 {
 	Unknown = 0,

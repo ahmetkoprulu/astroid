@@ -17,6 +17,7 @@ public class AstroidDb : DbContext
 	public DbSet<ADUser> Users { get; set; }
 	public DbSet<ADExchange> Exchanges { get; set; }
 	public DbSet<ADExchangeProvider> ExchangeProviders { get; set; }
+	public DbSet<ADNotification> Notifications { get; set; }
 
 	#endregion DbSets
 

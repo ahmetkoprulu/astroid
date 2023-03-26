@@ -5,9 +5,8 @@ using Astroid.Core.Models;
 
 namespace Astroid.Core.Notification;
 
-public class ASMail
+public class MailChannel : INotificationChannel
 {
-	private ILogger<ASMail> Logger { get; set; }
 	private const string FromName = "Astroid";
 	private const string From = "noreply@astroid.com";
 	private readonly string Host = string.Empty;
@@ -15,16 +14,15 @@ public class ASMail
 	private readonly string UserName = string.Empty;
 	private readonly string Password = string.Empty;
 
-	public ASMail(ILogger<ASMail> logger)
+	public MailChannel()
 	{
-		Logger = logger;
 		Host = Environment.GetEnvironmentVariable("ASTROID_SMTP_HOST") ?? throw new Exception("ASTROID_SMTP_HOST");
 		Port = int.Parse(Environment.GetEnvironmentVariable("ASTROID_SMTP_PORT") ?? throw new Exception("ASTROID_SMTP_PORT"));
 		UserName = Environment.GetEnvironmentVariable("ASTROID_SMTP_USERNAME") ?? throw new Exception("ASTROID_SMTP_USERNAME");
 		Password = Environment.GetEnvironmentVariable("ASTROID_SMTP_PASSWORD") ?? throw new Exception("ASTROID_SMTP_PASSWORD");
 	}
 
-	public ServiceData Send(string subject, string content, string to, params MailAttachment[] attachments)
+	public ServiceData Send(string subject, string content, string to, params NotificationAttachment[] attachments)
 	{
 		var message = new MimeMessage();
 		message.From.Add(new MailboxAddress(FromName, From));
@@ -70,7 +68,6 @@ public class ASMail
 		}
 		catch (Exception ex)
 		{
-			Logger.LogError(ex, "Error sending mail.");
 			return new ServiceData
 			{
 				Success = false,
