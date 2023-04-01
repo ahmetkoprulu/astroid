@@ -414,7 +414,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var i = 0;
-		var orderBookPrices = pSide == PositionSide.Long ? orderBook.Data.Asks.Skip(1) : orderBook.Data.Bids.Skip(1);
+		var orderBookPrices = pSide == PositionSide.Long ? orderBook.Data.Asks.Skip(settings.OrderBookSkip) : orderBook.Data.Bids.Skip(settings.OrderBookSkip);
 		while (i < settings.OrderBookOffset)
 		{
 			price = orderBookPrices.ElementAt(i).Price;

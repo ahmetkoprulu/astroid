@@ -40,7 +40,16 @@
             />
           </b-form-group>
           <b-form-group
-            label="Order Book Offset"
+            label="Skip"
+            v-if="model.limitSettings.valorizationType !== 1"
+          >
+            <b-form-input
+              type="number"
+              v-model="model.limitSettings.orderBookSkip"
+            />
+          </b-form-group>
+          <b-form-group
+            label="Offset"
             v-if="model.limitSettings.valorizationType !== 1"
           >
             <b-form-input
@@ -216,6 +225,7 @@ export default {
         positionSizeType: 1,
         limitSettings: {
           valorizationType: 2,
+          orderBookSkip: 1,
           orderBookOffset: 3,
           deviation: 1,
         },
