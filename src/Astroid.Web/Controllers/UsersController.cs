@@ -3,6 +3,7 @@ using Astroid.Entity;
 using Astroid.Web.Models;
 using System.Security.Claims;
 using Astroid.Core.Cache;
+using Microsoft.EntityFrameworkCore;
 
 namespace Astroid.Web;
 
@@ -22,5 +23,35 @@ public class UsersController : SecureController
 		};
 
 		return Success(user);
+	}
+
+	[HttpGet("profile")]
+	public async Task<IActionResult> Profile()
+	{
+		var user = await Db.Users.FirstOrDefaultAsync(x => x.Id == CurrentUser.Id);
+		if (user == null)
+			return NotFound("User not found");
+
+		return Success(new AMProfile
+		{
+			Id = user.Id,
+			Name = user.Name,
+			Email = user.Email
+		});
+	}
+
+	[HttpPost("profile")]
+	public async Task<IActionResult> SaveProfile([FromBody] AMProfile profile)
+	{
+		var user = await Db.Users.FirstOrDefaultAsync(x => x.Id == CurrentUser.Id);
+		if (user == null)
+			return NotFound("User not found");
+
+		user.Name = profile.Name;
+		user.Email = profile.Email;
+
+		await Db.SaveChangesAsync();
+
+		return Success(default, "Profile updated successfully");
 	}
 }

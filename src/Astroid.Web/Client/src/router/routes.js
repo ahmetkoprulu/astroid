@@ -15,6 +15,8 @@ import BotAudits from "../pages/Bots/Audits.vue";
 
 import Positions from "../pages/Positions.vue";
 
+import Profile from "../pages/Profile.vue";
+
 export const routes = [
 	{
 		name: "index",
@@ -101,6 +103,15 @@ export const routes = [
 					title: "Positions",
 					visible: true,
 					icon: "list-nested"
+				}
+			},
+			{
+				name: "profile",
+				path: "profile/:id",
+				component: Profile,
+				meta: {
+					title: "Profile",
+					visible: false,
 				}
 			}
 		]

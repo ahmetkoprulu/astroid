@@ -23,7 +23,6 @@
 </template>
 
 <script>
-import { Vue } from "../main";
 import UserService from "../services/users";
 
 // import Navbar from "../components/layout/Navbar.vue";
@@ -40,8 +39,8 @@ export default {
     Sidebar,
   },
   async mounted() {
-    var response = await UserService.userInfo();
-    Vue.prototype.$user = response.data.data;
+    var response = await UserService.getProfile();
+    this.$user = response.data.data;
 
     this.loading = false;
   },

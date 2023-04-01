@@ -34,17 +34,22 @@
         </div>
       </div>
 
-      <div class="mx-3 mt-5">
-        <div class="nav-item" @click="signOut">
-          <a href="#" class="nav-item-row">
-            <span class="nav-item-content">
-              <div class="nav-item-icon-container">
-                <i class="fa-solid fa-right-from-bracket fa-flip-horizontal" />
-              </div>
-              Sign Out
-            </span>
-          </a>
+      <div class="mx-4 mt-5 d-flex">
+        <div class="w-100 profile-widget">
+          <div>
+            <router-link
+              class="link"
+              :to="{ name: 'profile', params: { id: $user.id } }"
+            >
+              {{ $user.name }}
+            </router-link>
+          </div>
+          <small class="text-muted">{{ $user.email | truncate(28) }}</small>
         </div>
+        <i
+          class="fa-solid fa-right-from-bracket fa-flip-horizontal fa-fw text-center align-self-center sign-out-icon"
+          @click="signOut"
+        />
       </div>
     </div>
   </nav>
@@ -260,5 +265,20 @@ export default {
 .nav-item-arrow {
   color: var(--mui-c-grey-500);
   transition: 100ms;
+}
+
+.profile-widget {
+  font-size: var(--mui-text-sm);
+  font-weight: var(--mui-text-semibold);
+  color: var(--mui-c-grey-500);
+}
+
+.sign-out-icon {
+  cursor: pointer;
+}
+
+.link {
+  color: var(--mui-c-grey-500);
+  text-decoration: none !important;
 }
 </style>

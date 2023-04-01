@@ -58,6 +58,7 @@ import Dropdown from "@/components/shared/Dropdown/Dropdown.vue";
 import DropdownItem from "@/components/shared/Dropdown/DropdownItem.vue";
 import DropdownDivider from "@/components/shared/Dropdown/DropdownDivider.vue";
 import RadioGroup from "@/components/shared/RadioGroup.vue";
+import ValidatedInput from "@/components/shared/ValidatedInput.vue";
 
 Vue.component("page-header", PageHeader);
 Vue.component("v-table", Table);
@@ -69,6 +70,7 @@ Vue.component("v-dropdown", Dropdown);
 Vue.component("v-dropdown-item", DropdownItem);
 Vue.component("v-dropdown-divider", DropdownDivider);
 Vue.component("v-radio-group", RadioGroup);
+Vue.component("v-validated-input", ValidatedInput);
 
 // Filters
 Vue.filter("hideInvalidDate", function (value) {
@@ -146,9 +148,20 @@ Vue.filter("replaceEmptyValue", t =>
 	t ? t : `<small class="text-muted">empty</small>`
 );
 
+Vue.filter("truncate", (v, n) => {
+	if (v.length <= n) return v;
+	return v.split("").slice(0, n - 3).join("") + "...";
+});
+
 //Prototypes
 Vue.prototype.$consts = Consts;
 Vue.prototype.$helpers = Helpers;
+
+const user = Vue.observable({ user: {} });
+Object.defineProperty(Vue.prototype, '$user', {
+	get() { return user.user; },
+	set(value) { user.user = value; }
+});
 
 const busy = Vue.observable({ busy: false });
 Object.defineProperty(Vue.prototype, '$busy', {
