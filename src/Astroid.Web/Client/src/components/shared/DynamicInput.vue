@@ -1,22 +1,17 @@
 <template>
-  <ValidationProvider
-    :rules="property.isRequired ? 'required' : ''"
-    v-slot="{ errors }"
-    :name="property.title"
-  >
-    <template v-if="property.type === $consts.PROPERTY_TYPES.Dropdown">
-      <v-select
-        :options="dataItems(property.data)"
-        v-model="property.value"
-        data-vv-name="State"
-      />
-    </template>
+  <v-select
+    :options="dataItems(property.data)"
+    v-model="property.value"
+    data-vv-name="State"
+    v-if="property.type === $consts.PROPERTY_TYPES.Dropdown"
+  />
+  <v-checkbox
+    v-model="property.value"
+    label="Yes"
+    v-else-if="property.type === $consts.PROPERTY_TYPES.Boolean"
+  />
 
-    <template v-else-if="property.type === $consts.PROPERTY_TYPES.Boolean">
-      <v-checkbox v-model="property.value" label="Yes" />
-    </template>
-
-    <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.KeyValue">
+  <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.KeyValue">
       <v-key-value-input
         v-model="property.value"
         keyName="SourceProperty"
@@ -26,7 +21,7 @@
       />
     </template> -->
 
-    <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.Json">
+  <!-- <template v-else-if="property.type === $consts.PROPERTY_TYPES.Json">
       <div>
         <textarea
           class="form-control text-monospace"
@@ -41,38 +36,28 @@
       </div>
     </template> -->
 
-    <template v-else-if="property.isEncrypted">
-      <input
-        type="password"
-        class="form-control"
-        :id="property.property"
-        :name="property.property"
-        v-model="property.value"
-      />
-    </template>
+  <input
+    type="password"
+    class="form-control"
+    :id="property.property"
+    :name="property.property"
+    v-model="property.value"
+    v-else-if="property.encrypted"
+  />
 
-    <template v-else>
-      <input
-        type="text"
-        class="form-control"
-        :id="property.property"
-        :name="property.property"
-        v-model="property.value"
-      />
-    </template>
-
-    <span class="invalid-feedback d-block" v-if="errors.length > 0">{{
-      errors[0]
-    }}</span>
-  </ValidationProvider>
+  <input
+    type="text"
+    class="form-control"
+    :id="property.property"
+    :name="property.property"
+    v-model="property.value"
+    v-else
+  />
 </template>
 
 <script>
 export default {
   name: "DynamicInput",
-
-  components: {},
-
   props: {
     property: {
       type: Object,
@@ -86,7 +71,6 @@ export default {
       type: Object,
     },
   },
-
   methods: {
     dataItems(data) {
       const value = JSON.parse(data);

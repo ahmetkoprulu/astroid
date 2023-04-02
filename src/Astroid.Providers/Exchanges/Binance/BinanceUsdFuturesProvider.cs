@@ -13,10 +13,10 @@ namespace Astroid.Providers;
 
 public class BinanceUsdFuturesProvider : ExchangeProviderBase
 {
-	[PropertyMetadata("API Key", Type = PropertyTypes.Text, IsEncrypted = true, Group = "General")]
+	[PropertyMetadata("API Key", Type = PropertyTypes.Text, Required = true, Encrypted = true, Group = "General")]
 	public string Key { get; set; } = string.Empty;
 
-	[PropertyMetadata("API Secret", Type = PropertyTypes.Text, Required = true, IsEncrypted = true, Group = "General")]
+	[PropertyMetadata("API Secret", Type = PropertyTypes.Text, Required = true, Encrypted = true, Group = "General")]
 	public string Secret { get; set; } = string.Empty;
 
 	[PropertyMetadata("Test Net", Type = PropertyTypes.Boolean, Group = "General")]

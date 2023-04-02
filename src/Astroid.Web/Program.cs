@@ -10,6 +10,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using VueCliMiddleware;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Mvc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -84,11 +86,20 @@ else
 builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
 
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+	options.SuppressModelStateInvalidFilter = true;
+});
+
 // Add services to the container.
 builder.Services.AddControllers()
 	.AddNewtonsoftJson(options =>
 	{
 		options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+		options.SerializerSettings.ContractResolver = new DefaultContractResolver
+		{
+			NamingStrategy = new CamelCaseNamingStrategy()
+		};
 	});
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

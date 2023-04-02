@@ -40,6 +40,7 @@ public static class ExtensionMethods
 				Property = prop.Name,
 				DisplayName = metadata.DisplayName,
 				Description = metadata.Description,
+				Encrypted = metadata.Encrypted,
 				Required = metadata.Required,
 				DefaultValue = metadata.DefaultValue,
 				Type = metadata.Type,

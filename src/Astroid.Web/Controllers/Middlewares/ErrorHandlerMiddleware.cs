@@ -1,15 +1,7 @@
-using System;
-using System.IO;
 using System.Net;
-using System.Text.Json;
-using System.Threading.Tasks;
 using Astroid.Web.Models;
 using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 
 namespace Astroid.Web.Middleware;
 
@@ -58,7 +50,7 @@ public class ErrorHandlerMiddleware
 	{
 		var response = context.Response;
 		response.ContentType = "application/json";
-		var result = JsonSerializer.Serialize(new AMReturn
+		var result = JsonConvert.SerializeObject(new AMReturn
 		{
 			Code = code != 0 ? code : response.StatusCode,
 			Data = data,
@@ -85,7 +77,7 @@ public class ErrorHandlerMiddleware
 		await response.WriteAsync($"<h4>Internal Message ({code})</h4>");
 		await response.WriteAsync($"<pre>{internalMessage}</pre>");
 
-		var result = JsonSerializer.Serialize(new AMReturn
+		var result = JsonConvert.SerializeObject(new AMReturn
 		{
 			Code = code != 0 ? code : response.StatusCode,
 			Data = data,

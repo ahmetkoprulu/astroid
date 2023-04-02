@@ -3,28 +3,34 @@
     <page-header title="Save Bot" :actions="actions" />
     <div class="row mx-md-3">
       <div class="col-lg-5 col-md-12">
-        <div class="d-flex justify-content-between">
-          <b-form-group label="Label" class="w-100 mr-3">
-            <b-form-input type="text" v-model="model.label" />
-          </b-form-group>
-          <b-form-group label="Enabled">
-            <b-form-checkbox
-              v-model="model.isEnabled"
-              switch
-              style="margin-top: 7px"
+        <ValidationObserver ref="form">
+          <div class="d-flex justify-content-between">
+            <v-validated-input label="Label" class="w-100 mr-3">
+              <b-form-input type="text" v-model="model.label" />
+            </v-validated-input>
+            <b-form-group label="Enabled">
+              <b-form-checkbox
+                v-model="model.isEnabled"
+                switch
+                style="margin-top: 7px"
+              />
+            </b-form-group>
+          </div>
+          <b-form-group label="Description">
+            <b-form-textarea
+              v-model="model.description"
+              rows="2"
+              max-rows="6"
             />
           </b-form-group>
-        </div>
-        <b-form-group label="Description">
-          <b-form-textarea v-model="model.description" rows="2" max-rows="6" />
-        </b-form-group>
-        <b-form-group label="Market">
-          <v-select
-            v-model="model.exchangeId"
-            :options="exchangeOptions"
-            placeholder="Select a market"
-          />
-        </b-form-group>
+          <v-validated-input label="Market">
+            <v-select
+              v-model="model.exchangeId"
+              :options="exchangeOptions"
+              placeholder="Select a market"
+            />
+          </v-validated-input>
+        </ValidationObserver>
         <b-form-group label="Order Type">
           <v-radio-group
             v-model="model.orderType"
@@ -309,6 +315,9 @@ export default {
       this.markets = response.data.data;
     },
     async save(b) {
+      const isValid = await this.$refs.form.validate();
+      if (!isValid) return;
+
       b.setBusy(true);
       try {
         const response = await Service.save(this.model);

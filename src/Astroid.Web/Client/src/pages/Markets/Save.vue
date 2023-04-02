@@ -1,30 +1,35 @@
 <template>
   <div>
     <page-header title="Save Market" :actions="actions" />
-    <b-form-group label="Label">
-      <b-form-input type="text" v-model="model.name" />
-    </b-form-group>
-    <b-form-group label="Description">
-      <b-form-textarea v-model="model.description" rows="2" max-rows="6" />
-    </b-form-group>
-    <b-form-group label="Market">
-      <v-select
-        v-model="model.providerId"
-        :options="providerOptions"
-        placeholder="Select a market"
-        @input="onSelect"
-        v-if="!id"
-      />
-      <span v-else> {{ model.providerName }}</span>
-    </b-form-group>
-    <b-form-group
-      :description="property.description"
-      :label="property.displayName"
-      v-for="property in this.model.properties"
-      :key="property.property"
-    >
-      <v-dynamic-input :property="property" />
-    </b-form-group>
+    <div class="col-lg-5 col-md-12 mx-md-3">
+      <ValidationObserver ref="form">
+        <v-validated-input label="Label">
+          <b-form-input type="text" v-model="model.name" />
+        </v-validated-input>
+        <b-form-group label="Description">
+          <b-form-textarea v-model="model.description" rows="2" max-rows="6" />
+        </b-form-group>
+        <v-validated-input label="Market">
+          <v-select
+            v-model="model.providerId"
+            :options="providerOptions"
+            placeholder="Select a market"
+            @input="onSelect"
+            v-if="!id"
+          />
+          <span v-else> {{ model.providerName }}</span>
+        </v-validated-input>
+        <v-validated-input
+          :label="property.displayName"
+          :description="property.description"
+          v-for="property in this.model.properties"
+          :key="property.property"
+          :rules="property.required ? 'required' : ''"
+        >
+          <v-dynamic-input v-model="property.value" :property="property" />
+        </v-validated-input>
+      </ValidationObserver>
+    </div>
   </div>
 </template>
 
@@ -86,6 +91,9 @@ export default {
       this.providers = response.data.data;
     },
     async save(b) {
+      const isValid = await this.$refs.form.validate();
+      if (!isValid) return;
+
       b.setBusy(true);
       try {
         await Service.save(this.model);

@@ -1,9 +1,9 @@
 <template>
   <div>
     <div class="text-center text-muted" v-if="value.length == 0">
-      No target exists.
-      <a href="javascript:;" class="link" @click="add">Click</a> here to add
-      one.
+      No target exists. Click
+      <a href="javascript:;" class="link text-primary" @click="add">here</a> to
+      add one.
     </div>
     <div class="d-flex mb-2" v-for="(val, i) of value" :key="i">
       <b-form-input
