@@ -18,7 +18,7 @@
           <i class="mr-2" :class="action.icon"></i>
           {{ getValue(action.title) }}
         </router-link>
-        <b-button
+        <v-button
           v-else
           class="ml-2 header-item"
           :variant="action.variant || buttonType"
@@ -29,7 +29,7 @@
         >
           <i class="mr-2" :class="action.icon"></i>
           {{ getValue(action.title) }}
-        </b-button>
+        </v-button>
       </span>
     </div>
   </div>

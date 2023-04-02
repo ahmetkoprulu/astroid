@@ -47,6 +47,7 @@ extend("min_value", min_value);
 Vue.component("ValidationObserver", ValidationObserver);
 Vue.component("ValidationProvider", ValidationProvider);
 
+// Vue Tel Input
 import VueTelInput from 'vue-tel-input';
 import 'vue-tel-input/dist/vue-tel-input.css';
 const options = {
@@ -61,6 +62,7 @@ const options = {
 	autoDefaultCountry: false,
 }
 Vue.use(VueTelInput, options);
+
 // Components
 import PageHeader from "@/components/layout/PageHeader.vue";
 import Table from "@/components/shared/table/Table.vue";
@@ -73,6 +75,7 @@ import DropdownItem from "@/components/shared/Dropdown/DropdownItem.vue";
 import DropdownDivider from "@/components/shared/Dropdown/DropdownDivider.vue";
 import RadioGroup from "@/components/shared/RadioGroup.vue";
 import ValidatedInput from "@/components/shared/ValidatedInput.vue";
+import Button from "@/components/shared/Button.vue";
 
 Vue.component("page-header", PageHeader);
 Vue.component("v-table", Table);
@@ -85,6 +88,7 @@ Vue.component("v-dropdown-item", DropdownItem);
 Vue.component("v-dropdown-divider", DropdownDivider);
 Vue.component("v-radio-group", RadioGroup);
 Vue.component("v-validated-input", ValidatedInput);
+Vue.component("v-button", Button);
 
 // Filters
 Vue.filter("hideInvalidDate", function (value) {

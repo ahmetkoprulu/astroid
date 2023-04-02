@@ -44,7 +44,7 @@ export default {
         },
         {
           title: "Save",
-          event: () => this.save(),
+          event: (b) => this.save(b),
           icon: "fas fa-plus",
           variant: "primary",
         },
@@ -83,12 +83,15 @@ export default {
       const response = await Service.getProviders();
       this.providers = response.data.data;
     },
-    async save() {
+    async save(b) {
+      b.setBusy(true);
       try {
         await Service.save(this.model);
         this.$router.push({ name: "market-list" });
       } catch (error) {
         console.error(error);
+      } finally {
+        b.setBusy(false);
       }
     },
     delete() {

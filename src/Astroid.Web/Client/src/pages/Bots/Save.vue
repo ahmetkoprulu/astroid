@@ -1,7 +1,7 @@
 <template>
   <div>
     <page-header title="Save Bot" :actions="actions" />
-    <div class="row">
+    <div class="row mx-md-3">
       <div class="col-lg-5 col-md-12">
         <div class="d-flex justify-content-between">
           <b-form-group label="Label" class="w-100 mr-3">
@@ -191,7 +191,7 @@ export default {
         },
         {
           title: "Save",
-          event: () => this.save(),
+          event: (b) => this.save(b),
           icon: "fas fa-plus",
           variant: "primary",
         },
@@ -308,7 +308,8 @@ export default {
       const response = await MarketService.getAll();
       this.markets = response.data.data;
     },
-    async save() {
+    async save(b) {
+      b.setBusy(true);
       try {
         const response = await Service.save(this.model);
         if (response.status !== 200) {
@@ -317,6 +318,8 @@ export default {
         this.$router.push({ name: "bot-list" });
       } catch (error) {
         console.error(error);
+      } finally {
+        b.setBusy(false);
       }
     },
     delete() {
