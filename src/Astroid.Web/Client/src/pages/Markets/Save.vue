@@ -70,6 +70,7 @@ export default {
     },
   },
   async mounted() {
+    this.$busy = true;
     this.id = this.$route.params.id;
     if (this.id) {
       const response = await Service.get(this.id);
@@ -77,6 +78,7 @@ export default {
     } else {
       await this.getMarketProviders();
     }
+    this.$busy = false;
   },
   methods: {
     async getMarketProviders() {

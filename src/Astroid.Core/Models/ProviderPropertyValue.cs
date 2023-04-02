@@ -1,6 +1,4 @@
-﻿using Astroid.Core;
-
-namespace Astroid.Core;
+﻿namespace Astroid.Core;
 
 public class ProviderPropertyValue
 {
@@ -34,4 +32,3 @@ public class ProviderPropertyValue
 
 	public override string ToString() => $"{Value}";
 }
-

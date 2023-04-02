@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace Astroid.Web
 {
 	public class MPViewDataList<T> where T : class
@@ -43,7 +41,6 @@ namespace Astroid.Web
 		public object Value { get; set; }
 		public MPEFilterOperator Operator { get; set; }
 
-		[JsonConstructor]
 		public MPFilterValue() { }
 
 		public MPFilterValue(string column = null, object value = null, MPEFilterOperator opr = MPEFilterOperator.Equal)

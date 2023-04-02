@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Astroid.Core;
-using System.Text.Json;
+using Newtonsoft.Json;
 
 namespace Astroid.Entity;
 
@@ -22,11 +22,11 @@ public class ADExchange : IEntity
 		{
 			if (string.IsNullOrEmpty(PropertiesJson)) return new List<ProviderPropertyValue>();
 
-			return JsonSerializer.Deserialize<List<ProviderPropertyValue>>(PropertiesJson)!;
+			return JsonConvert.DeserializeObject<List<ProviderPropertyValue>>(PropertiesJson)!;
 		}
 		set
 		{
-			PropertiesJson = JsonSerializer.Serialize(value);
+			PropertiesJson = JsonConvert.SerializeObject(value);
 		}
 	}
 
