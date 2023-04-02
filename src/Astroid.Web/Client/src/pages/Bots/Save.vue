@@ -365,7 +365,7 @@ export default {
             this.$successToast("Delete Bot", "Bot deleted successfully");
             this.$router.push({ name: "bot-list" });
           } catch (error) {
-            console.error(error);
+            this.$errorToast("Delete Bot", error.message);
           }
         }
       );

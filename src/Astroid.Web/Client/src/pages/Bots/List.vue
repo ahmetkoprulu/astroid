@@ -45,7 +45,7 @@
               <i class="fa-regular fa-file-lines" /> Audits
             </v-dropdown-item>
             <v-dropdown-divider />
-            <v-dropdown-item @click="remove(props.row.id)">
+            <v-dropdown-item @click="deleteBot(props.row.id)">
               <span class="text-danger">
                 <i class="mr-1 fa-solid fa-trash" /> Delete
               </span>
@@ -83,6 +83,26 @@ export default {
   methods: {
     async requestFunction(filters, sorts, currentPage, perPage) {
       return await Service.list(filters, sorts, currentPage, perPage);
+    },
+    deleteBot(id) {
+      this.$alert.remove(
+        "Delete the Bot?",
+        "You won't be able to undo it",
+        async () => {
+          try {
+            const response = await Service.delete(id);
+            if (!response.data.success) {
+              this.$errorToast("Delete Bot", response.data.message);
+              return;
+            }
+
+            this.$successToast("Delete Bot", "Bot deleted successfully");
+            this.$refs.table.refresh();
+          } catch (error) {
+            this.$errorToast("Delete Bot", error.message);
+          }
+        }
+      );
     },
     async remove(id) {
       console.log(id);

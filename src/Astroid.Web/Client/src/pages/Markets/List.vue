@@ -36,7 +36,7 @@
               <i class="fa-regular fa-file-lines" /> Audits
             </v-dropdown-item>
             <v-dropdown-divider />
-            <v-dropdown-item @click="remove(props.row.id)">
+            <v-dropdown-item @click="deleteExchange(props.row.id)">
               <span class="text-danger">
                 <i class="mr-1 fa-solid fa-trash" /> Delete
               </span>
@@ -79,9 +79,25 @@ export default {
         params: { id: id },
       });
     },
-    async remove(id) {
-      await Service.remove(id);
-      this.$refs.table.refresh();
+    deleteExchange(id) {
+      this.$alert.remove(
+        "Delete the Market?",
+        "You won't be able to undo it",
+        async () => {
+          try {
+            const response = await Service.delete(id);
+            if (!response.data.success) {
+              this.$errorToast("Delete Market", response.data.message);
+              return;
+            }
+
+            this.$successToast("Delete Market", "Market deleted successfully");
+            this.$refs.table.refresh();
+          } catch (error) {
+            this.$errorToast("Delete Market", error.message);
+          }
+        }
+      );
     },
   },
 };
