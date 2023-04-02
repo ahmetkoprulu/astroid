@@ -299,19 +299,35 @@ export default {
   async mounted() {
     this.$busy = true;
     this.id = this.$route.params.id;
-    await this.getMarketProviders();
 
-    if (this.id) {
-      const response = await Service.get(this.id);
-      this.model = response.data.data;
-    } else {
-      this.model.key = window.crypto.randomUUID();
+    try {
+      await this.getMarketProviders();
+
+      if (this.id) {
+        const response = await Service.get(this.id);
+        if (!response.data.success) {
+          this.$errorToast("Fetch Bot", response.data.message);
+          return;
+        }
+
+        this.model = response.data.data;
+      } else {
+        this.model.key = window.crypto.randomUUID();
+      }
+    } catch (error) {
+      this.$errorToast("Fetch Bot", error.message);
     }
+
     this.$busy = false;
   },
   methods: {
     async getMarketProviders() {
       const response = await MarketService.getAll();
+      if (!response.data.success) {
+        this.$errorToast("Fetch Markets", response.data.message);
+        return;
+      }
+
       this.markets = response.data.data;
     },
     async save(b) {
@@ -321,9 +337,12 @@ export default {
       b.setBusy(true);
       try {
         const response = await Service.save(this.model);
-        if (response.status !== 200) {
+        if (!response.data.success) {
+          this.$errorToast("Save Bot", response.data.message);
           return;
         }
+
+        this.$successToast("Save Bot", "Bot saved successfully");
         this.$router.push({ name: "bot-list" });
       } catch (error) {
         console.error(error);
@@ -337,7 +356,13 @@ export default {
         "You won't be able to undo it",
         async () => {
           try {
-            await Service.delete(this.id);
+            const response = await Service.delete(this.id);
+            if (!response.data.success) {
+              this.$errorToast("Delete Bot", response.data.message);
+              return;
+            }
+
+            this.$successToast("Delete Bot", "Bot deleted successfully");
             this.$router.push({ name: "bot-list" });
           } catch (error) {
             console.error(error);

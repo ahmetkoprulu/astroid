@@ -10,18 +10,18 @@
         :requestFunction="requestFunction"
         :refreshButton="false"
       >
-        <template #column-type="props" cols="2">
+        <template #column-type="props">
           {{ $consts.AUDIT_TYPE_DESCRIPTIONS[props.row.type] }}
         </template>
-        <template #column-label="props" cols="2">
+        <template #column-label="props">
           <router-link :to="{ name: 'bot-save', params: { id: props.row.id } }">
             {{ props.row.label }}
           </router-link>
         </template>
-        <template #column-createdDate="props" cols="2">
+        <template #column-createdDate="props">
           <v-datetime v-model="props.row.createdDate" />
         </template>
-        <template #column-actions="props" cols="2">
+        <template #column-actions="props">
           <v-dropdown class="pull-right">
             <v-dropdown-item @click="showDetails(props.row)">
               <i class="mr-1 fa-solid fa-circle-info" /> Show Details

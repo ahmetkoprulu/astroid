@@ -9,7 +9,7 @@
         <b-form-group label="Description">
           <b-form-textarea v-model="model.description" rows="2" max-rows="6" />
         </b-form-group>
-        <v-validated-input label="Market">
+        <v-validated-input label="Market" :rules="!id ? 'required' : ''">
           <v-select
             v-model="model.providerId"
             :options="providerOptions"
@@ -77,11 +77,20 @@ export default {
   async mounted() {
     this.$busy = true;
     this.id = this.$route.params.id;
-    if (this.id) {
-      const response = await Service.get(this.id);
-      this.model = response.data.data;
-    } else {
-      await this.getMarketProviders();
+    try {
+      if (this.id) {
+        const response = await Service.get(this.id);
+        if (!response.data.success) {
+          this.$errorToast("Fetch Market", response.data.message);
+          return;
+        }
+
+        this.model = response.data.data;
+      } else {
+        await this.getMarketProviders();
+      }
+    } catch (error) {
+      this.$errorToast("Fetch Market", error.message);
     }
     this.$busy = false;
   },
@@ -96,7 +105,13 @@ export default {
 
       b.setBusy(true);
       try {
-        await Service.save(this.model);
+        var response = await Service.save(this.model);
+        if (!response.data.success) {
+          this.$errorToast("Save Market", response.data.message);
+          return;
+        }
+
+        this.$successToast("Save Market", "Market saved successfully");
         this.$router.push({ name: "market-list" });
       } catch (error) {
         console.error(error);
@@ -110,10 +125,16 @@ export default {
         "You won't be able to undo it",
         async () => {
           try {
-            await Service.delete(this.id);
+            var response = await Service.delete(this.id);
+            if (!response.data.success) {
+              this.$errorToast("Delete Market", response.data.message);
+              return;
+            }
+
+            this.$successToast("Delete Market", "Market deleted successfully");
             this.$router.push({ name: "market-list" });
           } catch (error) {
-            console.error(error);
+            this.$errorToast("Delete Market", error.message);
           }
         }
       );

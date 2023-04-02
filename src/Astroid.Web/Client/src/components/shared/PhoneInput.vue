@@ -43,6 +43,7 @@ export default {
 }
 
 .vti__dropdown-list.below {
+  font-weight: 400 !important;
   top: 43px !important;
 }
 .vti__dropdown-list {
@@ -50,10 +51,26 @@ export default {
 }
 
 .phone-input {
+  font-size: 1rem !important;
+  color: #495057 !important;
   border: 1px solid #ced4da !important;
   padding: 0 !important;
 }
+
+.vti__input {
+  color: #495057 !important;
+}
+
 .vue-tel-input:focus-within {
   box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 25%) !important;
+}
+
+.vti__flag-wrapper > strong {
+  font-size: 5rem;
+  font-weight: normal !important;
+}
+
+strong {
+  font-weight: normal;
 }
 </style>
