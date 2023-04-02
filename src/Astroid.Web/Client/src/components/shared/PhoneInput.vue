@@ -1,0 +1,59 @@
+<template>
+  <vue-tel-input
+    v-model="number"
+    @input="onInput"
+    styleClasses="form-control phone-input"
+  />
+</template>
+<script>
+export default {
+  name: "PhoneInput",
+  props: {
+    value: {
+      type: String,
+    },
+  },
+  data() {
+    return {
+      number: null,
+    };
+  },
+  watch: {
+    value(v) {
+      this.number = v;
+    },
+  },
+  methods: {
+    onInput(_, phone) {
+      if (!phone.number && phone.formatted) return;
+
+      if (!phone.number) phone.number = "";
+      this.$emit("input", phone.number);
+    },
+  },
+};
+</script>
+<style>
+.vti__search_box {
+  border: 1px solid #ced4da !important;
+  border-radius: 4px !important;
+  width: 92% !important;
+  padding: 7px;
+  margin: 8px 0px 8px 16px !important;
+}
+
+.vti__dropdown-list.below {
+  top: 43px !important;
+}
+.vti__dropdown-list {
+  overflow-x: hidden;
+}
+
+.phone-input {
+  border: 1px solid #ced4da !important;
+  padding: 0 !important;
+}
+.vue-tel-input:focus-within {
+  box-shadow: 0 0 0 0.2rem rgb(0 123 255 / 25%) !important;
+}
+</style>

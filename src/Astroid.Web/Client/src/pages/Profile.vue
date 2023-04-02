@@ -12,10 +12,16 @@
           <b-form-input type="email" v-model="profile.email" />
         </v-validated-input>
       </div>
+      <div class="col-lg-4 col-md-6 col-sm-12">
+        <b-form-group label="Phone">
+          <PhoneInput v-model="profile.phone" />
+        </b-form-group>
+      </div>
     </ValidationObserver>
   </div>
 </template>
 <script>
+import PhoneInput from "@/components/shared/PhoneInput";
 import Service from "@/services/users";
 export default {
   data() {
@@ -31,8 +37,10 @@ export default {
       profile: {},
     };
   },
-  mounted() {
-    this.get();
+  async created() {
+    this.$busy = true;
+    await this.get();
+    this.$busy = false;
   },
   methods: {
     async get() {
@@ -50,6 +58,9 @@ export default {
 
       this.$user = this.$helpers.cloneObject(this.profile);
     },
+  },
+  components: {
+    PhoneInput,
   },
 };
 </script>

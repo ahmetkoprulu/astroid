@@ -36,7 +36,8 @@ public class UsersController : SecureController
 		{
 			Id = user.Id,
 			Name = user.Name,
-			Email = user.Email
+			Email = user.Email,
+			Phone = user.Phone
 		});
 	}
 
@@ -49,6 +50,7 @@ public class UsersController : SecureController
 
 		user.Name = profile.Name;
 		user.Email = profile.Email;
+		user.Phone = profile.Phone;
 
 		await Db.SaveChangesAsync();
 

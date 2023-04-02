@@ -1,6 +1,6 @@
 <template>
   <nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse">
-    <div class="position-sticky">
+    <div class="position-sticky h-100 d-flex flex-column">
       <a class="navbar-brand d-flex text-dark mx-4 my-4" href="/">
         <img src="../../assets/logo.png" width="35" height="35" alt="" />
         <span class="mt-1">Astroid</span>
@@ -34,7 +34,7 @@
         </div>
       </div>
 
-      <div class="mx-4 mt-5 d-flex">
+      <div class="mx-4 mt-auto mb-5 d-flex">
         <div class="w-100 profile-widget">
           <div>
             <router-link

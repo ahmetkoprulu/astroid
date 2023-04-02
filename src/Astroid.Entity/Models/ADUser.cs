@@ -14,4 +14,5 @@ public class ADUser : IEntity
 	public string PasswordHash { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public bool IsRemoved { get; set; }
+	public string? Phone { get; set; }
 }

@@ -47,6 +47,20 @@ extend("min_value", min_value);
 Vue.component("ValidationObserver", ValidationObserver);
 Vue.component("ValidationProvider", ValidationProvider);
 
+import VueTelInput from 'vue-tel-input';
+import 'vue-tel-input/dist/vue-tel-input.css';
+const options = {
+	dropdownOptions: {
+		showDialCodeInList: true,
+		// showDialCodeInSelection: true,
+		showSearchBox: true
+	},
+	inputOptions: {
+		showDialCode: true,
+	},
+	autoDefaultCountry: false,
+}
+Vue.use(VueTelInput, options);
 // Components
 import PageHeader from "@/components/layout/PageHeader.vue";
 import Table from "@/components/shared/table/Table.vue";
