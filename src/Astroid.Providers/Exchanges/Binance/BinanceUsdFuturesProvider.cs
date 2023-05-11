@@ -106,22 +106,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				await CloseShort(order, result, true, position.Quantity);
 		}
 
-		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetPriceAsync(order.Ticker);
-		if (!tickerInfo.Success)
-		{
-			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Buy", PositionType = "Long" }));
-			return result;
-		}
+		var symbolInfo = GetSymbolInfo(order.Ticker);
 
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
-		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, tickerInfo.Data.Price);
+		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, symbolInfo.LastPrice);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success;
 		if (bot.OrderType == OrderEntryType.Market) success = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, result);
-		else success = await PlaceLimitOrder(order.Ticker, quantity, tickerInfo.Data.Price, symbolInfo.PricePrecision - 1, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
+		else success = await PlaceLimitOrder(order.Ticker, quantity, symbolInfo.LastPrice, symbolInfo.PricePrecision - 1, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
 
 		if (!success) return result;
 
@@ -203,22 +197,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 		}
 
-		var tickerInfo = await Client.UsdFuturesApi.ExchangeData.GetPriceAsync(order.Ticker);
-		if (!tickerInfo.Success)
-		{
-			result.WithMessage($"Failed getting ticker information: {tickerInfo?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting ticker information: {tickerInfo?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker }));
-			return result;
-		}
-
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
 		var symbolInfo = GetSymbolInfo(order.Ticker);
-		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, tickerInfo.Data.Price);
+		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, symbolInfo.LastPrice);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success;
 		if (bot.OrderType == OrderEntryType.Market) success = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, result);
-		else success = await PlaceLimitOrder(order.Ticker, quantity, tickerInfo.Data.Price, symbolInfo.PricePrecision - 1, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
+		else success = await PlaceLimitOrder(order.Ticker, quantity, symbolInfo.LastPrice, symbolInfo.PricePrecision - 1, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
 
 		if (!success) return result;
 
@@ -555,30 +542,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private AMSymbolInfo GetSymbolInfo(string ticker)
 	{
-		var symbolInfo = ExhangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker, GetExchangeInfo);
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker);
 		if (symbolInfo == null) throw new Exception($"Could not find symbol info for {ticker}");
 
 		return symbolInfo;
-	}
-
-	private AMExchangeInfo GetExchangeInfo()
-	{
-		var response = Client.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync().GetAwaiter().GetResult();
-		if (!response.Success) throw new Exception(response?.Error?.Message ?? "Could not get exchange info");
-
-		var exchangeInfo = new AMExchangeInfo
-		{
-			ModifiedAt = DateTime.UtcNow,
-			Symbols = response.Data.Symbols.Select(x => new AMSymbolInfo
-			{
-				Name = x.Name,
-				QuantityPrecision = x.QuantityPrecision,
-				PricePrecision = x.PricePrecision,
-				TickSize = x.LotSizeFilter?.StepSize,
-			}).ToList()
-		};
-
-		return exchangeInfo;
 	}
 
 	public override async Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType marginType)

@@ -140,6 +140,9 @@ db.Database.Migrate();
 
 await app.SeedDatabase();
 
+// Cache exchange info
+await BinanceCacheFeed.StartSubscriptions();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
