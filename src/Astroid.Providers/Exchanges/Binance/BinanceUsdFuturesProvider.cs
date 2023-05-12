@@ -35,7 +35,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var options = new BinanceClientOptions
 		{
-			ApiCredentials = new ApiCredentials(Key, Secret)
+			ApiCredentials = new BinanceApiCredentials(Key, Secret)
 		};
 
 		if (IsTestNet)

@@ -22,11 +22,11 @@ public static class BinanceCacheFeed
 		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
 			throw new Exception("Binance credentials not found.");
 
-		var creds = new ApiCredentials(key, secret);
+		var creds = new BinanceApiCredentials(key, secret);
 
 		SocketClient = new BinanceSocketClient(new BinanceSocketClientOptions
 		{
-			UsdFuturesStreamsOptions = new ApiClientOptions
+			UsdFuturesStreamsOptions = new BinanceSocketApiClientOptions
 			{
 				BaseAddress = "wss://stream.binancefuture.com",
 				ApiCredentials = creds,
