@@ -287,39 +287,57 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task PlaceTakeProfitOrders(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
 		var targets = bot.TakeProfitTargets;
+		if (targets.Any(x => !(x.Share > 0) || !(x.Activation > 0)))
+		{
+			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: Target(s) share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
+			return;
+		}
+
 		if (targets.Count == 0) targets.Add(new TakeProfitTarget { Activation = bot.StopLossPrice!.Value * 3, Share = 100 });
 
 		var oSide = order.PositionType == PositionType.Long ? OrderSide.Sell : OrderSide.Buy;
 		var pSide = order.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
 
-		for (int i = 0; i < targets.Count; i++)
-		{
-			var tpTarget = targets[i];
-			if (!(tpTarget.Share > 0) || !(tpTarget.Activation > 0))
+		var tpOrders = targets
+			.SkipLast(1)
+			.Select(x => new BinanceFuturesBatchOrder
 			{
-				result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order at target {i + 1}: Share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
-				continue;
+				Symbol = order.Ticker,
+				Side = oSide,
+				PositionSide = pSide,
+				Type = FuturesOrderType.TakeProfitMarket,
+				Quantity = Math.Round(quantity * x.Share / 100, symbol.QuantityPrecision),
+				StopPrice = CalculateTakeProfit(x.Activation, entryPrice, symbol.PricePrecision, order.PositionType),
+				TimeInForce = TimeInForce.GoodTillExpiredOrCanceled,
+				WorkingType = WorkingType.Contract
+			})
+			.ToArray();
+
+		if (tpOrders.Length > 0)
+		{
+			var profitOrderResponse = await Client.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(tpOrders);
+			for (var i = 0; i < profitOrderResponse.Data.Count(); i++)
+			{
+				var response = profitOrderResponse.Data.ElementAt(i);
+				result.AddAudit(AuditType.TakeProfitOrderPlaced, response.Success ? $"Placed take profit order at target {i + 1} successfully." : $"Failed placing take profit order at target {i + 1}: {response?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = response?.Data?.StopPrice }));
 			}
-
-			var closePosition = i + 1 == targets.Count;
-			var qShare = Math.Round(quantity * tpTarget.Share.Value / 100, symbol.QuantityPrecision);
-			var tpPrice = CalculateTakeProfit(tpTarget.Activation!.Value, entryPrice, symbol.PricePrecision, order.PositionType);
-
-			var profitOrderResponse = await Client.UsdFuturesApi.Trading
-				.PlaceOrderAsync(
-					order.Ticker,
-					oSide,
-					FuturesOrderType.TakeProfitMarket,
-					qShare,
-					positionSide: pSide,
-					stopPrice: tpPrice,
-					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Contract,
-					closePosition: closePosition
-				);
-
-			result.AddAudit(AuditType.TakeProfitOrderPlaced, profitOrderResponse.Success ? $"Placed take profit order at target {i + 1} successfully." : $"Failed placing take profit order at target {i + 1}: {profitOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = tpPrice }));
 		}
+
+		// TODO: Last TP order should be closePosition=true but multiple orders does not support it. Find a workaround.
+		var closeTp = targets.Last();
+		var closeTpOrderResponse = await Client.UsdFuturesApi.Trading
+			.PlaceOrderAsync(
+				order.Ticker,
+				oSide,
+				FuturesOrderType.TakeProfitMarket,
+				null,
+				positionSide: pSide,
+				stopPrice: CalculateTakeProfit(closeTp.Activation, entryPrice, symbol.PricePrecision, order.PositionType),
+				timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
+				workingType: WorkingType.Contract,
+				closePosition: true
+			);
+		result.AddAudit(AuditType.TakeProfitOrderPlaced, closeTpOrderResponse.Success ? $"Placed take profit order at target {targets.Count()} successfully." : $"Failed placing take profit order at target {targets.Count() + 1}: {closeTpOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = closeTpOrderResponse?.Data?.StopPrice }));
 	}
 
 	private async Task<(bool, decimal)> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
@@ -362,7 +380,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					quantity,
 					price,
 					positionSide: pSide,
-					timeInForce: TimeInForce.ImmediateOrCancel,
+					timeInForce: TimeInForce.FillOrKill,
 					workingType: WorkingType.Contract,
 					orderResponseType: OrderResponseType.Result
 				);
@@ -398,7 +416,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					quantity,
 					price,
 					positionSide: pSide,
-					timeInForce: TimeInForce.ImmediateOrCancel,
+					timeInForce: TimeInForce.FillOrKill,
 					workingType: WorkingType.Contract,
 					orderResponseType: OrderResponseType.Result
 				);
