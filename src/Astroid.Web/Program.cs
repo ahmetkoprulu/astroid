@@ -12,6 +12,7 @@ using VueCliMiddleware;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
+using Astroid.Web.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -85,6 +86,7 @@ else
 // Dependency Injections
 builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
+builder.Services.AddSingleton<OrderQueue>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
