@@ -7,12 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-    "dev": "cd src/Astroid.Web && cross-env ASPNETCORE_ENVIRONMENT=Production NODE_ENV=development dotnet watch run",
+    "dev": "cd src/Astroid.Web && dotnet watch run",
     "db-migrate": "dotnet ef migrations add --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-migrate-list": "dotnet ef migrations list --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-update": "dotnet ef database update --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-migrate-rm": "dotnet ef migrations remove --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
-    "publish": "cd src/Astroid.Web && cross-env ASPNETCORE_ENVIRONMENT=Production dotnet publish -c Release -p:PublishProfile=FileSystem",
+    "publish": "cd src/Astroid.Web && dotnet publish -c Release -p:PublishProfile=FileSystem",
     "build:frontend": "cd src/Astroid.Web && npm run build:frontend"
   },
   "repository": {
