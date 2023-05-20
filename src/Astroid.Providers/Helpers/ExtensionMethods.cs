@@ -12,11 +12,7 @@ public static class ExtensionMethods
 	{
 		if (exchange.Provider == null) return null;
 
-		var generatedType = Type.GetType(exchange.Provider.TargetType);
-
-
-		if (generatedType == null) throw new TypeLoadException($"User provider [{exchange.Provider.Name} - {exchange.Provider.TargetType}] type not found.");
-
+		var generatedType = Type.GetType(exchange.Provider.TargetType) ?? throw new TypeLoadException($"User provider [{exchange.Provider.Name} - {exchange.Provider.TargetType}] type not found.");
 		var providerBase = (ExchangeProviderBase)ActivatorUtilities.CreateInstance(serviceProvider, generatedType);
 		providerBase.Context();
 
@@ -25,9 +21,7 @@ public static class ExtensionMethods
 
 	public static List<ProviderPropertyValue> GeneratePropertyMetadata(this ADExchangeProvider provider)
 	{
-		var generatedType = Type.GetType(provider.TargetType);
-		if (generatedType == null) throw new TypeLoadException($"User provider [{provider.Name} - {provider.TargetType}] type not found.");
-
+		var generatedType = Type.GetType(provider.TargetType) ?? throw new TypeLoadException($"User provider [{provider.Name} - {provider.TargetType}] type not found.");
 		var list = new List<ProviderPropertyValue>();
 		var propInfos = generatedType.GetProperties();
 		foreach (var prop in propInfos)

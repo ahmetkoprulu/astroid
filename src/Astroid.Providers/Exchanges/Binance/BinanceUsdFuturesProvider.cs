@@ -24,10 +24,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private BinanceClient Client { get; set; }
 
-	public BinanceUsdFuturesProvider(IServiceProvider serviceProvider, ADExchange exchange) : base(serviceProvider, exchange)
-	{
-		Context();
-	}
+	public BinanceUsdFuturesProvider(IServiceProvider serviceProvider, ADExchange exchange) : base(serviceProvider, exchange) => Context();
 
 	public override void Context()
 	{
@@ -106,19 +103,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				await CloseShort(order, result, true, position.Quantity);
 		}
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
-
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
-		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, symbolInfo.LastPrice);
+		var quantity = ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success; decimal price;
 		if (bot.OrderType == OrderEntryType.Market) (success, price) = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, result);
-		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, symbolInfo.LastPrice, symbolInfo.PricePrecision - 1, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
+		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
 
 		if (!success) return result;
 
+		var symbolInfo = GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, price, symbolInfo, quantity, result);
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
@@ -192,16 +188,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
-		var quantity = ConvertUsdtToCoin(bot, order, symbolInfo.QuantityPrecision, symbolInfo.LastPrice);
+		var quantity = ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success; decimal price;
 		if (bot.OrderType == OrderEntryType.Market) (success, price) = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, result);
-		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, symbolInfo.LastPrice, symbolInfo.PricePrecision - 1, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
+		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
 
 		if (!success) return result;
 
+		var symbolInfo = GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, price, symbolInfo, quantity, result);
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
@@ -364,14 +360,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return (true, orderResponse.Data.AveragePrice);
 	}
 
-	private async Task<(bool, decimal)> PlaceLimitOrder(string ticker, decimal quantity, decimal lastPrice, int precision, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
+	private async Task<(bool, decimal)> PlaceLimitOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		decimal price;
 		if (settings.ValorizationType == ValorizationType.LastPrice)
 		{
-			var deviatedDifference = lastPrice * settings.Deviation / 100;
+			var symbolInfo = GetSymbolInfo(ticker);
+			var deviatedDifference = symbolInfo.LastPrice * settings.Deviation / 100;
 
-			price = pSide == PositionSide.Long ? Math.Round(lastPrice + deviatedDifference, precision) : Math.Round(lastPrice - deviatedDifference, precision);
+			price = pSide == PositionSide.Long ? Math.Round(symbolInfo.LastPrice + deviatedDifference, symbolInfo.PricePrecision - 1) : Math.Round(symbolInfo.LastPrice - deviatedDifference, symbolInfo.PricePrecision - 1);
 			var orderResponse = await Client.UsdFuturesApi.Trading
 				.PlaceOrderAsync(
 					ticker,
@@ -454,15 +451,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return response.Data;
 	}
 
-	private decimal ConvertUsdtToCoin(ADBot bot, AMOrderRequest order, int precision, decimal lastPrice)
+	private decimal ConvertUsdtToCoin(ADBot bot, AMOrderRequest order)
 	{
 		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
 		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
 
-		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT");
-		if (usdtBalanceInfo == null) throw new Exception("Could not find USDT balance");
-
+		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT") ?? throw new Exception("Could not find USDT balance");
 		var wallet = usdtBalanceInfo.AvailableBalance / order.Risk;
+
+		var symbolInfo = GetSymbolInfo(order.Ticker);
 
 		if (!bot.PositionSize.HasValue || bot.PositionSize <= 0)
 		{
@@ -470,21 +467,21 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 			bot.PositionSize = wallet / bot.StopLossPrice / order.Leverage;
 
-			return Math.Round(bot.PositionSize!.Value / lastPrice, precision);
+			return Math.Round(bot.PositionSize!.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 		}
 
 		order.Leverage = order.Leverage <= 0 ? (int)(wallet / bot.PositionSize!.Value / bot.StopLossPrice!.Value) : order.Leverage;
 
-		if (bot.PositionSizeType == PositionSizeType.FixedInAsset) return Math.Round(bot.PositionSize!.Value, precision);
+		if (bot.PositionSizeType == PositionSizeType.FixedInAsset) return Math.Round(bot.PositionSize!.Value, symbolInfo.QuantityPrecision);
 
-		if (bot.PositionSizeType == PositionSizeType.FixedInUsd) return Math.Round(bot.PositionSize!.Value / lastPrice, precision);
+		if (bot.PositionSizeType == PositionSizeType.FixedInUsd) return Math.Round(bot.PositionSize!.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 
 		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(bot.PositionSize) / 100;
 
-		return Math.Round(usdQuantity / lastPrice, precision);
+		return Math.Round(usdQuantity / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 	}
 
-	static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)
+	private static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)
 	{
 		Dictionary<decimal, BinanceOrderBookEntry> aggregated_bids = new();
 		var tickSize = 1.0m / (decimal)Math.Pow(10, precision - 1);
@@ -493,9 +490,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			var rounded_price = bid.Price - (bid.Price % tickSize);
 
-			if (aggregated_bids.ContainsKey(rounded_price))
+			if (aggregated_bids.TryGetValue(rounded_price, out var value))
 			{
-				aggregated_bids[rounded_price].Quantity += bid.Quantity;
+				value.Quantity += bid.Quantity;
 			}
 			else
 			{
@@ -512,7 +509,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return smoothed_bids;
 	}
 
-	private decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
+	private static decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
 	{
 		if (!bot.IsStopLossEnabled) return null;
 
@@ -521,7 +518,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return CalculateStopLoss(bot.StopLossPrice.Value, entryPrice, precision, type);
 	}
 
-	private decimal? CalculateStopActivation(ADBot bot, decimal entryPrice, int precision, PositionType type)
+	private static decimal? CalculateStopActivation(ADBot bot, decimal entryPrice, int precision, PositionType type)
 	{
 		if (bot.StopLossActivation == null || bot.StopLossActivation <= 0) return null;
 
@@ -530,14 +527,14 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(entryPrice - (entryPrice * bot.StopLossActivation!.Value / 100), precision);
 	}
 
-	private decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)
+	private static decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)
 	{
 		if (type == PositionType.Long) return Math.Round(entryPrice - (entryPrice * activation / 100), precision);
 
 		return Math.Round(entryPrice + (entryPrice * activation / 100), precision);
 	}
 
-	private decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int precision, PositionType type)
+	private static decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int precision, PositionType type)
 	{
 		if (type == PositionType.Long) return Math.Round(entryPrice + (entryPrice * activation / 100), precision);
 
@@ -546,9 +543,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private AMSymbolInfo GetSymbolInfo(string ticker)
 	{
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker);
-		if (symbolInfo == null) throw new Exception($"Could not find symbol info for {ticker}");
-
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
 		return symbolInfo;
 	}
 

@@ -24,10 +24,7 @@ public class ADExchange : IEntity
 
 			return JsonConvert.DeserializeObject<List<ProviderPropertyValue>>(PropertiesJson)!;
 		}
-		set
-		{
-			PropertiesJson = JsonConvert.SerializeObject(value);
-		}
+		set => PropertiesJson = JsonConvert.SerializeObject(value);
 	}
 
 	public Guid ProviderId { get; set; }

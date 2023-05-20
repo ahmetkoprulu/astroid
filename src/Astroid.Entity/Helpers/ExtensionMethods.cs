@@ -43,8 +43,5 @@ public static class ContextExtentionMethods
 		return returnDefault ? default : new T();
 	}
 
-	public static string SetAs<T>(this IEntity _, T obj) where T : new()
-	{
-		return JsonConvert.SerializeObject(obj);
-	}
+	public static string SetAs<T>(this IEntity _, T obj) where T : new() => JsonConvert.SerializeObject(obj);
 }

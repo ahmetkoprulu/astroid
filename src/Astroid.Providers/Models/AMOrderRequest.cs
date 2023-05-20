@@ -10,33 +10,23 @@ public class AMOrderRequest
 	public int Risk { get; set; } = 1;
 	public string Key { get; set; }
 
-	public OrderType OrderType
+	public OrderType OrderType => Type switch
 	{
-		get
-		{
-			return Type switch
-			{
-				"open-long" => OrderType.Buy,
-				"open-short" => OrderType.Sell,
-				"close-long" => OrderType.Sell,
-				"close-short" => OrderType.Buy,
-				_ => throw new Exception("Invalid order type")
-			};
-		}
-	}
-	public PositionType PositionType
+		"open-long" => OrderType.Buy,
+		"open-short" => OrderType.Sell,
+		"close-long" => OrderType.Sell,
+		"close-short" => OrderType.Buy,
+		_ => throw new Exception("Invalid order type")
+	};
+
+	public PositionType PositionType => Type switch
 	{
-		get
-		{
-			return Type switch
-			{
-				"open-long" => PositionType.Long,
-				"open-short" => PositionType.Short,
-				"close-long" => PositionType.Long,
-				"close-short" => PositionType.Short,
-				_ => throw new Exception("Invalid position type")
-			};
-		}
-	}
+		"open-long" => PositionType.Long,
+		"open-short" => PositionType.Short,
+		"close-long" => PositionType.Long,
+		"close-short" => PositionType.Short,
+		_ => throw new Exception("Invalid position type")
+	};
+
 	public string? Timestamp { get; set; }
 }

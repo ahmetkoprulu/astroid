@@ -62,10 +62,7 @@ public static class BinanceCacheFeed
 		});
 	}
 
-	public static async Task StopSubscriptions()
-	{
-		await SocketClient.UnsubscribeAllAsync();
-	}
+	public static async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
 
 	public static async Task GetExchangeInfo()
 	{
