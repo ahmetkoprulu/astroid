@@ -453,14 +453,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private decimal ConvertUsdtToCoin(ADBot bot, AMOrderRequest order)
 	{
+		var symbolInfo = GetSymbolInfo(order.Ticker);
+		if (bot.PositionSizeType == PositionSizeType.FixedInAsset) return Math.Round(bot.PositionSize!.Value, symbolInfo.QuantityPrecision);
+
 		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
 		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
 
 		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT") ?? throw new Exception("Could not find USDT balance");
 		var wallet = usdtBalanceInfo.AvailableBalance / order.Risk;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
-
+		symbolInfo = GetSymbolInfo(order.Ticker);
 		if (!bot.PositionSize.HasValue || bot.PositionSize <= 0)
 		{
 			if (bot.StopLossPrice == 0 || order.Leverage == 0) throw new Exception("Stoploss or leverage is not set");
