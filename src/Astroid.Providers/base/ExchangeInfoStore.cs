@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Linq;
 
 namespace Astroid.Providers;
 
@@ -9,7 +10,7 @@ public static class ExchangeInfoStore
 	public static AMExchangeInfo GetOrAdd(string exchange, Func<AMExchangeInfo> func)
 	{
 		var isExist = ExchangeInfo.TryGetValue(exchange, out var info);
-		if (isExist && info?.ModifiedAt > DateTime.UtcNow.AddDays(-1)) return info;
+		if (isExist && info!.ModifiedAt > DateTime.UtcNow.AddDays(-1)) return info;
 
 		var newInfo = func();
 		ExchangeInfo.AddOrUpdate(exchange, newInfo, (key, oldInfo) => newInfo);
@@ -37,4 +38,8 @@ public static class ExchangeInfoStore
 		var info = Get(exchange);
 		return info?.Symbols.FirstOrDefault(x => x.Name == symbol);
 	}
+
+	public static List<AMExchangeInfo> GetAll() => ExchangeInfo.Values.ToList();
+
+	public static void Clear() => ExchangeInfo.Clear();
 }

@@ -7,4 +7,5 @@ public class AMSymbolInfo
 	public int QuantityPrecision { get; set; }
 	public int PricePrecision { get; set; }
 	public decimal LastPrice { get; set; }
+	public DateTime ModifiedAt { get; set; }
 }

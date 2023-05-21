@@ -4,6 +4,7 @@ using Astroid.Web.Models;
 using Astroid.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Astroid.Providers;
 
 namespace Astroid.Web;
 
@@ -57,5 +58,17 @@ public class HomeController : BaseController
 		await HttpContext.SignOutAsync(ACWeb.Authentication.DefaultSchema);
 
 		return Success(default, "User signed out successfully");
+	}
+
+	[HttpGet("status")]
+	public IActionResult Status()
+	{
+		var exchanges = ExchangeInfoStore.GetAll();
+
+		return Ok(new
+		{
+			ServerTime = DateTime.UtcNow,
+			Exchanges = exchanges
+		});
 	}
 }

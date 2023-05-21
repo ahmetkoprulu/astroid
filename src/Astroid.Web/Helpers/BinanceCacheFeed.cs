@@ -8,13 +8,13 @@ using Newtonsoft.Json;
 
 namespace Astroid.Web;
 
-public static class BinanceCacheFeed
+public class BinanceCacheFeed : IDisposable
 {
-	private static BinanceSocketClient SocketClient { get; set; }
+	private BinanceSocketClient SocketClient { get; set; }
 
-	private static BinanceClient Client { get; set; }
+	private BinanceClient Client { get; set; }
 
-	static BinanceCacheFeed()
+	public BinanceCacheFeed()
 	{
 		var key = Environment.GetEnvironmentVariable("ASTROID_BINANCE_TEST_KEY");
 		var secret = Environment.GetEnvironmentVariable("ASTROID_BINANCE_TEST_SECRET");
@@ -45,7 +45,7 @@ public static class BinanceCacheFeed
 		});
 	}
 
-	public static async Task StartSubscriptions()
+	public async Task StartSubscriptions()
 	{
 		await GetExchangeInfo();
 		await SocketClient.UsdFuturesStreams.SubscribeToAllTickerUpdatesAsync(data =>
@@ -58,27 +58,42 @@ public static class BinanceCacheFeed
 				if (symbolInfo == null) continue;
 
 				symbolInfo.LastPrice = priceInfo.LastPrice;
+				symbolInfo.ModifiedAt = DateTime.UtcNow;
 			}
 		});
 	}
 
-	public static async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
+	public async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
 
-	public static async Task GetExchangeInfo()
+	public async Task GetExchangeInfo()
 	{
 		var info = await Client.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync();
 		var exchangeInfo = new AMExchangeInfo
 		{
+			Name = "Binance USD Futures",
 			ModifiedAt = DateTime.UtcNow,
-			Symbols = info.Data.Symbols.Select(x => new AMSymbolInfo
+			Symbols = info.Data.Symbols.Select(x =>
 			{
-				Name = x.Name,
-				QuantityPrecision = x.QuantityPrecision,
-				PricePrecision = x.PricePrecision,
-				TickSize = x.LotSizeFilter?.StepSize,
+				var lastPrice = Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name).GetAwaiter().GetResult().Data.Price;
+				return new AMSymbolInfo
+				{
+					Name = x.Name,
+					QuantityPrecision = x.QuantityPrecision,
+					PricePrecision = x.PricePrecision,
+					TickSize = x.LotSizeFilter?.StepSize,
+					LastPrice = lastPrice,
+					ModifiedAt = DateTime.UtcNow
+				};
 			}).ToList()
 		};
 
 		ExchangeInfoStore.Add(ACExchanges.BinanceUsdFutures, exchangeInfo);
+	}
+
+	public void Dispose()
+	{
+		SocketClient?.UnsubscribeAllAsync().Wait();
+		SocketClient?.Dispose();
+		Client?.Dispose();
 	}
 }

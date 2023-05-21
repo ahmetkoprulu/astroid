@@ -86,7 +86,7 @@ else
 // Dependency Injections
 builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
-builder.Services.AddSingleton<OrderQueue>();
+builder.Services.AddSingleton<BinanceCacheFeed>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -143,7 +143,8 @@ db.Database.Migrate();
 await app.SeedDatabase();
 
 // Cache exchange info
-await BinanceCacheFeed.StartSubscriptions();
+using var binanceFeed = scope.ServiceProvider.GetRequiredService<BinanceCacheFeed>();
+await binanceFeed.StartSubscriptions();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

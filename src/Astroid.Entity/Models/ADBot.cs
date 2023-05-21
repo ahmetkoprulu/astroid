@@ -14,8 +14,6 @@ public class ADBot : IEntity
 	public string? Description { get; set; }
 	public Guid ExchangeId { get; set; }
 	// public SignalSourceType SignalSourceType { get; set; }
-	[Column(nameof(Tickers))]
-	public string TickersJson { get; set; }
 	public OrderEntryType OrderType { get; set; }
 	public OrderMode OrderMode { get; set; }
 	public PositionSizeType PositionSizeType { get; set; }
@@ -48,11 +46,5 @@ public class ADBot : IEntity
 	{
 		get => this.GetAs<LimitSettings>(LimitSettingsJson);
 		set => LimitSettingsJson = this.SetAs(value);
-	}
-
-	public List<string> Tickers
-	{
-		get => this.GetAs<List<string>>(TickersJson);
-		set => TickersJson = this.SetAs(value);
 	}
 }
