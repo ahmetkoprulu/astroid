@@ -2,9 +2,6 @@ using Astroid.Core;
 using Astroid.Providers;
 using Binance.Net.Clients;
 using Binance.Net.Objects;
-using CryptoExchange.Net.Authentication;
-using CryptoExchange.Net.Objects;
-using Newtonsoft.Json;
 
 namespace Astroid.Web;
 
@@ -61,6 +58,25 @@ public class BinanceCacheFeed : IDisposable
 				symbolInfo.ModifiedAt = DateTime.UtcNow;
 			}
 		});
+
+		var binanceInfo = ExchangeInfoStore.Get(ACExchanges.BinanceUsdFutures);
+		foreach (var ticker in binanceInfo!.Symbols)
+		{
+			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
+			{
+				ticker.OrderBook.ProcessUpdate(data.Data);
+				if (ticker.OrderBook.LastUpdateTime == 0)
+				{
+					ticker.OrderBook.LastUpdateTime = -1;
+					Console.WriteLine("Getting snapshot");
+					GetDepthSnapshot(ticker.OrderBook);
+				}
+
+				var bestBid = ticker.OrderBook.GetFirstBid();
+				var bestAsk = ticker.OrderBook.GetFirstAsk();
+				Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
+			});
+		}
 	}
 
 	public async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
@@ -82,12 +98,27 @@ public class BinanceCacheFeed : IDisposable
 					PricePrecision = x.PricePrecision,
 					TickSize = x.LotSizeFilter?.StepSize,
 					LastPrice = lastPrice,
-					ModifiedAt = DateTime.UtcNow
+					ModifiedAt = DateTime.UtcNow,
+					OrderBook = new AMOrderBook(x.Name)
 				};
 			}).ToList()
 		};
 
 		ExchangeInfoStore.Add(ACExchanges.BinanceUsdFutures, exchangeInfo);
+	}
+
+	public async void GetDepthSnapshot(AMOrderBook orderBook)
+	{
+		var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(orderBook.Symbol, 1000);
+		if (snapshot.Success)
+		{
+			orderBook.LoadSnapshot(snapshot.Data.Asks, snapshot.Data.Bids, snapshot.Data.LastUpdateId);
+			Console.WriteLine("Order book snapshot received and processed.");
+		}
+		else
+		{
+			Console.WriteLine("Failed to retrieve order book snapshot.");
+		}
 	}
 
 	public void Dispose()

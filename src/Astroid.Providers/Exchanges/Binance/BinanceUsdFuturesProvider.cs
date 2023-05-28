@@ -3,7 +3,6 @@ using Astroid.Entity;
 using Binance.Net.Clients;
 using Binance.Net.Enums;
 using Binance.Net.Objects;
-using CryptoExchange.Net.Authentication;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Binance.Net.Objects.Models.Futures;

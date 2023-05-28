@@ -8,4 +8,5 @@ public class AMSymbolInfo
 	public int PricePrecision { get; set; }
 	public decimal LastPrice { get; set; }
 	public DateTime ModifiedAt { get; set; }
+	public AMOrderBook OrderBook { get; set; }
 }
