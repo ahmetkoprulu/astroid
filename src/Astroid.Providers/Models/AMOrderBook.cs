@@ -22,18 +22,49 @@ public class AMOrderBook
 		Symbol = symbol;
 	}
 
-	// ToArray is thread safe for ConcurrentDictionary so the collection can be ordered safely
-	public IEnumerable<KeyValuePair<decimal, decimal>> GetAsks(int size) => _asks.ToArray().OrderBy(x => x.Key).Take(size);
+	public IEnumerable<KeyValuePair<decimal, decimal>> GetAsks(int size, int skip = 0) => _asks.ToArray().OrderBy(x => x.Key).Skip(skip).Take(size);
 
-	public IEnumerable<KeyValuePair<decimal, decimal>> GetBids(int size) => _bids.ToArray().OrderByDescending(x => x.Key).Take(size);
+	public IEnumerable<KeyValuePair<decimal, decimal>> GetBids(int size, int skip = 0) => _bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
 
-	public KeyValuePair<decimal, decimal> GetNthAsk(int n) => _asks.ToArray().OrderBy(x => x.Key).Skip(n - 1).FirstOrDefault();
+	public (decimal, decimal) GetNthBestAsk(int n)
+	{
+		var bestNth = _asks.ToArray().OrderBy(x => x.Key).Skip(n - 1).FirstOrDefault();
+		return (bestNth.Key, bestNth.Value);
+	}
 
-	public KeyValuePair<decimal, decimal> GetNthBid(int n) => _bids.ToArray().OrderByDescending(x => x.Key).Skip(n - 1).FirstOrDefault();
+	public (decimal, decimal) GetNthBestBid(int n)
+	{
+		var bestNth = _bids.ToDictionary(x => x.Key, x => x.Value).ToArray().OrderByDescending(x => x.Key).Skip(n - 1).FirstOrDefault();
+		return (bestNth.Key, bestNth.Value);
+	}
 
-	public KeyValuePair<decimal, decimal> GetFirstAsk() => _asks.ToArray().OrderBy(x => x.Key).FirstOrDefault();
+	// Since ToArray method is not thread safe, iterating over the keys array.
+	// Even getting the keys array is thread safe, accessing to the dictionary is not. So, we need to use TryGetValue method.
+	public (decimal, decimal) GetBestAsk()
+	{
+		do
+		{
+			var minKey = _asks.Keys.Min();
+			var valueExists = _asks.TryGetValue(minKey, out var minValue);
 
-	public KeyValuePair<decimal, decimal> GetFirstBid() => _bids.ToArray().OrderByDescending(x => x.Key).FirstOrDefault();
+			if (valueExists) return (minKey, minValue);
+		} while (_asks.Count > 0);
+
+		return (0, 0);
+	}
+
+	public (decimal, decimal) GetBestBid()
+	{
+		do
+		{
+			var minKey = _asks.Keys.Max();
+			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+
+			if (valueExists) return (minKey, minValue);
+		} while (_asks.Count > 0);
+
+		return (0, 0);
+	}
 
 	// How to manage a local order book correctly [1]:
 	//   1. Open a stream to wss://stream.binance.com:9443/ws/bnbbtc@depth
