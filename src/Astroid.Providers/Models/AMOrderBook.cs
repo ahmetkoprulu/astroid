@@ -26,20 +26,36 @@ public class AMOrderBook
 
 	public IEnumerable<KeyValuePair<decimal, decimal>> GetBids(int size, int skip = 0) => _bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
 
+	// Since ToArray method is not thread safe, iterating over the keys array.
+	// Even getting the keys array is thread safe, accessing to the dictionary is not. So, we need to use TryGetValue method.
 	public (decimal, decimal) GetNthBestAsk(int n)
 	{
-		var bestNth = _asks.ToArray().OrderBy(x => x.Key).Skip(n - 1).FirstOrDefault();
-		return (bestNth.Key, bestNth.Value);
+		do
+		{
+			var minKey = _asks.Keys.OrderBy(x => x).Skip(n - 1).FirstOrDefault();
+			if (minKey == 0) return (0, 0);
+
+			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			if (valueExists) return (minKey, minValue);
+		} while (_asks.Count > 0);
+
+		return (0, 0);
 	}
 
 	public (decimal, decimal) GetNthBestBid(int n)
 	{
-		var bestNth = _bids.ToDictionary(x => x.Key, x => x.Value).ToArray().OrderByDescending(x => x.Key).Skip(n - 1).FirstOrDefault();
-		return (bestNth.Key, bestNth.Value);
+		do
+		{
+			var minKey = _asks.Keys.OrderByDescending(x => x).Skip(n - 1).FirstOrDefault();
+			if (minKey == 0) return (0, 0);
+
+			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			if (valueExists) return (minKey, minValue);
+		} while (_asks.Count > 0);
+
+		return (0, 0);
 	}
 
-	// Since ToArray method is not thread safe, iterating over the keys array.
-	// Even getting the keys array is thread safe, accessing to the dictionary is not. So, we need to use TryGetValue method.
 	public (decimal, decimal) GetBestAsk()
 	{
 		do
@@ -57,11 +73,11 @@ public class AMOrderBook
 	{
 		do
 		{
-			var minKey = _asks.Keys.Max();
-			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			var maxKey = _bids.Keys.Max();
+			var valueExists = _bids.TryGetValue(maxKey, out var minValue);
 
-			if (valueExists) return (minKey, minValue);
-		} while (_asks.Count > 0);
+			if (valueExists) return (maxKey, minValue);
+		} while (_bids.Count > 0);
 
 		return (0, 0);
 	}

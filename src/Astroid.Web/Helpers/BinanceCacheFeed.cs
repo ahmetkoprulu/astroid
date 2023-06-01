@@ -60,23 +60,39 @@ public class BinanceCacheFeed : IDisposable
 		});
 
 		var binanceInfo = ExchangeInfoStore.Get(ACExchanges.BinanceUsdFutures);
-		foreach (var ticker in binanceInfo!.Symbols)
+		var ticker = binanceInfo!.Symbols.FirstOrDefault(x => x.Name == "BTCUSDT");
+		await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
 		{
-			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
+			ticker.OrderBook.ProcessUpdate(data.Data);
+			if (ticker.OrderBook.LastUpdateTime == 0)
 			{
-				ticker.OrderBook.ProcessUpdate(data.Data);
-				if (ticker.OrderBook.LastUpdateTime == 0)
-				{
-					ticker.OrderBook.LastUpdateTime = -1;
-					Console.WriteLine("Getting snapshot");
-					GetDepthSnapshot(ticker.OrderBook);
-				}
+				ticker.OrderBook.LastUpdateTime = -1;
+				Console.WriteLine("Getting snapshot");
+				GetDepthSnapshot(ticker.OrderBook);
+			}
 
-				var bestBid = ticker.OrderBook.GetFirstBid();
-				var bestAsk = ticker.OrderBook.GetFirstAsk();
-				Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
-			});
-		}
+			// var bestBid = ticker.OrderBook.GetBestBid();
+			// var bestAsk = ticker.OrderBook.GetBestAsk();
+			// Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
+		});
+
+		// foreach (var ticker in binanceInfo!.Symbols)
+		// {
+		// 	await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
+		// 	{
+		// 		ticker.OrderBook.ProcessUpdate(data.Data);
+		// 		if (ticker.OrderBook.LastUpdateTime == 0)
+		// 		{
+		// 			ticker.OrderBook.LastUpdateTime = -1;
+		// 			Console.WriteLine("Getting snapshot");
+		// 			GetDepthSnapshot(ticker.OrderBook);
+		// 		}
+
+		// 		var bestBid = ticker.OrderBook.GetFirstBid();
+		// 		var bestAsk = ticker.OrderBook.GetFirstAsk();
+		// 		Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
+		// 	});
+		// }
 	}
 
 	public async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
