@@ -15,6 +15,8 @@
     "core-js": "^3.6.5",
     "cross-env": "^7.0.3",
     "moment": "^2.24.0",
+    "monaco-editor": "^0.20.0",
+    "monaco-editor-webpack-plugin": "^1.9.0",
     "vee-validate": "^3.0.11",
     "vue": "^2.6.11",
     "vue-router": "^3.2.0",

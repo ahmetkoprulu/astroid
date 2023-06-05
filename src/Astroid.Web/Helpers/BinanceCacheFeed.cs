@@ -104,7 +104,7 @@ public class BinanceCacheFeed : IDisposable
 		{
 			Name = "Binance USD Futures",
 			ModifiedAt = DateTime.UtcNow,
-			Symbols = info.Data.Symbols.Select(x =>
+			Symbols = info.Data.Symbols.Where(x => x.Name == "BTCUSDT").Select(x =>
 			{
 				var lastPrice = Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name).GetAwaiter().GetResult().Data.Price;
 				return new AMSymbolInfo

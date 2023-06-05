@@ -52,4 +52,11 @@ export const LIMIT_VALORIZATION_TYPES = {
 	2: "Order Book"
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_VALORIZATION_TYPES }
+export const LIMIT_ORDER_BOOK_COMPUTATION_METHODS = {
+	1: { id: 1, title: "Standard Deviation", icon: "fa fa-calculator" },
+	2: { id: 2, title: "Code", icon: "fa fa-code" },
+	// 2: { title: "Fixed Spread", icon: "fa fa-arrows-h" },
+	// 3: { title: "Percentage Spread", icon: "fa fa-percent" },
+}
+
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS }
