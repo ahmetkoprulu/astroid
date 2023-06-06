@@ -71,10 +71,10 @@ public class BaseController : Controller
 	protected IActionResult Created(AMReturn data) => StatusCode(201, data);
 
 	[NonAction]
-	protected IActionResult BadRequest(AMReturn data) => StatusCode(400, data);
+	protected IActionResult BadRequest(AMReturn data) => StatusCode(200, data);
 
 	[NonAction]
-	protected IActionResult BadRequest(string message) => StatusCode(400, AMReturn.Bad(message));
+	protected IActionResult BadRequest(string message) => StatusCode(200, AMReturn.Bad(message));
 
 	[NonAction]
 	protected IActionResult Unauthorized(AMReturn data) => StatusCode(401, data);

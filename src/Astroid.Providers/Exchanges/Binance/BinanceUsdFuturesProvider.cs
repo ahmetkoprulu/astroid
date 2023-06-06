@@ -458,14 +458,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<(bool, decimal)> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
-		// Calculate entry point
-		// Get index of greatest entry point less than entry point
-		// Place order
-
 		var i = 0;
 		if (settings.ComputeEntryPoint) i = GetEntryPointIndex(orderBook, pSide, settings);
 
-		while (i < settings.OrderBookOffset)
+		var endIndex = settings.OrderBookOffset + i;
+		while (i < endIndex)
 		{
 			var (p, _) = pSide == PositionSide.Long ? orderBook.GetNthBestAsk(settings.OrderBookSkip + i) : orderBook.GetNthBestBid(settings.OrderBookSkip + i);
 			var orderResponse = await Client.UsdFuturesApi.Trading
@@ -493,41 +490,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		return (false, default);
-	}
-
-	private int GetEntryPointIndex(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
-	{
-		var entryPoint = GetEntryPoint(orderBook, pSide, settings);
-		var i = pSide == PositionSide.Long ? orderBook.GetGreatestAskPriceLessThan(entryPoint) : orderBook.GetLeastBidPriceGreaterThan(entryPoint);
-
-		if (i <= 0) throw new Exception("Could not find entry point out of order book.");
-
-		return i;
-	}
-
-	private decimal GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
-	{
-		var prices = pSide == PositionSide.Long ? orderBook.GetAskPrices(settings.OrderBookDepth) : orderBook.GetBidPrices(settings.OrderBookDepth);
-
-		if (settings.ComputationMethod == OrderBookComputationMethod.Code)
-		{
-			return default;
-		}
-
-		var sDeviation = ComputeStandardDeviation(prices);
-		var mean = prices.Average();
-
-		return pSide == PositionSide.Long ? mean + (2 * sDeviation) : mean - (2 * sDeviation);
-	}
-
-	private decimal ComputeStandardDeviation(IEnumerable<decimal> prices)
-	{
-		var mean = prices.Average();
-		var squaredDifferences = prices.Select(p => Math.Pow((double)p - (double)mean, 2));
-		var variance = squaredDifferences.Sum() / squaredDifferences.Count();
-		var standardDeviation = Math.Sqrt(variance);
-
-		return (decimal)standardDeviation;
 	}
 
 	private bool TryGetOrderBook(string ticker, AMProviderResult result, out AMOrderBook orderBook)

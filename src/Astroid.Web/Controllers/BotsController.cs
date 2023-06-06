@@ -7,6 +7,7 @@ using Astroid.Providers;
 using Astroid.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Astroid.Core.Cache;
+using Binance.Net.Enums;
 
 namespace Astroid.Web;
 
@@ -209,6 +210,38 @@ public class BotsController : SecureController
 		}
 
 		return Success(null, "Order executed successfully");
+	}
+
+	[HttpPost("{ticker}/test-computation-method")]
+	public async Task<IActionResult> TestComputationMethod(string ticker, [FromBody] AMBot bot)
+	{
+		if (string.IsNullOrEmpty(ticker))
+			return BadRequest("Invalid ticker");
+
+		var exchange = await Db.Exchanges
+			.AsNoTracking()
+			.Include(x => x.Provider)
+			.FirstOrDefaultAsync(x => x.Id == bot.ExchangeId);
+
+		if (exchange == null)
+			return NotFound($"Exchange {bot.ExchangeId} not found");
+
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange.Provider.Name, ticker);
+		if (symbolInfo == null)
+			return BadRequest($"Symbol {ticker} not found");
+
+		var orderBook = symbolInfo.OrderBook;
+		if (orderBook == null)
+			return BadRequest($"Order book for {ticker} not found");
+
+		var longResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
+		var shortResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
+
+		return Success(new
+		{
+			Long = Math.Round(longResult, symbolInfo.PricePrecision),
+			Short = Math.Round(shortResult, symbolInfo.PricePrecision)
+		});
 	}
 
 	[HttpPut("{id}/margin-type")]

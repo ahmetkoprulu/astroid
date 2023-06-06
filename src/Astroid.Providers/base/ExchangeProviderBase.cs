@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
+using Binance.Net.Enums;
 using Newtonsoft.Json;
 
 namespace Astroid.Providers;
@@ -21,6 +22,41 @@ public abstract class ExchangeProviderBase : IDisposable
 		// Db = serviceProvider.GetService(typeof(AstroidDb)) as AstroidDb ?? throw new Exception("Db cannot be null");
 		Exchange = exchange;
 		CorrelationId = GenerateCorrelationId();
+	}
+
+	public static int GetEntryPointIndex(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	{
+		var entryPoint = GetEntryPoint(orderBook, pSide, settings);
+		var i = pSide == PositionSide.Long ? orderBook.GetGreatestAskPriceLessThan(entryPoint) : orderBook.GetLeastBidPriceGreaterThan(entryPoint);
+
+		if (i <= 0) throw new Exception("Could not find entry point out of order book.");
+
+		return i;
+	}
+
+	public static decimal GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	{
+		var prices = pSide == PositionSide.Long ? orderBook.GetAskPrices(settings.OrderBookDepth) : orderBook.GetBidPrices(settings.OrderBookDepth);
+
+		if (settings.ComputationMethod == OrderBookComputationMethod.Code)
+		{
+			return default;
+		}
+
+		var sDeviation = ComputeStandardDeviation(prices);
+		var mean = prices.Average();
+
+		return pSide == PositionSide.Long ? mean + (2 * sDeviation) : mean - (2 * sDeviation);
+	}
+
+	public static decimal ComputeStandardDeviation(IEnumerable<decimal> prices)
+	{
+		var mean = prices.Average();
+		var squaredDifferences = prices.Select(p => Math.Pow((double)p - (double)mean, 2));
+		var variance = squaredDifferences.Sum() / squaredDifferences.Count();
+		var standardDeviation = Math.Sqrt(variance);
+
+		return (decimal)standardDeviation;
 	}
 
 	public virtual void Context()

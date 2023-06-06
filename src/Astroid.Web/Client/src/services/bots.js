@@ -17,5 +17,8 @@ export default {
 	},
 	async changeMarginType(id, marginType, tickers) {
 		return HTTP.put(`${URL}/${id}/margin-type?type=${marginType}&tickers=${tickers}`);
+	},
+	async testComputationMethod(ticker, bot) {
+		return HTTP.post(`${URL}/${ticker}/test-computation-method`, bot);
 	}
 };

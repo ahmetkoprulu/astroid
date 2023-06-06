@@ -94,12 +94,17 @@
 							v-if="model.limitSettings.computeEntryPoint"
 						>
 							<DropDownSelect
+								class="mr-3"
 								name="computation-methods"
 								v-model="model.limitSettings.computationMethod"
 								:options="limitOrderBookComputationMethodOptions"
 								split
 								@click="showEditorModal"
 							/>
+							<i
+								class="fa-solid fa-flask fa-fw"
+								@click="showComputationTestModal"
+							></i>
 						</b-form-group>
 						<b-form-group
 							label="Force Until Position Filled"
@@ -204,16 +209,11 @@
 				<WebhookInfo :bot-key="model.key" />
 			</div>
 		</div>
-		<b-modal ref="editorModal" title="Code Editor" size="xl">
-			<code class="code code-top">
-				<span class="text-primary"> public <i>decimal</i> </span>
-				<strong> ComputeEntryPoint </strong> (
-				<i class="text-secondary">List&lt;OrderBookEntry&gt; entries </i>)
-				<strong>{</strong>
-			</code>
-			<CodeEditor v-model="model.limitSettings.code" />
-			<code class="code code-bottom">}</code>
-		</b-modal>
+		<ComputationMethodModal
+			ref="computationMethodModal"
+			:settings="model.limitSettings"
+		/>
+		<ComputationMethodTestModal ref="computationMethodTestModal" :bot="model" />
 	</div>
 </template>
 
@@ -223,8 +223,9 @@ import MarketService from "@/services/markets";
 
 import MultipleTakeProfit from "@/components/Bots/MultipleTakeProfit.vue";
 import WebhookInfo from "@/components/Bots/WebhookInfo.vue";
-import CodeEditor from "@/components/shared/code-editor/CodeEditor.vue";
 import DropDownSelect from "@/components/shared/DropdownSelect.vue";
+import ComputationMethodModal from "@/components/Bots/ComputationMethodModal.vue";
+import ComputationMethodTestModal from "@/components/Bots/ComputationMethodTestModal.vue";
 
 export default {
 	data() {
@@ -276,6 +277,7 @@ export default {
 					forceUntilFilled: false,
 					computeEntryPoint: false,
 					computationMethod: 1,
+					orderBookDepth: 1000,
 					code: "// Entries are bids for long and asks for short.\n// Order book depth is 1000.\n// Order book is sorted by price.\n\n",
 					orderBookSkip: 1,
 					orderBookOffset: 3,
@@ -425,32 +427,18 @@ export default {
 			return value == this.model.positionSizeType;
 		},
 		showEditorModal() {
-			if (this.model.limitSettings.computationMethod != 2) return;
-			this.$refs.editorModal.show();
+			this.$refs.computationMethodModal.show();
+		},
+		showComputationTestModal() {
+			this.$refs.computationMethodTestModal.show();
 		},
 	},
 	components: {
 		WebhookInfo,
 		MultipleTakeProfit,
-		CodeEditor,
 		DropDownSelect,
+		ComputationMethodModal,
+		ComputationMethodTestModal,
 	},
 };
 </script>
-<style scoped>
-.code {
-	width: 100%;
-	font-size: 11pt;
-	display: block;
-	border-radius: 0px;
-	background-color: #eee;
-	border-left: 1px solid #ddd;
-	border-right: 1px solid #ddd;
-}
-.code-top {
-	border-top: 1px solid #ddd;
-}
-.code-bottom {
-	border-bottom: 1px solid #ddd;
-}
-</style>
