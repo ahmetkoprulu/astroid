@@ -26,6 +26,10 @@ public class AMOrderBook
 
 	public IEnumerable<KeyValuePair<decimal, decimal>> GetBids(int size, int skip = 0) => _bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
 
+	public IEnumerable<decimal> GetAskPrices(int depth = 0) => _asks.Keys.OrderBy(x => x).Take(depth == 0 ? _asks.Count : depth);
+
+	public IEnumerable<decimal> GetBidPrices(int depth = 0) => _bids.Keys.OrderByDescending(x => x).Take(depth == 0 ? _bids.Count : depth);
+
 	// Since ToArray method is not thread safe, iterating over the keys array.
 	// Even getting the keys array is thread safe, accessing to the dictionary is not. So, we need to use TryGetValue method.
 	public (decimal, decimal) GetNthBestAsk(int n)
@@ -80,6 +84,28 @@ public class AMOrderBook
 		} while (_bids.Count > 0);
 
 		return (0, 0);
+	}
+
+	public int GetGreatestAskPriceLessThan(decimal price)
+	{
+		var keys = _asks.Keys.OrderBy(x => x).ToArray();
+		for (var i = 0; i < keys.Length; i++)
+		{
+			if (keys[i] > price) return i;
+		}
+
+		return -1;
+	}
+
+	public int GetLeastBidPriceGreaterThan(decimal price)
+	{
+		var keys = _bids.Keys.OrderByDescending(x => x).ToArray();
+		for (var i = 0; i < keys.Length; i++)
+		{
+			if (keys[i] < price) return i;
+		}
+
+		return -1;
 	}
 
 	// How to manage a local order book correctly [1]:
