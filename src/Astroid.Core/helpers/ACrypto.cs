@@ -148,11 +148,11 @@ namespace Astroid.Core
 			using var memoryStream = new MemoryStream(cipherTextBytes);
 			using var cryptoStream = new CryptoStream(memoryStream, decrypt, CryptoStreamMode.Read);
 			var plainTextBytes = new byte[cipherTextBytes.Length];
-			int readBytes = 0;
+			var readBytes = 0;
 
 			while (readBytes < plainTextBytes.Length)
 			{
-				int n = cryptoStream.Read(plainTextBytes, readBytes, plainTextBytes.Length - readBytes);
+				var n = cryptoStream.Read(plainTextBytes, readBytes, plainTextBytes.Length - readBytes);
 				if (n == 0) break;
 				readBytes += n;
 			}

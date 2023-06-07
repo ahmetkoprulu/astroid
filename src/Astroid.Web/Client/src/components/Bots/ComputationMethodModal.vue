@@ -5,7 +5,10 @@
 		:size="showCodeEditor ? 'xl' : 'md'"
 		ok-only
 	>
-		<b-form-group label="Order Book Depth">
+		<b-form-group
+			label="Order Book Depth"
+			description="Number of order book entries to be computed. Max ~1000."
+		>
 			<b-form-input
 				class="w-50"
 				type="number"

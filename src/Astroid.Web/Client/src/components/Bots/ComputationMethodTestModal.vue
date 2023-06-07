@@ -6,7 +6,10 @@
 		@hidden="hidden"
 	>
 		<ValidationObserver ref="form">
-			<v-validated-input label="Ticker">
+			<v-validated-input
+				label="Ticker"
+				description="A symbol for testing the computation method."
+			>
 				<b-form-input class="w-50" type="text" v-model="ticker" />
 			</v-validated-input>
 		</ValidationObserver>
@@ -39,7 +42,7 @@ export default {
 	},
 	data() {
 		return {
-			ticker: "",
+			ticker: "BTCUSDT",
 			showResults: false,
 			isTesting: false,
 			results: {

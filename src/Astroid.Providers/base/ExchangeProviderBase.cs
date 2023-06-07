@@ -36,12 +36,18 @@ public abstract class ExchangeProviderBase : IDisposable
 
 	public static decimal GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
 	{
-		var prices = pSide == PositionSide.Long ? orderBook.GetAskPrices(settings.OrderBookDepth) : orderBook.GetBidPrices(settings.OrderBookDepth);
-
 		if (settings.ComputationMethod == OrderBookComputationMethod.Code)
 		{
-			return default;
+			var pairs = pSide == PositionSide.Long ? orderBook.GetAsks(settings.OrderBookDepth) : orderBook.GetBids(settings.OrderBookDepth);
+			var entries = pairs.Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).ToList();
+
+			var result = CodeExecutor.ExecuteComputationMethod(settings.Code, entries);
+			if (!result.IsSuccess) throw new Exception(result.Message);
+
+			return result.Data;
 		}
+
+		var prices = pSide == PositionSide.Long ? orderBook.GetAskPrices(settings.OrderBookDepth) : orderBook.GetBidPrices(settings.OrderBookDepth);
 
 		var sDeviation = ComputeStandardDeviation(prices);
 		var mean = prices.Average();

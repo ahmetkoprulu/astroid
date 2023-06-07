@@ -101,10 +101,14 @@
 								split
 								@click="showEditorModal"
 							/>
-							<i
-								class="fa-solid fa-flask fa-fw"
+							<a
+								href="#"
+								class="badge btn badge-primary"
+								style="padding: 9px"
 								@click="showComputationTestModal"
-							></i>
+							>
+								<i class="fa-solid fa-flask fa-fw" /> Test
+							</a>
 						</b-form-group>
 						<b-form-group
 							label="Force Until Position Filled"
@@ -278,7 +282,7 @@ export default {
 					computeEntryPoint: false,
 					computationMethod: 1,
 					orderBookDepth: 1000,
-					code: "// Entries are bids for long and asks for short.\n// Order book depth is 1000.\n// Order book is sorted by price.\n\n",
+					code: "// Entries are asks for long and bids for short.\n// Entries are sorted by ascending for asks and descending for bids.\n// Entry object consist of Price and Quantity properties.\n// Referenced namespaces:\n// using System;\n// using System.Collections.Generic;\n// using System.Linq;\n\n",
 					orderBookSkip: 1,
 					orderBookOffset: 3,
 					deviation: 1,

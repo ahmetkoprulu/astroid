@@ -226,7 +226,7 @@ public class BotsController : SecureController
 		if (exchange == null)
 			return NotFound($"Exchange {bot.ExchangeId} not found");
 
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange.Provider.Name, ticker);
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange.Provider.Name, ticker.ToUpper());
 		if (symbolInfo == null)
 			return BadRequest($"Symbol {ticker} not found");
 
@@ -234,14 +234,21 @@ public class BotsController : SecureController
 		if (orderBook == null)
 			return BadRequest($"Order book for {ticker} not found");
 
-		var longResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
-		var shortResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
-
-		return Success(new
+		try
 		{
-			Long = Math.Round(longResult, symbolInfo.PricePrecision),
-			Short = Math.Round(shortResult, symbolInfo.PricePrecision)
-		});
+			var longResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
+			var shortResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
+
+			return Success(new
+			{
+				Long = Math.Round(longResult, symbolInfo.PricePrecision),
+				Short = Math.Round(shortResult, symbolInfo.PricePrecision)
+			});
+		}
+		catch (Exception ex)
+		{
+			return BadRequest(ex.Message);
+		}
 	}
 
 	[HttpPut("{id}/margin-type")]
