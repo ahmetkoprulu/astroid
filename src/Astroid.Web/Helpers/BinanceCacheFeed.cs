@@ -2,6 +2,7 @@ using Astroid.Core;
 using Astroid.Providers;
 using Binance.Net.Clients;
 using Binance.Net.Objects;
+using Binance.Net.Objects.Models.Futures;
 
 namespace Astroid.Web;
 
@@ -126,15 +127,13 @@ public class BinanceCacheFeed : IDisposable
 	public async void GetDepthSnapshot(AMOrderBook orderBook)
 	{
 		var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(orderBook.Symbol, 1000);
-		if (snapshot.Success)
-		{
-			orderBook.LoadSnapshot(snapshot.Data.Asks, snapshot.Data.Bids, snapshot.Data.LastUpdateId);
-			Console.WriteLine("Order book snapshot received and processed.");
-		}
-		else
-		{
-			Console.WriteLine("Failed to retrieve order book snapshot.");
-		}
+		orderBook.LoadSnapshot(snapshot.Data.Asks, snapshot.Data.Bids, snapshot.Data.LastUpdateId);
+	}
+
+	public async Task<BinanceFuturesOrderBook> GetDepth(string ticker)
+	{
+		var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker, 1000);
+		return snapshot.Data;
 	}
 
 	public void Dispose()

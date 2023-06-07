@@ -71,4 +71,30 @@ public class HomeController : BaseController
 			Exchanges = exchanges
 		});
 	}
+
+	[HttpGet("status/order-book/{ticker}")]
+	public async Task<IActionResult> OrderBookStatus(string ticker, [FromQuery(Name = "depth")] int depth = 1000)
+	{
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, ticker);
+		if (symbolInfo == null) return BadRequest("Invalid ticker");
+
+		return Ok(new
+		{
+			Asks = symbolInfo.OrderBook?.GetAsks(depth).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth),
+			Bids = symbolInfo.OrderBook?.GetBids(depth).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth)
+		});
+	}
+
+	[HttpGet("status/snapshot/{ticker}")]
+	public async Task<IActionResult> Snapshot(string ticker, [FromServices] BinanceCacheFeed feed, [FromQuery(Name = "depth")] int depth = 1000)
+	{
+		var snapshot = await feed.GetDepth(ticker);
+
+		return Ok(new
+		{
+			ServerTime = DateTime.UtcNow,
+			Asks = snapshot.Asks.Take(depth),
+			Bids = snapshot.Bids.Take(depth)
+		});
+	}
 }
