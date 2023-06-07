@@ -114,7 +114,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!success) return result;
 
 		var symbolInfo = GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, price, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
 		return result;
@@ -197,7 +197,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!success) return result;
 
 		var symbolInfo = GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, price, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
 		return result;
