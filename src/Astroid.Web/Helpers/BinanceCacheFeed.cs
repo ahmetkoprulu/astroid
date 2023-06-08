@@ -61,39 +61,19 @@ public class BinanceCacheFeed : IDisposable
 		});
 
 		var binanceInfo = ExchangeInfoStore.Get(ACExchanges.BinanceUsdFutures);
-		var ticker = binanceInfo!.Symbols.FirstOrDefault(x => x.Name == "BTCUSDT");
-		await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
+		foreach (var ticker in binanceInfo!.Symbols)
 		{
-			ticker.OrderBook.ProcessUpdate(data.Data);
-			if (ticker.OrderBook.LastUpdateTime == 0)
+			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
 			{
-				ticker.OrderBook.LastUpdateTime = -1;
-				Console.WriteLine("Getting snapshot");
-				GetDepthSnapshot(ticker.OrderBook);
-			}
-
-			// var bestBid = ticker.OrderBook.GetBestBid();
-			// var bestAsk = ticker.OrderBook.GetBestAsk();
-			// Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
-		});
-
-		// foreach (var ticker in binanceInfo!.Symbols)
-		// {
-		// 	await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
-		// 	{
-		// 		ticker.OrderBook.ProcessUpdate(data.Data);
-		// 		if (ticker.OrderBook.LastUpdateTime == 0)
-		// 		{
-		// 			ticker.OrderBook.LastUpdateTime = -1;
-		// 			Console.WriteLine("Getting snapshot");
-		// 			GetDepthSnapshot(ticker.OrderBook);
-		// 		}
-
-		// 		var bestBid = ticker.OrderBook.GetFirstBid();
-		// 		var bestAsk = ticker.OrderBook.GetFirstAsk();
-		// 		Console.WriteLine($"Binance {ticker.Name} {bestBid} {bestAsk}");
-		// 	});
-		// }
+				ticker.OrderBook.ProcessUpdate(data.Data);
+				if (ticker.OrderBook.LastUpdateTime == 0)
+				{
+					ticker.OrderBook.LastUpdateTime = -1;
+					Console.WriteLine("Getting snapshot");
+					GetDepthSnapshot(ticker.OrderBook);
+				}
+			});
+		}
 	}
 
 	public async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
@@ -105,7 +85,7 @@ public class BinanceCacheFeed : IDisposable
 		{
 			Name = "Binance USD Futures",
 			ModifiedAt = DateTime.UtcNow,
-			Symbols = info.Data.Symbols.Where(x => x.Name == "BTCUSDT").Select(x =>
+			Symbols = info.Data.Symbols.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "XRPUSDT").Select(x =>
 			{
 				var lastPrice = Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name).GetAwaiter().GetResult().Data.Price;
 				return new AMSymbolInfo

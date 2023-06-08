@@ -115,6 +115,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var symbolInfo = GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
+
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
 		return result;
@@ -281,6 +282,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task PlaceTakeProfitOrders(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
+		if (bot.IsPositionSizeExpandable) await CancelCurrentTakeProfitOrders(order, result);
+
 		var targets = bot.TakeProfitTargets;
 		if (targets.Any(x => !(x.Share > 0) || !(x.Activation > 0)))
 		{
@@ -333,6 +336,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				closePosition: true
 			);
 		result.AddAudit(AuditType.TakeProfitOrderPlaced, closeTpOrderResponse.Success ? $"Placed take profit order at target {targets.Count()} successfully." : $"Failed placing take profit order at target {targets.Count() + 1}: {closeTpOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = closeTpOrderResponse?.Data?.StopPrice }));
+	}
+
+	private async Task CancelCurrentTakeProfitOrders(AMOrderRequest order, AMProviderResult result)
+	{
+		var ordersResponse = await Client.UsdFuturesApi.Trading.GetOpenOrdersAsync(order.Ticker);
+		if (!ordersResponse.Success)
+			throw new Exception($"Failed getting open orders: {ordersResponse?.Error?.Message}");
+
+		var existTpOrders = ordersResponse.Data.Where(x => x.Symbol == order.Ticker && x.Type == FuturesOrderType.TakeProfitMarket);
+		if (!existTpOrders.Any()) return;
+
+		var cancelResult = await Client.UsdFuturesApi.Trading.CancelMultipleOrdersAsync(order.Ticker, existTpOrders.Select(x => x.Id).ToList());
+		if (!cancelResult.Success)
+			throw new Exception($"Failed cancelling open take profit orders: {cancelResult?.Error?.Message}");
+
+		result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Cancelled {cancelResult.Data.Count(x => x.Success)} take profit order(s) out of {cancelResult.Data.Count()}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker }));
 	}
 
 	private async Task<(bool, decimal)> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
