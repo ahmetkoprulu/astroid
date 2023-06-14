@@ -48,15 +48,27 @@ public class BinanceCacheFeed : IDisposable
 		await GetExchangeInfo();
 		await SocketClient.UsdFuturesStreams.SubscribeToAllTickerUpdatesAsync(data =>
 		{
-			var markPrices = data.Data;
+			var prices = data.Data;
 
-			foreach (var priceInfo in markPrices)
+			foreach (var priceInfo in prices)
 			{
 				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, priceInfo.Symbol);
 				if (symbolInfo == null) continue;
 
-				symbolInfo.LastPrice = priceInfo.LastPrice;
-				symbolInfo.ModifiedAt = DateTime.UtcNow;
+				symbolInfo.SetLastPrice(priceInfo.LastPrice);
+			}
+		});
+
+		await SocketClient.UsdFuturesStreams.SubscribeToAllMarkPriceUpdatesAsync(1000, data =>
+		{
+			var prices = data.Data;
+
+			foreach (var priceInfo in prices)
+			{
+				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, priceInfo.Symbol);
+				if (symbolInfo == null) continue;
+
+				symbolInfo.SetMarkPrice(priceInfo.MarkPrice);
 			}
 		});
 
@@ -88,6 +100,8 @@ public class BinanceCacheFeed : IDisposable
 			Symbols = info.Data.Symbols.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "XRPUSDT").Select(x =>
 			{
 				var lastPrice = Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name).GetAwaiter().GetResult().Data.Price;
+				var markPrice = Client.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(x.Name).GetAwaiter().GetResult().Data.MarkPrice;
+
 				return new AMSymbolInfo
 				{
 					Name = x.Name,
@@ -95,6 +109,7 @@ public class BinanceCacheFeed : IDisposable
 					PricePrecision = x.PricePrecision,
 					TickSize = x.LotSizeFilter?.StepSize,
 					LastPrice = lastPrice,
+					MarkPrice = markPrice,
 					ModifiedAt = DateTime.UtcNow,
 					OrderBook = new AMOrderBook(x.Name)
 				};

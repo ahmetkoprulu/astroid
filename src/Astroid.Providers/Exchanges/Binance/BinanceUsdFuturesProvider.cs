@@ -114,7 +114,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!success) return result;
 
 		var symbolInfo = GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
 
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
@@ -255,7 +255,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				positionSide: pSide,
 				stopPrice: stopPrice,
 				timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-				workingType: WorkingType.Contract,
+				workingType: WorkingType.Mark,
 				closePosition: true
 			);
 		result.AddAudit(AuditType.StopLossOrderPlaced, stopOrderResponse.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {stopOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
@@ -274,9 +274,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					activationPrice: activation,
 					callbackRate: cRate,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
-					workingType: WorkingType.Contract
+					workingType: WorkingType.Mark
 				);
-			result.AddAudit(AuditType.StopLossOrderPlaced, trailiginStopOrder.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {trailiginStopOrder?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
+			result.AddAudit(AuditType.StopLossOrderPlaced, trailiginStopOrder.Success ? $"Placed trailing stop loss order successfully." : $"Failed placing trailing stop loss order: {trailiginStopOrder?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
 
