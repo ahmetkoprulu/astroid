@@ -50,10 +50,10 @@ public class AMOrderBook
 	{
 		do
 		{
-			var minKey = _asks.Keys.OrderByDescending(x => x).Skip(n - 1).FirstOrDefault();
+			var minKey = _bids.Keys.OrderByDescending(x => x).Skip(n - 1).FirstOrDefault();
 			if (minKey == 0) return (0, 0);
 
-			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			var valueExists = _bids.TryGetValue(minKey, out var minValue);
 			if (valueExists) return (minKey, minValue);
 		} while (_asks.Count > 0);
 
