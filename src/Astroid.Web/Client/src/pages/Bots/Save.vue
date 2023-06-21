@@ -23,11 +23,11 @@
 							max-rows="6"
 						/>
 					</b-form-group>
-					<v-validated-input label="Market">
+					<v-validated-input label="Wallet">
 						<v-select
 							v-model="model.exchangeId"
 							:options="exchangeOptions"
-							placeholder="Select a market"
+							placeholder="Select a wallet"
 						/>
 					</v-validated-input>
 				</ValidationObserver>
@@ -103,7 +103,7 @@
 							/>
 							<a
 								href="#"
-								class="badge btn badge-primary"
+								class="badge btn label-primary"
 								style="padding: 9px"
 								@click="showComputationTestModal"
 							>
@@ -167,6 +167,7 @@
 						<div class="d-flex justify-content-between">
 							<span>Profit Targets</span>
 							<a
+								class="text-primary"
 								href="javascript:;"
 								@click="
 									model.takeProfitTargets.push({

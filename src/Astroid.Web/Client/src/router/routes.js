@@ -4,7 +4,7 @@ import Index from "../pages/Index.vue";
 
 //Trading Pages
 import Trading from "../pages/Trading.vue";
-import Dashboard from "../pages/Dashboard.vue";
+// import Dashboard from "../pages/Dashboard.vue";
 
 import Markets from "../pages/Markets/List.vue";
 import MarketSave from "../pages/Markets/Save.vue";
@@ -13,7 +13,7 @@ import Bots from "../pages/Bots/List.vue";
 import BotSave from "../pages/Bots/Save.vue";
 import BotAudits from "../pages/Bots/Audits.vue";
 
-import Positions from "../pages/Positions.vue";
+// import Positions from "../pages/Positions.vue";
 
 import Profile from "../pages/Profile.vue";
 
@@ -38,24 +38,24 @@ export const routes = [
 		path: "/trading",
 		component: Trading,
 		children: [
-			{
-				name: "dashboard",
-				path: "dashboard",
-				component: Dashboard,
-				meta: {
-					title: "Dashboard",
-					visible: true,
-					icon: "speedometer2"
-				}
-			},
+			// {
+			// 	name: "dashboard",
+			// 	path: "dashboard",
+			// 	component: Dashboard,
+			// 	meta: {
+			// 		title: "Dashboard",
+			// 		visible: true,
+			// 		icon: "speedometer2"
+			// 	}
+			// },
 			{
 				name: "market-list",
 				path: "markets",
 				component: Markets,
 				meta: {
-					title: "Markets",
+					title: "Wallet",
 					visible: true,
-					icon: "arrow-left-right"
+					icon: "fa-solid fa-wallet"
 				},
 			},
 			{
@@ -63,7 +63,7 @@ export const routes = [
 				path: "markets/save/:id?",
 				component: MarketSave,
 				meta: {
-					title: "Save Market",
+					title: "Save Wallet",
 					visible: false,
 				},
 			},
@@ -74,7 +74,7 @@ export const routes = [
 				meta: {
 					title: "Bots",
 					visible: true,
-					icon: "gear-wide-connected"
+					icon: "fa-solid fa-robot"
 				}
 			},
 			{
@@ -95,16 +95,16 @@ export const routes = [
 					visible: false,
 				}
 			},
-			{
-				name: "positions",
-				path: "positions",
-				component: Positions,
-				meta: {
-					title: "Positions",
-					visible: true,
-					icon: "list-nested"
-				}
-			},
+			// {
+			// 	name: "positions",
+			// 	path: "positions",
+			// 	component: Positions,
+			// 	meta: {
+			// 		title: "Positions",
+			// 		visible: true,
+			// 		icon: "list-nested"
+			// 	}
+			// },
 			{
 				name: "profile",
 				path: "profile/:id",
