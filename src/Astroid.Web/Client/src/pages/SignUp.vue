@@ -21,7 +21,11 @@
 							type="password"
 						></b-form-input>
 					</v-validated-input>
-					<v-validated-input class="mb-3" label="Confirm Password">
+					<v-validated-input
+						class="mb-3"
+						label="Confirm Password"
+						rules="required|confirmed:Password"
+					>
 						<b-form-input
 							v-model="form.confirmPassword"
 							type="password"

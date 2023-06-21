@@ -1,5 +1,10 @@
 <template>
-	<ValidationProvider v-slot="{ errors }" :rules="rules" :name="label">
+	<ValidationProvider
+		v-slot="{ errors }"
+		:rules="rules"
+		:name="label"
+		:vid="label"
+	>
 		<b-form-group :label="label" :description="description">
 			<template v-slot:label>
 				<slot name="label" />

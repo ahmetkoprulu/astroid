@@ -32,7 +32,8 @@ import {
 	required,
 	email,
 	regex,
-	min_value
+	min_value,
+	confirmed
 } from "vee-validate/dist/rules";
 
 setInteractionMode("passive");
@@ -42,6 +43,7 @@ extend("min", min);
 extend("email", email);
 extend("regex", regex);
 extend("min_value", min_value);
+extend("confirmed", confirmed);
 
 Vue.component("ValidationObserver", ValidationObserver);
 Vue.component("ValidationProvider", ValidationProvider);
