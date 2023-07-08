@@ -8,7 +8,8 @@ namespace Astroid.Providers;
 public class AMOrderBook
 {
 	public string Symbol { get; }
-	public long LastUpdateTime { get; set; } = 0;
+	public long LastUpdateTime { get; private set; } = 0;
+	public DateTime LastUpdateDate { get; private set; } = DateTime.MinValue;
 	private readonly IDictionary<decimal, decimal> _asks = new ConcurrentDictionary<decimal, decimal>();
 	private readonly IDictionary<decimal, decimal> _bids = new ConcurrentDictionary<decimal, decimal>();
 	private readonly List<IBinanceEventOrderBook> _buffer = new();
@@ -20,6 +21,12 @@ public class AMOrderBook
 			throw new ArgumentException("Invalid symbol value", nameof(symbol));
 
 		Symbol = symbol;
+	}
+
+	public void SetLastUpdateTime(long timestamp)
+	{
+		LastUpdateTime = timestamp;
+		LastUpdateDate = DateTime.UtcNow;
 	}
 
 	public IEnumerable<KeyValuePair<decimal, decimal>> GetAsks(int size, int skip = 0) => _asks.ToArray().OrderBy(x => x.Key).Skip(skip).Take(size);
@@ -148,7 +155,7 @@ public class AMOrderBook
 		if (e.LastUpdateId <= LastUpdateTime)
 			return;
 
-		LastUpdateTime = e.LastUpdateId;
+		SetLastUpdateTime(e.LastUpdateId);
 		UpdateOrderBook(e.Asks, _asks);
 		UpdateOrderBook(e.Bids, _bids);
 	}
@@ -170,7 +177,7 @@ public class AMOrderBook
 		_asks.Clear();
 		_bids.Clear();
 
-		LastUpdateTime = lastUpdateId;
+		SetLastUpdateTime(lastUpdateId);
 		UpdateOrderBook(asks, _asks);
 		UpdateOrderBook(bids, _bids);
 	}

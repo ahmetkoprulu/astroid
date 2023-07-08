@@ -73,14 +73,16 @@ public class BinanceCacheFeed : IDisposable
 		});
 
 		var binanceInfo = ExchangeInfoStore.Get(ACExchanges.BinanceUsdFutures);
-		foreach (var ticker in binanceInfo!.Symbols)
+		var symbolsToCache = binanceInfo!.Symbols.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "XRPUSDT").ToList();
+
+		foreach (var ticker in symbolsToCache)
 		{
 			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
 			{
 				ticker.OrderBook.ProcessUpdate(data.Data);
 				if (ticker.OrderBook.LastUpdateTime == 0)
 				{
-					ticker.OrderBook.LastUpdateTime = -1;
+					ticker.OrderBook.SetLastUpdateTime(-1);
 					Console.WriteLine("Getting snapshot");
 					GetDepthSnapshot(ticker.OrderBook);
 				}
@@ -93,14 +95,10 @@ public class BinanceCacheFeed : IDisposable
 	public async Task GetExchangeInfo()
 	{
 		var info = await Client.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync();
-		var exchangeInfo = new AMExchangeInfo
-		{
-			Name = "Binance USD Futures",
-			ModifiedAt = DateTime.UtcNow,
-			Symbols = info.Data.Symbols.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "XRPUSDT").Select(x =>
+		var symbolInfoTasks = info.Data.Symbols.Take(100).Select(async x =>
 			{
-				var lastPrice = Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name).GetAwaiter().GetResult().Data.Price;
-				var markPrice = Client.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(x.Name).GetAwaiter().GetResult().Data.MarkPrice;
+				var lastPrice = (await Client.UsdFuturesApi.ExchangeData.GetPriceAsync(x.Name)).Data.Price;
+				var markPrice = (await Client.UsdFuturesApi.ExchangeData.GetMarkPriceAsync(x.Name)).Data.MarkPrice;
 
 				return new AMSymbolInfo
 				{
@@ -113,7 +111,15 @@ public class BinanceCacheFeed : IDisposable
 					ModifiedAt = DateTime.UtcNow,
 					OrderBook = new AMOrderBook(x.Name)
 				};
-			}).ToList()
+			});
+
+		var symbols = (await Task.WhenAll(symbolInfoTasks)).ToList();
+
+		var exchangeInfo = new AMExchangeInfo
+		{
+			Name = "Binance USD Futures",
+			ModifiedAt = DateTime.UtcNow,
+			Symbols = symbols
 		};
 
 		ExchangeInfoStore.Add(ACExchanges.BinanceUsdFutures, exchangeInfo);

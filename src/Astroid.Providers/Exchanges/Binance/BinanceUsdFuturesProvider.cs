@@ -383,7 +383,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (settings.ValorizationType == ValorizationType.LastPrice)
 			return await PlaceDeviatedOrder(ticker, quantity, oSide, pSide, settings, result);
 
-		var success = TryGetOrderBook(ticker, result, out var orderBook);
+		var (success, orderBook) = await TryGetOrderBook(ticker, result);
 		if (!success) return (false, default);
 
 		if (settings.ForceUntilFilled)
@@ -511,27 +511,25 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return (false, default);
 	}
 
-	private bool TryGetOrderBook(string ticker, AMProviderResult result, out AMOrderBook orderBook)
+	private async Task<(bool, AMOrderBook)> TryGetOrderBook(string ticker, AMProviderResult result)
 	{
 		var symbolInfo = GetSymbolInfo(ticker);
-		if (symbolInfo.OrderBook != null && symbolInfo.OrderBook.LastUpdateTime > 0)
+		if (symbolInfo.OrderBook != null && symbolInfo.OrderBook.LastUpdateTime > 0 && symbolInfo.OrderBook.LastUpdateDate > DateTime.UtcNow.AddMinutes(-5))
 		{
-			orderBook = symbolInfo.OrderBook;
-			return true;
+			return (true, symbolInfo.OrderBook);
 		}
 
-		orderBook = new AMOrderBook(ticker);
-		var orderBookResponse = Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker).GetAwaiter().GetResult();
+		var orderBook = new AMOrderBook(ticker);
+		var orderBookResponse = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker);
 		if (!orderBookResponse.Success)
 		{
 			result.WithMessage($"Failed getting order book: {orderBookResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting order book: {orderBookResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker }));
-			return false;
+			return (false, orderBook);
 		}
 
-		orderBook = new AMOrderBook(ticker);
 		orderBook.LoadSnapshot(orderBookResponse.Data.Asks, orderBookResponse.Data.Bids, 1);
 
-		return true;
+		return (true, orderBook);
 	}
 
 	private async Task<BinancePositionDetailsUsdt?> GetPosition(string ticker, PositionSide side, IEnumerable<BinancePositionDetailsUsdt>? positions = null)
