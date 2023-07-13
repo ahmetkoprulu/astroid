@@ -8,6 +8,7 @@ public class AMOrderRequest
 	public int Leverage { get; set; }
 	public string? Type { get; set; }
 	public int Risk { get; set; } = 1;
+	public decimal? Quantity { get; set; }
 	public string Key { get; set; }
 
 	public OrderType OrderType => Type switch
