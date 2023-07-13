@@ -180,13 +180,13 @@ public class BotsController : SecureController
 
 		try
 		{
-			if (Cache.IsLocked($"lock:bot:{bot.Id}"))
+			if (Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
 			{
 				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
 				return BadRequest("Bot is busy");
 			}
 
-			var _ = Cache.AcquireLock($"lock:bot:{bot.Id}");
+			var _ = Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
 			var result = await exchanger.ExecuteOrder(bot, orderRequest);
 			if (!result.Success) LogError(null, result.Message ?? string.Empty);
 
@@ -206,7 +206,7 @@ public class BotsController : SecureController
 		}
 		finally
 		{
-			Cache.ReleaseLock($"lock:bot:{bot.Id}");
+			Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
 		}
 
 		return Success(null, "Order executed successfully");
