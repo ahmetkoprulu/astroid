@@ -646,7 +646,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private AMSymbolInfo GetSymbolInfo(string ticker)
 	{
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(Exchange.Provider.Name, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
+		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
 		return symbolInfo;
 	}
 

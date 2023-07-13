@@ -5,6 +5,7 @@ using Astroid.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
+using Astroid.Web.Cache;
 
 namespace Astroid.Web;
 
@@ -72,10 +73,10 @@ public class HomeController : BaseController
 		});
 	}
 
-	[HttpGet("status/order-book/{ticker}")]
-	public async Task<IActionResult> OrderBookStatus(string ticker, [FromQuery(Name = "depth")] int depth = 1000)
+	[HttpGet("status/order-book/{exchange}/{ticker}")]
+	public async Task<IActionResult> OrderBookStatus(string exchange, string ticker, [FromQuery(Name = "depth")] int depth = 1000)
 	{
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, ticker);
+		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange, ticker);
 		if (symbolInfo == null) return BadRequest("Invalid ticker");
 
 		return Ok(new

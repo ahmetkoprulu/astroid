@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Astroid.Web.Helpers;
+using Astroid.Web.Cache;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +88,7 @@ else
 builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
 builder.Services.AddSingleton<BinanceCacheFeed>();
+builder.Services.AddSingleton<BinanceTestCacheFeed>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
@@ -144,7 +146,10 @@ await app.SeedDatabase();
 
 // Cache exchange info
 using var binanceFeed = scope.ServiceProvider.GetRequiredService<BinanceCacheFeed>();
+using var binanceTestFeed = scope.ServiceProvider.GetRequiredService<BinanceTestCacheFeed>();
+
 await binanceFeed.StartSubscriptions();
+await binanceTestFeed.StartSubscriptions();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

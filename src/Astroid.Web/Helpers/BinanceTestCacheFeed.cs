@@ -6,19 +6,19 @@ using Binance.Net.Objects.Models.Futures;
 
 namespace Astroid.Web.Cache;
 
-public class BinanceCacheFeed : IDisposable
+public class BinanceTestCacheFeed : IDisposable
 {
 	private BinanceSocketClient SocketClient { get; set; }
 
 	private BinanceClient Client { get; set; }
 
-	public BinanceCacheFeed()
+	public BinanceTestCacheFeed()
 	{
-		var key = Environment.GetEnvironmentVariable("ASTROID_BINANCE_KEY");
-		var secret = Environment.GetEnvironmentVariable("ASTROID_BINANCE_SECRET");
+		var key = Environment.GetEnvironmentVariable("ASTROID_BINANCE_TEST_KEY");
+		var secret = Environment.GetEnvironmentVariable("ASTROID_BINANCE_TEST_SECRET");
 
 		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
-			throw new Exception("Binance credentials not found.");
+			throw new Exception("Binance test credentials not found.");
 
 		var creds = new BinanceApiCredentials(key, secret);
 
@@ -26,6 +26,7 @@ public class BinanceCacheFeed : IDisposable
 		{
 			UsdFuturesStreamsOptions = new BinanceSocketApiClientOptions
 			{
+				BaseAddress = "wss://stream.binancefuture.com",
 				ApiCredentials = creds,
 			},
 			LogLevel = LogLevel.Debug
@@ -35,6 +36,7 @@ public class BinanceCacheFeed : IDisposable
 		{
 			UsdFuturesApiOptions = new BinanceApiClientOptions
 			{
+				BaseAddress = "https://testnet.binancefuture.com",
 				ApiCredentials = creds,
 			},
 			LogLevel = LogLevel.Debug
@@ -50,7 +52,7 @@ public class BinanceCacheFeed : IDisposable
 
 			foreach (var priceInfo in prices)
 			{
-				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, priceInfo.Symbol);
+				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFuturesTest, priceInfo.Symbol);
 				if (symbolInfo == null) continue;
 
 				symbolInfo.SetLastPrice(priceInfo.LastPrice);
@@ -63,29 +65,12 @@ public class BinanceCacheFeed : IDisposable
 
 			foreach (var priceInfo in prices)
 			{
-				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, priceInfo.Symbol);
+				var symbolInfo = ExchangeInfoStore.GetSymbolInfo(ACExchanges.BinanceUsdFuturesTest, priceInfo.Symbol);
 				if (symbolInfo == null) continue;
 
 				symbolInfo.SetMarkPrice(priceInfo.MarkPrice);
 			}
 		});
-
-		var binanceInfo = ExchangeInfoStore.Get(ACExchanges.BinanceUsdFutures);
-		var symbolsToCache = binanceInfo!.Symbols.Take(30).ToList();
-
-		foreach (var ticker in symbolsToCache)
-		{
-			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, data =>
-			{
-				ticker.OrderBook.ProcessUpdate(data.Data);
-				if (ticker.OrderBook.LastUpdateTime == 0)
-				{
-					ticker.OrderBook.SetLastUpdateTime(-1);
-					Console.WriteLine("Getting snapshot");
-					GetDepthSnapshot(ticker.OrderBook);
-				}
-			});
-		}
 	}
 
 	public async Task StopSubscriptions() => await SocketClient.UnsubscribeAllAsync();
@@ -123,12 +108,12 @@ public class BinanceCacheFeed : IDisposable
 
 		var exchangeInfo = new AMExchangeInfo
 		{
-			Name = "Binance USD Futures",
+			Name = "Binance USD Futures Test",
 			ModifiedAt = DateTime.UtcNow,
 			Symbols = symbols
 		};
 
-		ExchangeInfoStore.Add(ACExchanges.BinanceUsdFutures, exchangeInfo);
+		ExchangeInfoStore.Add(ACExchanges.BinanceUsdFuturesTest, exchangeInfo);
 	}
 
 	public async void GetDepthSnapshot(AMOrderBook orderBook)
