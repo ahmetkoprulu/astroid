@@ -123,7 +123,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> CloseLong(AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
-		if (!force)
+		if (quantity == 0)
 		{
 			var position = await GetPosition(order.Ticker, PositionSide.Long);
 			if (position == null)
@@ -132,7 +132,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				return result;
 			}
 
-			quantity = position.Quantity;
+			if (order.Quantity > 0)
+			{
+				var symbolInfo = GetSymbolInfo(order.Ticker);
+				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
+			}
+			else
+			{
+				quantity = position.Quantity;
+			}
 		}
 
 		var orderInfo = await Client.UsdFuturesApi.Trading
@@ -206,7 +214,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> CloseShort(AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
-		if (!force)
+		if (quantity == 0)
 		{
 			var position = await GetPosition(order.Ticker, PositionSide.Short);
 			if (position == null)
@@ -215,7 +223,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				return result;
 			}
 
-			quantity = position.Quantity;
+			if (order.Quantity > 0)
+			{
+				var symbolInfo = GetSymbolInfo(order.Ticker);
+				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
+			}
+			else
+			{
+				quantity = position.Quantity;
+			}
 		}
 
 		var orderInfo = await Client.UsdFuturesApi.Trading
