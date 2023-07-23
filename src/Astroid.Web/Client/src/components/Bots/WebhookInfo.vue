@@ -21,7 +21,7 @@
 
 { 
   "ticker": "BTCUSDT", 
-  "type": "close-long | close-short", 
+  "type": "close-long | close-short | close-all", 
   "key": "{{ botKey }}" 
 }
       </pre>

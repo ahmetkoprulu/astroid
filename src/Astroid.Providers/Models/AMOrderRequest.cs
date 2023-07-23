@@ -17,6 +17,7 @@ public class AMOrderRequest
 		"open-short" => OrderType.Sell,
 		"close-long" => OrderType.Sell,
 		"close-short" => OrderType.Buy,
+		"close-all" => OrderType.Sell,
 		_ => throw new Exception("Invalid order type")
 	};
 
@@ -26,6 +27,7 @@ public class AMOrderRequest
 		"open-short" => PositionType.Short,
 		"close-long" => PositionType.Long,
 		"close-short" => PositionType.Short,
+		"close-all" => PositionType.Both,
 		_ => throw new Exception("Invalid position type")
 	};
 

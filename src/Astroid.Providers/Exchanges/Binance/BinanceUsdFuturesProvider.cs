@@ -63,6 +63,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			{
 				result = await CloseShort(order, result);
 			}
+			else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Both)
+			{
+				result = await CloseAll(order, result);
+			}
 			else throw new InvalidOperationException("Order could not be executed.");
 		}
 		catch (Exception ex)
@@ -251,6 +255,33 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!force) result.WithSuccess();
 		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Buy", PositionType = "Short" }));
+
+		return result;
+	}
+
+	private async Task<AMProviderResult> CloseAll(AMOrderRequest order, AMProviderResult result)
+	{
+		var allPositions = await GetPositions();
+		var positions = allPositions
+			.Where(x => x.Symbol == order.Ticker && x.Quantity != 0)
+			.Select(x => new BinanceFuturesBatchOrder
+			{
+				Symbol = order.Ticker,
+				PositionSide = x.PositionSide,
+				Side = x.PositionSide == PositionSide.Long ? OrderSide.Sell : OrderSide.Buy,
+				Type = FuturesOrderType.Market,
+				Quantity = Math.Abs(x.Quantity)
+			})
+			.ToArray();
+
+		var closeOrder = await Client.UsdFuturesApi.Trading.PlaceMultipleOrdersAsync(positions);
+		for (var i = 0; i < closeOrder.Data.Count(); i++)
+		{
+			var response = closeOrder.Data.ElementAt(i);
+			result.AddAudit(AuditType.CloseOrderPlaced, response.Success ? $"Placed close order successfully." : $"Failed placing close order: {response?.Error?.Message}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, response?.Data?.Quantity, response?.Data?.AveragePrice, OrderType = response?.Data?.Side.ToString(), PositionType = response?.Data?.PositionSide.ToString() }));
+		}
+
+		result.WithSuccess();
 
 		return result;
 	}

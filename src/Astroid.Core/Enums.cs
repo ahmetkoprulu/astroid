@@ -4,7 +4,8 @@ public enum PositionType : short
 {
 	Unknown = 0,
 	Long = 1,
-	Short = 2
+	Short = 2,
+	Both = 3
 }
 
 public enum OrderType : short
