@@ -3,6 +3,7 @@ using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
 using Binance.Net.Enums;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
 namespace Astroid.Providers;
@@ -11,6 +12,7 @@ public abstract class ExchangeProviderBase : IDisposable
 {
 	public IServiceProvider ServiceProvider { get; set; }
 	protected AstroidDb Db { get; set; }
+	protected ExchangeInfoStore ExchangeStore { get; set; }
 	protected ADExchange Exchange { get; set; }
 	public string CorrelationId { get; set; }
 
@@ -19,26 +21,26 @@ public abstract class ExchangeProviderBase : IDisposable
 	protected ExchangeProviderBase(IServiceProvider serviceProvider, ADExchange exchange)
 	{
 		ServiceProvider = serviceProvider;
-		// Db = serviceProvider.GetService(typeof(AstroidDb)) as AstroidDb ?? throw new Exception("Db cannot be null");
+		ExchangeStore = ServiceProvider.GetRequiredService<ExchangeInfoStore>();
 		Exchange = exchange;
 		CorrelationId = GenerateCorrelationId();
 	}
 
-	public static int GetEntryPointIndex(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	public async Task<int> GetEntryPointIndex(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
 	{
-		var entryPoint = GetEntryPoint(orderBook, pSide, settings);
-		var i = pSide == PositionSide.Long ? orderBook.GetGreatestAskPriceLessThan(entryPoint) : orderBook.GetLeastBidPriceGreaterThan(entryPoint);
+		var entryPoint = await GetEntryPoint(orderBook, pSide, settings);
+		var i = pSide == PositionSide.Long ? await orderBook.GetGreatestAskPriceLessThan(entryPoint) : await orderBook.GetLeastBidPriceGreaterThan(entryPoint);
 
 		if (i <= 0) throw new Exception("Could not find entry point out of order book.");
 
 		return i;
 	}
 
-	public static decimal GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	public static async Task<decimal> GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
 	{
 		if (settings.ComputationMethod == OrderBookComputationMethod.Code)
 		{
-			var pairs = pSide == PositionSide.Long ? orderBook.GetAsks(settings.OrderBookDepth) : orderBook.GetBids(settings.OrderBookDepth);
+			var pairs = pSide == PositionSide.Long ? await orderBook.GetAsks(settings.OrderBookDepth) : await orderBook.GetBids(settings.OrderBookDepth);
 			var entries = pairs.Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).ToList();
 
 			var result = CodeExecutor.ExecuteComputationMethod(settings.Code, entries);
@@ -47,7 +49,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			return result.Data;
 		}
 
-		var prices = pSide == PositionSide.Long ? orderBook.GetAskPrices(settings.OrderBookDepth) : orderBook.GetBidPrices(settings.OrderBookDepth);
+		var prices = pSide == PositionSide.Long ? await orderBook.GetAskPrices(settings.OrderBookDepth) : await orderBook.GetBidPrices(settings.OrderBookDepth);
 
 		var sDeviation = ComputeStandardDeviation(prices);
 		var mean = prices.Average();

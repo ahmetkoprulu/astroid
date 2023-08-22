@@ -5,12 +5,18 @@ public class AConfAppSettings
 	public List<AConfEndpoint> Endpoints { get; set; } = new();
 	public AConfFrontend Frontend { get; set; } = new();
 	public AConfDatabase Database { get; set; } = new();
+	public AConfCache Cache { get; set; } = new();
 }
 
 public class AConfDatabase
 {
 	public string? ConnectionString { get; set; }
 	public DatabaseProvider DatabaseProvider { get; set; }
+}
+
+public class AConfCache
+{
+	public string? ConnectionString { get; set; }
 }
 
 public class AConfEndpoint

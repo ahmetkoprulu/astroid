@@ -12,7 +12,8 @@ namespace Astroid.Web;
 [Route("api")]
 public class HomeController : BaseController
 {
-	public HomeController(AstroidDb db) : base(db) { }
+	public ExchangeInfoStore ExchangeStore { get; set; }
+	public HomeController(AstroidDb db, ExchangeInfoStore exchangeStore) : base(db) => ExchangeStore = exchangeStore;
 
 	[HttpPost("sign-up")]
 	public async Task<IActionResult> SignUp(AMSignUp model)
@@ -62,9 +63,9 @@ public class HomeController : BaseController
 	}
 
 	[HttpGet("status")]
-	public IActionResult Status()
+	public async Task<IActionResult> Status()
 	{
-		var exchanges = ExchangeInfoStore.GetAll();
+		var exchanges = await ExchangeStore.GetAll();
 
 		return Ok(new
 		{
@@ -76,13 +77,15 @@ public class HomeController : BaseController
 	[HttpGet("status/order-book/{exchange}/{ticker}")]
 	public async Task<IActionResult> OrderBookStatus(string exchange, string ticker, [FromQuery(Name = "depth")] int depth = 1000)
 	{
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange, ticker);
+		var symbolInfo = ExchangeStore.GetSymbolInfo(exchange, ticker);
 		if (symbolInfo == null) return BadRequest("Invalid ticker");
+
+		var orderBook = await ExchangeStore.GetOrderBook(exchange, ticker);
 
 		return Ok(new
 		{
-			Asks = symbolInfo.OrderBook?.GetAsks(depth).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth),
-			Bids = symbolInfo.OrderBook?.GetBids(depth).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth)
+			Asks = (await orderBook.GetAsks(depth)).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth),
+			Bids = (await orderBook.GetBids(depth)).Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).Take(depth)
 		});
 	}
 

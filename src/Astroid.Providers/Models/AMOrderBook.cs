@@ -1,5 +1,6 @@
 
 using System.Collections.Concurrent;
+using Astroid.Core.Cache;
 using Binance.Net.Interfaces;
 using Binance.Net.Objects.Models;
 
@@ -7,95 +8,121 @@ namespace Astroid.Providers;
 
 public class AMOrderBook
 {
+	public ICacheService Cache { get; set; }
 	public string Symbol { get; }
-	public long LastUpdateTime { get; private set; } = 0;
+	public string Exchange { get; set; } = string.Empty;
 	public DateTime LastUpdateDate { get; private set; } = DateTime.MinValue;
-	private readonly IDictionary<decimal, decimal> _asks = new ConcurrentDictionary<decimal, decimal>();
-	private readonly IDictionary<decimal, decimal> _bids = new ConcurrentDictionary<decimal, decimal>();
 	private readonly List<IBinanceEventOrderBook> _buffer = new();
 	private const decimal IgnoreVolumeValue = 0;
 
-	public AMOrderBook(string symbol)
+	public AMOrderBook(string exchange, string symbol, ICacheService cache)
 	{
+		Cache = cache;
 		if (string.IsNullOrEmpty(symbol))
 			throw new ArgumentException("Invalid symbol value", nameof(symbol));
 
 		Symbol = symbol;
+		Exchange = exchange;
 	}
 
-	public void SetLastUpdateTime(long timestamp)
+	public async Task SetLastUpdateTime(long timestamp)
 	{
-		LastUpdateTime = timestamp;
+		await WriteLastUpdateTime(timestamp);
 		LastUpdateDate = DateTime.UtcNow;
 	}
 
-	public IEnumerable<KeyValuePair<decimal, decimal>> GetAsks(int size, int skip = 0) => _asks.ToArray().OrderBy(x => x.Key).Skip(skip).Take(size);
+	public async Task<IEnumerable<KeyValuePair<decimal, decimal>>> GetAsks(int size, int skip = 0)
+	{
+		var asks = await ReadAsks();
+		return asks.ToArray().OrderBy(x => x.Key).Skip(skip).Take(size);
+	}
 
-	public IEnumerable<KeyValuePair<decimal, decimal>> GetBids(int size, int skip = 0) => _bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
+	public async Task<IEnumerable<KeyValuePair<decimal, decimal>>> GetBids(int size, int skip = 0)
+	{
+		var bids = await ReadBids();
+		return bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
+	}
 
-	public IEnumerable<decimal> GetAskPrices(int depth = 0) => _asks.Keys.OrderBy(x => x).Take(depth == 0 ? _asks.Count : depth);
+	public async Task<IEnumerable<decimal>> GetAskPrices(int depth = 0)
+	{
+		var asks = await ReadAsks();
+		return asks.Keys.OrderBy(x => x).Take(depth == 0 ? asks.Count : depth);
+	}
 
-	public IEnumerable<decimal> GetBidPrices(int depth = 0) => _bids.Keys.OrderByDescending(x => x).Take(depth == 0 ? _bids.Count : depth);
+	public async Task<IEnumerable<decimal>> GetBidPrices(int depth = 0)
+	{
+		var bids = await ReadBids();
+		return bids.Keys.OrderByDescending(x => x).Take(depth == 0 ? bids.Count : depth);
+	}
 
 	// Since ToArray method is not thread safe, iterating over the keys array.
 	// Even getting the keys array is thread safe, accessing to the dictionary is not. So, we need to use TryGetValue method.
-	public (decimal, decimal) GetNthBestAsk(int n)
+	public async Task<(decimal, decimal)> GetNthBestAsk(int n)
 	{
+		var asks = await ReadAsks();
+
 		do
 		{
-			var minKey = _asks.Keys.OrderBy(x => x).Skip(n - 1).FirstOrDefault();
+			var minKey = asks.Keys.OrderBy(x => x).Skip(n - 1).FirstOrDefault();
 			if (minKey == 0) return (0, 0);
 
-			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			var valueExists = asks.TryGetValue(minKey, out var minValue);
 			if (valueExists) return (minKey, minValue);
-		} while (_asks.Count > 0);
+		} while (asks.Count > 0);
 
 		return (0, 0);
 	}
 
-	public (decimal, decimal) GetNthBestBid(int n)
+	public async Task<(decimal, decimal)> GetNthBestBid(int n)
 	{
+		var bids = await ReadBids();
+
 		do
 		{
-			var minKey = _bids.Keys.OrderByDescending(x => x).Skip(n - 1).FirstOrDefault();
+			var minKey = bids.Keys.OrderByDescending(x => x).Skip(n - 1).FirstOrDefault();
 			if (minKey == 0) return (0, 0);
 
-			var valueExists = _bids.TryGetValue(minKey, out var minValue);
+			var valueExists = bids.TryGetValue(minKey, out var minValue);
 			if (valueExists) return (minKey, minValue);
-		} while (_asks.Count > 0);
+		} while (bids.Count > 0);
 
 		return (0, 0);
 	}
 
-	public (decimal, decimal) GetBestAsk()
+	public async Task<(decimal, decimal)> GetBestAsk()
 	{
+		var asks = await ReadAsks();
+
 		do
 		{
-			var minKey = _asks.Keys.Min();
-			var valueExists = _asks.TryGetValue(minKey, out var minValue);
+			var minKey = asks.Keys.Min();
+			var valueExists = asks.TryGetValue(minKey, out var minValue);
 
 			if (valueExists) return (minKey, minValue);
-		} while (_asks.Count > 0);
+		} while (asks.Count > 0);
 
 		return (0, 0);
 	}
 
-	public (decimal, decimal) GetBestBid()
+	public async Task<(decimal, decimal)> GetBestBid()
 	{
+		var bids = await ReadBids();
+
 		do
 		{
-			var maxKey = _bids.Keys.Max();
-			var valueExists = _bids.TryGetValue(maxKey, out var minValue);
+			var maxKey = bids.Keys.Max();
+			var valueExists = bids.TryGetValue(maxKey, out var minValue);
 
 			if (valueExists) return (maxKey, minValue);
-		} while (_bids.Count > 0);
+		} while (bids.Count > 0);
 
 		return (0, 0);
 	}
 
-	public int GetGreatestAskPriceLessThan(decimal price)
+	public async Task<int> GetGreatestAskPriceLessThan(decimal price)
 	{
-		var keys = _asks.Keys.OrderBy(x => x).ToArray();
+		var asks = await ReadAsks();
+		var keys = asks.Keys.OrderBy(x => x).ToArray();
 		for (var i = 0; i < keys.Length; i++)
 		{
 			if (keys[i] > price) return i;
@@ -104,9 +131,10 @@ public class AMOrderBook
 		return -1;
 	}
 
-	public int GetLeastBidPriceGreaterThan(decimal price)
+	public async Task<int> GetLeastBidPriceGreaterThan(decimal price)
 	{
-		var keys = _bids.Keys.OrderByDescending(x => x).ToArray();
+		var bids = await ReadBids();
+		var keys = bids.Keys.OrderByDescending(x => x).ToArray();
 		for (var i = 0; i < keys.Length; i++)
 		{
 			if (keys[i] < price) return i;
@@ -126,41 +154,50 @@ public class AMOrderBook
 	// + 8. If the quantity is 0, remove the price level
 	// + 9. Receiving an event that removes a price level that is not in your local order book can happen and is normal.
 	// Reference: https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#how-to-manage-a-local-order-book-correctly
-	public void ProcessUpdate(IBinanceEventOrderBook e)
+	public async Task ProcessUpdate(IBinanceEventOrderBook e)
 	{
 		// 2. Buffer the events you receive from the stream
-		if (LastUpdateTime <= 0)
+		var lastUpdateTime = await ReadLastUpdateTime();
+		if (lastUpdateTime <= 0)
 		{
 			_buffer.Add(e);
 			return;
 		}
 
 		// Consume buffered events after snapshot is loaded
-		if (LastUpdateTime > 0 && _buffer.Count > 0)
+		if (lastUpdateTime > 0 && _buffer.Count > 0)
 		{
 			_buffer.Add(e);
 			_buffer.Sort((x, y) => x.LastUpdateId.CompareTo(y.LastUpdateId));
-			_buffer.ForEach(x => UpdateDepth(x));
-			_buffer.Clear();
 
+			foreach (var obe in _buffer)
+				await UpdateDepth(obe);
+
+			_buffer.Clear();
 			return;
 		}
 
-		UpdateDepth(e);
+		await UpdateDepth(e);
 	}
 
-	public void UpdateDepth(IBinanceEventOrderBook e)
+	public async Task UpdateDepth(IBinanceEventOrderBook e)
 	{
 		// 4. Drop any event where u is less or equal lastUpdateId in the snapshot
-		if (e.LastUpdateId <= LastUpdateTime)
+		var lastUpdateTime = await ReadLastUpdateTime();
+		if (e.LastUpdateId <= lastUpdateTime)
 			return;
 
-		SetLastUpdateTime(e.LastUpdateId);
-		UpdateOrderBook(e.Asks, _asks);
-		UpdateOrderBook(e.Bids, _bids);
+		await SetLastUpdateTime(e.LastUpdateId);
+		var asks = await ReadAsks();
+		var updatedAsks = UpdateOrderBook(e.Asks, asks);
+		await WriteAsks(updatedAsks);
+
+		var bids = await ReadBids();
+		var updatedBids = UpdateOrderBook(e.Bids, bids);
+		await WriteBids(updatedBids);
 	}
 
-	public void UpdateOrderBook(IEnumerable<BinanceOrderBookEntry> updates, IDictionary<decimal, decimal> orders)
+	public IDictionary<decimal, decimal> UpdateOrderBook(IEnumerable<BinanceOrderBookEntry> updates, IDictionary<decimal, decimal> orders)
 	{
 		foreach (var t in updates)
 		{
@@ -170,15 +207,38 @@ public class AMOrderBook
 			// 9. Receiving an event that removes a price level that is not in your local order book can happen and is normal.
 			else if (orders.ContainsKey(t.Price)) orders.Remove(t.Price);
 		}
+
+		return orders;
 	}
 
-	public void LoadSnapshot(IEnumerable<BinanceOrderBookEntry> asks, IEnumerable<BinanceOrderBookEntry> bids, long lastUpdateId)
+	public async Task LoadSnapshot(IEnumerable<BinanceOrderBookEntry> asks, IEnumerable<BinanceOrderBookEntry> bids, long lastUpdateId)
 	{
-		_asks.Clear();
-		_bids.Clear();
-
-		SetLastUpdateTime(lastUpdateId);
-		UpdateOrderBook(asks, _asks);
-		UpdateOrderBook(bids, _bids);
+		await SetLastUpdateTime(lastUpdateId);
+		await WriteAsks(asks.ToDictionary(x => x.Price, x => x.Quantity));
+		await WriteBids(bids.ToDictionary(x => x.Price, x => x.Quantity));
 	}
+
+	public async Task<IDictionary<decimal, decimal>> ReadAsks()
+	{
+		var asks = await Cache.Get<IDictionary<decimal, decimal>>($"OrderBook:{Exchange}:{Symbol}:Asks");
+		if (asks == null) return new ConcurrentDictionary<decimal, decimal>();
+
+		return asks;
+	}
+
+	public async Task<IDictionary<decimal, decimal>> ReadBids()
+	{
+		var bids = await Cache.Get<IDictionary<decimal, decimal>>($"OrderBook:{Exchange}:{Symbol}:Bids");
+		if (bids == null) return new ConcurrentDictionary<decimal, decimal>();
+
+		return bids;
+	}
+
+	public async Task<long> ReadLastUpdateTime() => await Cache.Get<long>($"OrderBook:{Exchange}:{Symbol}:LastUpdateTime", 0);
+
+	public async Task WriteLastUpdateTime(long lastUpdateTime) => await Cache.Set($"OrderBook:{Exchange}:{Symbol}:LastUpdateTime", lastUpdateTime, TimeSpan.FromSeconds(30));
+
+	public async Task WriteAsks(IDictionary<decimal, decimal> asks) => await Cache.Set($"OrderBook:{Exchange}:{Symbol}:Asks", asks, TimeSpan.FromSeconds(30));
+
+	public async Task WriteBids(IDictionary<decimal, decimal> bids) => await Cache.Set($"OrderBook:{Exchange}:{Symbol}:Bids", bids, TimeSpan.FromSeconds(30));
 }

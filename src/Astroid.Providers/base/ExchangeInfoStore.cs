@@ -1,45 +1,59 @@
 using System.Collections.Concurrent;
 using System.Linq;
+using Astroid.Core;
+using Astroid.Core.Cache;
 
 namespace Astroid.Providers;
 
-public static class ExchangeInfoStore
+public class ExchangeInfoStore
 {
-	private static ConcurrentDictionary<string, AMExchangeInfo> ExchangeInfo { get; set; } = new();
+	private ICacheService Cache { get; }
 
-	public static AMExchangeInfo GetOrAdd(string exchange, Func<AMExchangeInfo> func)
+	public ExchangeInfoStore(ICacheService cache) => Cache = cache;
+
+	public async Task<AMExchangeInfo?> Get(string key)
 	{
-		var isExist = ExchangeInfo.TryGetValue(exchange, out var info);
-		if (isExist && info!.ModifiedAt > DateTime.UtcNow.AddDays(-1)) return info;
+		var info = new AMExchangeInfo
+		{
+			Name = key,
+		};
 
-		var newInfo = func();
-		ExchangeInfo.AddOrUpdate(exchange, newInfo, (key, oldInfo) => newInfo);
-
-		return newInfo;
-	}
-
-	public static void Add(string exchange, AMExchangeInfo info) => ExchangeInfo.AddOrUpdate(exchange, info, (key, oldInfo) => info);
-
-	public static AMExchangeInfo? Get(string key)
-	{
-		_ = ExchangeInfo.TryGetValue(key, out var info);
+		var symbols = await Cache.GetStartsWith<AMSymbolInfo>($"Symbol:{key}");
+		info.Symbols = symbols.ToList();
 
 		return info;
 	}
 
-	public static AMSymbolInfo? GetSymbolInfo(string exchange, string symbol, Func<AMExchangeInfo> func)
+	public async Task<AMSymbolInfo?> GetSymbolInfo(string exchange, string symbol)
 	{
-		var info = GetOrAdd(exchange, func);
-		return info.Symbols.FirstOrDefault(x => x.Name == symbol);
+		var info = await Cache.Get<AMSymbolInfo>($"Symbol:{exchange}:{symbol}");
+		if (info is null) return null;
+
+		return info;
 	}
 
-	public static AMSymbolInfo? GetSymbolInfo(string exchange, string symbol)
+	public async Task<AMOrderBook> GetOrderBook(string exchange, string symbol)
 	{
-		var info = Get(exchange);
-		return info?.Symbols.FirstOrDefault(x => x.Name == symbol);
+		var info = await GetSymbolInfo(exchange, symbol);
+		if (info is null) return new AMOrderBook(exchange, symbol, Cache);
+
+		return info.GetOrderBook(exchange, Cache);
 	}
 
-	public static List<AMExchangeInfo> GetAll() => ExchangeInfo.Values.ToList();
+	public async Task WriteSymbolInfo(string exchange, AMSymbolInfo info) => await Cache.Set($"Symbol:{exchange}:{info.Name}", info);
 
-	public static void Clear() => ExchangeInfo.Clear();
+	public async Task<List<AMExchangeInfo>> GetAll()
+	{
+		var exchanges = new List<AMExchangeInfo>();
+
+		var binance = await Get(ACExchanges.BinanceUsdFutures);
+		if (binance != null)
+			exchanges.Add(binance);
+
+		var binanceTest = await Get(ACExchanges.BinanceUsdFuturesTest);
+		if (binanceTest != null)
+			exchanges.Add(binanceTest);
+
+		return exchanges;
+	}
 }

@@ -20,6 +20,9 @@
     "ConnectionStringMariaDb": "Server=localhost;Port=3306;Database=astroid;User Id=root;Password=1234;",
     "DatabaseProvider": 2
   },
+  "Cache": {
+    "ConnectionString": "localhost:6379,allowAdmin=true"
+  },
   "Logging": {
     "LogLevel": {
       "Default": "Debug",

@@ -108,7 +108,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
-		var quantity = ConvertUsdtToCoin(bot, order);
+		var quantity = await ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success; decimal price;
@@ -117,7 +117,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!success) return result;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
+		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
 
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
@@ -138,7 +138,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 			if (order.Quantity > 0)
 			{
-				var symbolInfo = GetSymbolInfo(order.Ticker);
+				var symbolInfo = await GetSymbolInfo(order.Ticker);
 				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 			}
 			else
@@ -200,7 +200,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
-		var quantity = ConvertUsdtToCoin(bot, order);
+		var quantity = await ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		bool success; decimal price;
@@ -209,7 +209,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!success) return result;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
+		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
 		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
 
@@ -229,7 +229,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 			if (order.Quantity > 0)
 			{
-				var symbolInfo = GetSymbolInfo(order.Ticker);
+				var symbolInfo = await GetSymbolInfo(order.Ticker);
 				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 			}
 			else
@@ -454,8 +454,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 
 			var (p, q) = pSide == PositionSide.Long
-				? orderBook.GetBestAsk()
-				: orderBook.GetBestBid();
+				? await orderBook.GetBestAsk()
+				: await orderBook.GetBestBid();
 
 			if (p <= 0 || q <= 0)
 				continue;
@@ -494,7 +494,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<(bool, decimal)> PlaceDeviatedOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
-		var symbolInfo = GetSymbolInfo(ticker);
+		var symbolInfo = await GetSymbolInfo(ticker);
 		var deviatedDifference = symbolInfo.LastPrice * settings.Deviation / 100;
 
 		var price = pSide == PositionSide.Long ? Math.Round(symbolInfo.LastPrice + deviatedDifference, symbolInfo.PricePrecision - 1) : Math.Round(symbolInfo.LastPrice - deviatedDifference, symbolInfo.PricePrecision - 1);
@@ -525,12 +525,12 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task<(bool, decimal)> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		var i = 0;
-		if (settings.ComputeEntryPoint) i = GetEntryPointIndex(orderBook, pSide, settings);
+		if (settings.ComputeEntryPoint) i = await GetEntryPointIndex(orderBook, pSide, settings);
 
 		var endIndex = settings.OrderBookOffset + i;
 		while (i < endIndex)
 		{
-			var (p, _) = pSide == PositionSide.Long ? orderBook.GetNthBestAsk(settings.OrderBookSkip + i) : orderBook.GetNthBestBid(settings.OrderBookSkip + i);
+			var (p, _) = pSide == PositionSide.Long ? await orderBook.GetNthBestAsk(settings.OrderBookSkip + i) : await orderBook.GetNthBestBid(settings.OrderBookSkip + i);
 			var orderResponse = await Client.UsdFuturesApi.Trading
 				.PlaceOrderAsync(
 					ticker,
@@ -560,23 +560,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<(bool, AMOrderBook)> TryGetOrderBook(string ticker, AMProviderResult result)
 	{
-		var symbolInfo = GetSymbolInfo(ticker);
-		if (symbolInfo.OrderBook != null && symbolInfo.OrderBook.LastUpdateTime > 0 && symbolInfo.OrderBook.LastUpdateDate > DateTime.UtcNow.AddMinutes(-5))
+		var ob = await GetOrderBook(ticker);
+		if (await ob.ReadLastUpdateTime() > 0)
 		{
-			return (true, symbolInfo.OrderBook);
+			return (true, ob);
 		}
 
-		var orderBook = new AMOrderBook(ticker);
 		var orderBookResponse = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker);
 		if (!orderBookResponse.Success)
 		{
 			result.WithMessage($"Failed getting order book: {orderBookResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed getting order book: {orderBookResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker }));
-			return (false, orderBook);
+			return (false, ob);
 		}
 
-		orderBook.LoadSnapshot(orderBookResponse.Data.Asks, orderBookResponse.Data.Bids, 1);
+		await ob.LoadSnapshot(orderBookResponse.Data.Asks, orderBookResponse.Data.Bids, 1);
 
-		return (true, orderBook);
+		return (true, ob);
 	}
 
 	private async Task<BinancePositionDetailsUsdt?> GetPosition(string ticker, PositionSide side, IEnumerable<BinancePositionDetailsUsdt>? positions = null)
@@ -598,14 +597,14 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return response.Data;
 	}
 
-	private decimal ConvertUsdtToCoin(ADBot bot, AMOrderRequest order)
+	private async Task<decimal> ConvertUsdtToCoin(ADBot bot, AMOrderRequest order)
 	{
 		if (order.Quantity > 0) bot.PositionSize = order.Quantity;
 
-		var symbolInfo = GetSymbolInfo(order.Ticker);
+		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (bot.PositionSizeType == PositionSizeType.FixedInAsset) return Math.Round(bot.PositionSize!.Value, symbolInfo.QuantityPrecision);
 
-		symbolInfo = GetSymbolInfo(order.Ticker);
+		symbolInfo = await GetSymbolInfo(order.Ticker);
 
 		// TODO: Dynamic position size calculation
 		// if (!bot.PositionSize.HasValue || bot.PositionSize <= 0)
@@ -691,10 +690,17 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(entryPrice - (entryPrice * activation / 100), precision);
 	}
 
-	private AMSymbolInfo GetSymbolInfo(string ticker)
+	private async Task<AMSymbolInfo> GetSymbolInfo(string ticker)
 	{
 		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
+		return symbolInfo;
+	}
+
+	private async Task<AMOrderBook> GetOrderBook(string ticker)
+	{
+		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
+		var symbolInfo = await ExchangeStore.GetOrderBook(providerName, ticker);
 		return symbolInfo;
 	}
 

@@ -14,6 +14,7 @@ using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Astroid.Web.Helpers;
 using Astroid.Web.Cache;
+using Astroid.Providers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,7 +87,9 @@ else
 
 // Dependency Injections
 builder.Services.AddDbContext<AstroidDb>();
-builder.Services.AddScoped(typeof(ICacheService), _ => new InMemoryCache(new MemoryCache(new MemoryCacheOptions())));
+builder.Services.AddSingleton<ICacheService, RedisCache>();
+builder.Services.AddSingleton<ExchangeInfoStore>();
+
 builder.Services.AddSingleton<BinanceCacheFeed>();
 builder.Services.AddSingleton<BinanceTestCacheFeed>();
 

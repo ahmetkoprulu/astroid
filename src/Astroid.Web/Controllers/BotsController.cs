@@ -13,12 +13,14 @@ namespace Astroid.Web;
 
 public class BotsController : SecureController
 {
+	private ExchangeInfoStore ExchangeStore { get; set; }
 	private readonly IServiceProvider ServiceProvider;
 
-	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ILogger<BotsController> logger) : base(db, cache)
+	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ExchangeInfoStore exchangeStore, ILogger<BotsController> logger) : base(db, cache)
 	{
 		ServiceProvider = serviceProvider;
 		Logger = logger;
+		ExchangeStore = exchangeStore;
 	}
 
 	[HttpPost("list")]
@@ -180,13 +182,13 @@ public class BotsController : SecureController
 
 		try
 		{
-			if (Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
+			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
 			{
 				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
 				return BadRequest("Bot is busy");
 			}
 
-			var _ = Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
+			var _ = await Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}", TimeSpan.FromMinutes(1));
 			var result = await exchanger.ExecuteOrder(bot, orderRequest);
 			if (!result.Success) LogError(null, result.Message ?? string.Empty);
 
@@ -206,7 +208,7 @@ public class BotsController : SecureController
 		}
 		finally
 		{
-			Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
+			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
 		}
 
 		return Success(null, "Order executed successfully");
@@ -226,18 +228,18 @@ public class BotsController : SecureController
 		if (exchange == null)
 			return NotFound($"Exchange {bot.ExchangeId} not found");
 
-		var symbolInfo = ExchangeInfoStore.GetSymbolInfo(exchange.Provider.Name, ticker.ToUpper());
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, ticker.ToUpper());
 		if (symbolInfo == null)
 			return BadRequest($"Symbol {ticker} not found");
 
-		var orderBook = symbolInfo.OrderBook;
+		var orderBook = await ExchangeStore.GetOrderBook(exchange.Provider.Name, ticker.ToUpper());
 		if (orderBook == null)
 			return BadRequest($"Order book for {ticker} not found");
 
 		try
 		{
-			var longResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
-			var shortResult = ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
+			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
+			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
 
 			return Success(new
 			{

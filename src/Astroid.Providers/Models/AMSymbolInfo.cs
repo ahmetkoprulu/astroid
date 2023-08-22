@@ -1,3 +1,5 @@
+using Astroid.Core.Cache;
+
 namespace Astroid.Providers;
 
 public class AMSymbolInfo
@@ -9,7 +11,6 @@ public class AMSymbolInfo
 	public decimal LastPrice { get; set; }
 	public decimal MarkPrice { get; set; }
 	public DateTime ModifiedAt { get; set; }
-	public AMOrderBook OrderBook { get; set; }
 
 	public void SetLastPrice(decimal price)
 	{
@@ -22,4 +23,6 @@ public class AMSymbolInfo
 		MarkPrice = price;
 		ModifiedAt = DateTime.UtcNow;
 	}
+
+	public AMOrderBook GetOrderBook(string exchange, ICacheService cache) => new(exchange, Name, cache);
 }
