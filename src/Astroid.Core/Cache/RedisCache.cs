@@ -14,7 +14,7 @@ public class RedisCache : ICacheService
 	public RedisCache(IConfiguration config)
 	{
 		var settings = config.Get<AConfAppSettings>() ?? new();
-		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_REDIS_CONNECTION_STRING");
+		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_CACHE_CONNECTION_STRING");
 		ConnectionString = connStringEnvVariable ?? settings.Cache.ConnectionString;
 		_redisConnection = ConnectionMultiplexer.Connect(ConnectionString ?? throw new NullReferenceException("Invalid Redis Connection String"));
 		_redisDatabase = _redisConnection.GetDatabase();
