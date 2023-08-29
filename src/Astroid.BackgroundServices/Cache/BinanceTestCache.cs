@@ -137,7 +137,7 @@ public class BinanceTestCache : IHostedService
 				MarkPrice = markPrice?.MarkPrice ?? 0,
 			};
 
-			if (!(symbolInfo.LastPrice > 0 && symbolInfo.MarkPrice > 0)) return;
+			if (!(symbolInfo.LastPrice > 0 && symbolInfo.MarkPrice > 0)) continue;
 
 			await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFuturesTest, symbolInfo);
 		}
