@@ -7,13 +7,43 @@ networks:
 services:
     astroid_web:
         image: ahmetkoprulu/astroid:latest
+        # build:
+        #     dockerfile: dockerfile-web
         depends_on:
             - "astroid_db"
             - "astroid_cache"
-        container_name: astroid_web
-        ports:
-            - "80:80"
-            - "443:443"
+            - "astroid_services"
+        # uncomment below lines if you want to run without scaling and load balancing
+        # container_name: astroid_web
+        # ports:
+        #     - "80:80"
+        #     - "443:443"
+        environment:
+            - ASPNETCORE_ENVIRONMENT=Production
+            - ASTROID_DB_CONNECTION_STRING=Server=astroid_db;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;
+            - ASTROID_DB_PROVIDER=2
+            - ASTROID_CACHE_CONNECTION_STRING=astroid_cache:6379,password=1234567890,allowAdmin=true
+            - ASTROID_BINANCE_TEST_KEY==********
+            - ASTROID_BINANCE_TEST_SECRET==********
+            - ASTROID_BINANCE_KEY=********
+            - ASTROID_BINANCE_SECRET=********
+        deploy:
+            replicas: 2
+            restart_policy:
+                condition: on-failure
+        networks:
+            - internal
+        volumes:
+            - ./config.prod.json:/astroid/config.prof.json
+
+    astroid_services:
+        container_name: astroid_services
+        image: ahmetkoprulu/astroid-services:latest
+        # build:
+        #     dockerfile: dockerfile-services
+        depends_on:
+            - "astroid_db"
+            - "astroid_cache"
         environment:
             - ASPNETCORE_ENVIRONMENT=Production
             - ASTROID_DB_CONNECTION_STRING=Server=astroid_db;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;
@@ -45,12 +75,23 @@ services:
         container_name: astroid_cache
         ports:
             - "6379:6379"
-        command: redis-server --requirepass 1234567890
         restart: always
         volumes:
             - astroid_data:/data
         networks:
             - internal
 
+    astroid_lb:
+        image: nginx:latest
+        depends_on:
+            - "astroid_web"
+        ports:
+            - "80:80"
+            - "443:443"
+        volumes:
+            - ./nginx.conf:/etc/nginx/nginx.conf
+            - ./ssl:/etc/ssl
+        networks:
+            - internal
 volumes:
     astroid_data:
