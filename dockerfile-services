@@ -1,0 +1,34 @@
+## Build
+
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS builder
+WORKDIR /source
+
+LABEL group="astroid"
+LABEL project="astroid-services"
+LABEL type="build"
+
+COPY . .
+
+# Change the Directory
+
+WORKDIR /source/
+
+# aspnet-core
+
+RUN dotnet restore src/Astroid.BackgroundServices/Astroid.BackgroundServices.csproj
+RUN dotnet publish src/Astroid.BackgroundServices/Astroid.BackgroundServices.csproj --output /astroid/ --configuration Release
+
+## Runtime
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS runtime
+
+# Change the Directory
+
+WORKDIR /astroid
+
+LABEL group="astroid"
+LABEL project="astroid-services"
+LABEL type="runtime"
+
+COPY --from=builder /astroid .
+ENTRYPOINT ["dotnet", "Astroid.BackgroundServices.dll"]

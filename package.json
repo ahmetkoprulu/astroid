@@ -13,7 +13,9 @@
     "db-update": "dotnet ef database update --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-migrate-rm": "dotnet ef migrations remove --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "publish": "cd src/Astroid.Web && dotnet publish -c Release -p:PublishProfile=FileSystem",
-    "build:frontend": "cd src/Astroid.Web && npm run build:frontend"
+    "build:frontend": "cd src/Astroid.Web && npm run build:frontend",
+    "build:docker:web": "docker build -t ahmetkoprulu/astroid:latest -f ./dockerfile-web .",
+    "build:docker:services": "docker build -t ahmetkoprulu/astroid-services:latest -f ./dockerfile-services ."
   },
   "repository": {
     "type": "git",

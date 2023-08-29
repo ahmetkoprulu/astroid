@@ -5,7 +5,8 @@ using Astroid.Core;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
-using Astroid.Web.Cache;
+using Binance.Net.Objects;
+using Binance.Net.Clients;
 
 namespace Astroid.Web;
 
@@ -90,15 +91,34 @@ public class HomeController : BaseController
 	}
 
 	[HttpGet("status/snapshot/{ticker}")]
-	public async Task<IActionResult> Snapshot(string ticker, [FromServices] BinanceCacheFeed feed, [FromQuery(Name = "depth")] int depth = 1000)
+	public async Task<IActionResult> Snapshot(string exchange, string ticker, [FromQuery(Name = "depth")] int depth = 100)
 	{
-		var snapshot = await feed.GetDepth(ticker);
+		var key = Environment.GetEnvironmentVariable("ASTROID_BINANCE_KEY");
+		var secret = Environment.GetEnvironmentVariable("ASTROID_BINANCE_SECRET");
+
+		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
+			throw new Exception("Binance credentials not found.");
+
+		var creds = new BinanceApiCredentials(key, secret);
+
+		var options = new BinanceApiClientOptions { ApiCredentials = creds };
+
+		if (exchange == ACExchanges.BinanceUsdFuturesTest)
+			options.BaseAddress = "https://testnet.binancefuture.com";
+
+		var client = new BinanceClient(new BinanceClientOptions
+		{
+			UsdFuturesApiOptions = options,
+			LogLevel = LogLevel.Debug
+		});
+
+		var snapshot = await client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker, 200);
 
 		return Ok(new
 		{
 			ServerTime = DateTime.UtcNow,
-			Asks = snapshot.Asks.Take(depth),
-			Bids = snapshot.Bids.Take(depth)
+			Asks = snapshot.Data.Asks.Take(depth),
+			Bids = snapshot.Data.Bids.Take(depth)
 		});
 	}
 }
