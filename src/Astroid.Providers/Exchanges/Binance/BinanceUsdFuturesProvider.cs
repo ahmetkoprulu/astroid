@@ -111,16 +111,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var quantity = await ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
-		bool success; decimal price;
-		if (bot.OrderType == OrderEntryType.Market) (success, price) = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, result);
-		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
+		AMOrderResult orderResult;
+		if (bot.OrderType == OrderEntryType.Market) orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, result);
+		else orderResult = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Long, bot.LimitSettings, result);
 
-		if (!success) return result;
+		if (!orderResult.Success) return result;
 
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
 
-		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -203,15 +203,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var quantity = await ConvertUsdtToCoin(bot, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
-		bool success; decimal price;
-		if (bot.OrderType == OrderEntryType.Market) (success, price) = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, result);
-		else (success, price) = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
+		AMOrderResult orderResult;
+		if (bot.OrderType == OrderEntryType.Market) orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, result);
+		else orderResult = await PlaceLimitOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Short, bot.LimitSettings, result);
 
-		if (!success) return result;
+		if (!orderResult.Success) return result;
 
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, price, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -401,7 +401,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Cancelled {cancelResult.Data.Count(x => x.Success)} take profit order(s) out of {cancelResult.Data.Count()}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker }));
 	}
 
-	private async Task<(bool, decimal)> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
 	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
@@ -414,24 +414,26 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				orderResponseType: OrderResponseType.Result
 			);
 
+
 		if (!orderResponse.Success)
 		{
 			result.WithMessage($"Failed Market Order Placing Order: {orderResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed placing market order: {orderResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
-			return (false, default);
+			return new();
 		}
 
 		result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed market order successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
+		var data = orderResponse.Data;
 
-		return (true, orderResponse.Data.AveragePrice);
+		return AMOrderResult.WithSuccess(data.AveragePrice, data.QuantityFilled, data.Id.ToString());
 	}
 
-	private async Task<(bool, decimal)> PlaceLimitOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceLimitOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		if (settings.ValorizationType == ValorizationType.LastPrice)
 			return await PlaceDeviatedOrder(ticker, quantity, oSide, pSide, settings, result);
 
 		var (success, orderBook) = await TryGetOrderBook(ticker, result);
-		if (!success) return (false, default);
+		if (!success) return new();
 
 		if (settings.ForceUntilFilled)
 			return await PlaceOrderTillPositionFilled(orderBook, ticker, quantity, oSide, pSide, settings, result);
@@ -439,10 +441,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return await PlaceOboOrder(orderBook, ticker, quantity, oSide, pSide, settings, result);
 	}
 
-	private async Task<(bool, decimal)> PlaceOrderTillPositionFilled(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceOrderTillPositionFilled(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		var remainingQuantity = quantity;
 		var lastEntryPrice = 0m;
+		var totalQuantity = 0m;
 		var i = 0;
 		var cts = new CancellationTokenSource(settings.ForceTimeout * 1000);
 		while (remainingQuantity > 0)
@@ -450,7 +453,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			if (cts.IsCancellationRequested)
 			{
 				result.AddAudit(AuditType.OpenOrderPlaced, $"Force order book limit order timed out.", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
-				return (false, default);
+				return new();
 			}
 
 			var (p, q) = pSide == PositionSide.Long
@@ -474,6 +477,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					orderResponseType: OrderResponseType.Result
 				);
 
+			totalQuantity += orderResponse.Data.QuantityFilled;
 			i++;
 
 			if (!orderResponse.Success || orderResponse.Data.AveragePrice <= 0)
@@ -489,10 +493,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, LastEntryPrice = lastEntryPrice, AveragePrice = lastEntryPrice / i, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
-		return (false, lastEntryPrice);
+		return AMOrderResult.WithSuccess(lastEntryPrice, totalQuantity);
 	}
 
-	private async Task<(bool, decimal)> PlaceDeviatedOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceDeviatedOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		var symbolInfo = await GetSymbolInfo(ticker);
 		var deviatedDifference = symbolInfo.LastPrice * settings.Deviation / 100;
@@ -514,15 +518,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!orderResponse.Success)
 		{
 			result.WithMessage($"Failed placing limit order: {orderResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed placing limit order: {orderResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, EntryPrice = price, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
-			return (false, default);
+			return new();
 		}
 
 		result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed limit order successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, EntryPrice = price, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
 
-		return (true, orderResponse.Data.AveragePrice);
+		var data = orderResponse.Data;
+		return AMOrderResult.WithSuccess(data.AveragePrice, data.QuantityFilled, data.Id.ToString());
 	}
 
-	private async Task<(bool, decimal)> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		var i = 0;
 		if (settings.ComputeEntryPoint) i = await GetEntryPointIndex(orderBook, pSide, settings);
@@ -548,14 +553,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			if (openPosition != null)
 			{
 				result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed OBO limit order at {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, EntryPrice = p, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
-				return (true, orderResponse.Data.AveragePrice);
+				var data = orderResponse.Data;
+
+				return AMOrderResult.WithSuccess(data.AveragePrice, data.QuantityFilled, data.Id.ToString());
 			}
 
 			result.WithMessage($"Failed placing OBO limit order at {i + 1}: {orderResponse?.Error?.Message}").AddAudit(AuditType.OpenOrderPlaced, $"Failed placing OBO limit order at {i + 1}: {orderResponse?.Error?.Message}", CorrelationId, data: JsonConvert.SerializeObject(new { Ticker = ticker, Quantity = quantity, EntryPrice = p, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
 			i++;
 		}
 
-		return (false, default);
+		return new();
 	}
 
 	private async Task<(bool, AMOrderBook)> TryGetOrderBook(string ticker, AMProviderResult result)
