@@ -69,9 +69,9 @@ public class BotsController : SecureController
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
 			TakeProfitTargets = bot.TakeProfitTargets,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
+			StopLossType = bot.StopLossType,
 			StopLossPrice = bot.StopLossPrice,
 			StopLossCallbackRate = bot.StopLossCallbackRate,
-			StopLossActivation = bot.StopLossActivation,
 			Key = bot.Key,
 			IsEnabled = bot.IsEnabled,
 			LimitSettings = bot.LimitSettings
@@ -100,9 +100,9 @@ public class BotsController : SecureController
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
 				TakeProfitTargets = model.TakeProfitTargets,
 				IsStopLossEnabled = model.IsStopLossEnabled,
+				StopLossType = model.StopLossType,
 				StopLossPrice = model.StopLossPrice,
 				StopLossCallbackRate = model.StopLossCallbackRate,
-				StopLossActivation = model.StopLossActivation,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
 				UserId = CurrentUser.Id,
@@ -129,9 +129,9 @@ public class BotsController : SecureController
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
 			bot.TakeProfitTargets = model.TakeProfitTargets;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
+			bot.StopLossType = model.StopLossType;
 			bot.StopLossPrice = model.StopLossPrice;
 			bot.StopLossCallbackRate = model.StopLossCallbackRate;
-			bot.StopLossActivation = model.StopLossActivation;
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;
 			bot.ModifiedDate = DateTime.Now;
@@ -178,6 +178,13 @@ public class BotsController : SecureController
 		{
 			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
 			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
+		}
+
+		var isPositionExist = await Db.Positions.AnyAsync(x => x.ExchangeId == exchange.Id && x.Status == PositionStatus.Open && x.Symbol == orderRequest.Ticker && x.BotId != bot.Id);
+		if (isPositionExist)
+		{
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position for {orderRequest.Ticker} already opened by other bot");
+			return BadRequest($"Position for {orderRequest.Ticker} already opened by other bot");
 		}
 
 		try
@@ -238,8 +245,8 @@ public class BotsController : SecureController
 
 		try
 		{
-			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
-			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
+			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Long, bot.LimitSettings);
+			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Short, bot.LimitSettings);
 
 			return Success(new
 			{

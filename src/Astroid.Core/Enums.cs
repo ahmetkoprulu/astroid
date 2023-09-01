@@ -113,3 +113,37 @@ public enum PropertyTypes : short
 	KeyValue = 22,
 	DynamicSettings = 23
 }
+
+public enum PositionStatus
+{
+	Unknown = 0,
+	Open = 1,
+	Closed = 2,
+	Cancelled = 3
+}
+
+public enum OrderTriggerType
+{
+	Unknown = 0,
+	StopLoss = 1,
+	TakeProfit = 2,
+	Pyramiding = 3,
+}
+
+public enum OrderStatus
+{
+	Unknown = 0,
+	Triggered = 1,
+	Filled = 3,
+	Rejected = 5,
+	Cancelled = 4,
+	Expired = 6,
+}
+
+public enum StopLossType
+{
+	Unknown = 0,
+	Fixed,
+	Trailing,
+	TrailingProfit
+}

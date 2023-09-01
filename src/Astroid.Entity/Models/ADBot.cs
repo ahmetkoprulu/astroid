@@ -14,9 +14,9 @@ public class ADBot : IEntity
 	public string? Description { get; set; }
 	public Guid ExchangeId { get; set; }
 	// public SignalSourceType SignalSourceType { get; set; }
-	public OrderEntryType OrderType { get; set; }
-	public OrderMode OrderMode { get; set; }
-	public PositionSizeType PositionSizeType { get; set; }
+	public OrderEntryType OrderType { get; set; } = OrderEntryType.Market;
+	public OrderMode OrderMode { get; set; } = OrderMode.TwoWay;
+	public PositionSizeType PositionSizeType { get; set; } = PositionSizeType.FixedInUsd;
 	public decimal? PositionSize { get; set; }
 	public bool IsPositionSizeExpandable { get; set; }
 	[Column(nameof(LimitSettings))]
@@ -25,8 +25,8 @@ public class ADBot : IEntity
 	[Column(nameof(TakeProfitTargets))]
 	public string TakeProfitTargetsJson { get; set; }
 	public bool IsStopLossEnabled { get; set; }
+	public StopLossType StopLossType { get; set; } = StopLossType.Fixed;
 	public decimal? StopLossPrice { get; set; }
-	public decimal? StopLossActivation { get; set; }
 	public decimal? StopLossCallbackRate { get; set; }
 	public string Key { get; set; }
 	public bool IsEnabled { get; set; }

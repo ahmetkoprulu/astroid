@@ -59,4 +59,9 @@ export const LIMIT_ORDER_BOOK_COMPUTATION_METHODS = {
 	// 3: { title: "Percentage Spread", icon: "fa fa-percent" },
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS }
+export const STOP_LOSS_TYPE = {
+	1: { id: 1, title: "Fixed", icon: "fa fa-arrows-down-to-line" },
+	2: { id: 2, title: "Trailing", icon: "fa fa-stairs" },
+	3: { id: 3, title: "Trailing Profit", icon: "fa fa-bars" }
+}
+export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS, STOP_LOSS_TYPE }

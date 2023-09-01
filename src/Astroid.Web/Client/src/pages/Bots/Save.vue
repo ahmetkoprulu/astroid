@@ -185,28 +185,27 @@
 				<b-form-group label="Stop Loss">
 					<b-form-checkbox v-model="model.isStopLossEnabled" switch />
 				</b-form-group>
-				<b-form-group
-					label="Stop Price"
-					description="In ratio of entry price"
-					v-if="model.isStopLossEnabled"
-				>
-					<b-form-input type="number" v-model="model.stopLossPrice" />
-				</b-form-group>
-				<div class="d-flex">
+				<div v-if="model.isStopLossEnabled">
+					<b-form-group label="Type">
+						<v-radio-group
+							v-model="model.stopLossType"
+							:options="stopLossOptions"
+							width="130px"
+						/>
+					</b-form-group>
+					<b-form-group
+						label="Trigger Price"
+						description="In ratio of entry price"
+					>
+						<b-form-input type="number" v-model="model.stopLossPrice" />
+					</b-form-group>
 					<b-form-group
 						class="w-50 mr-2"
 						label="Callback Rate"
 						description="Percentage of price change to trigger"
-						v-if="model.isStopLossEnabled"
+						v-if="model.stopLossType === 2"
 					>
 						<b-form-input type="number" v-model="model.stopLossCallbackRate" />
-					</b-form-group>
-					<b-form-group
-						class="w-50"
-						label="Activation Price"
-						v-if="model.isStopLossEnabled"
-					>
-						<b-form-input type="number" v-model="model.stopLossActivation" />
 					</b-form-group>
 				</div>
 			</div>
@@ -276,7 +275,7 @@ export default {
 				positionSize: 10,
 				isPositionSizeExpandable: true,
 				orderMode: 2,
-				positionSizeType: 1,
+				positionSizeType: 2,
 				limitSettings: {
 					valorizationType: 2,
 					forceUntilFilled: false,
@@ -291,6 +290,7 @@ export default {
 				isTakePofitEnabled: false,
 				takeProfitTargets: [],
 				isStopLossActivated: false,
+				stopLossType: 1,
 				stopLossActivation: null,
 				stopLossCallbackRate: null,
 				stopLossPrice: null,
@@ -352,6 +352,15 @@ export default {
 			return Object.entries(
 				this.$consts.LIMIT_ORDER_BOOK_COMPUTATION_METHODS
 			).map(([_, value]) => value); // eslint-disable-line no-unused-vars
+		},
+		stopLossOptions() {
+			return Object.entries(this.$consts.STOP_LOSS_TYPE).map(([key, value]) => {
+				return {
+					text: value.title,
+					value: Number.parseInt(key),
+					icon: value.icon,
+				};
+			});
 		},
 	},
 	async mounted() {
