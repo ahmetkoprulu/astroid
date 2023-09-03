@@ -133,10 +133,11 @@ public enum OrderTriggerType
 public enum OrderStatus
 {
 	Unknown = 0,
-	Triggered = 1,
+	Open = 1,
+	Triggered = 2,
 	Filled = 3,
-	Rejected = 5,
-	Cancelled = 4,
+	Rejected = 4,
+	Cancelled = 5,
 	Expired = 6,
 }
 

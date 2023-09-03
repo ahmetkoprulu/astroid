@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Astroid.Providers;
 
@@ -53,7 +54,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Long)
 			{
-				result = await CloseLong(order, result);
+				result = await CloseLong(bot, order, result);
 			}
 			else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Short)
 			{
@@ -61,7 +62,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Short)
 			{
-				result = await CloseShort(order, result);
+				result = await CloseShort(bot, order, result);
 			}
 			else if (order.OrderType == OrderType.Sell && order.PositionType == PositionType.Both)
 			{
@@ -103,7 +104,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				return result;
 			}
 			else if (bot.OrderMode == OrderMode.Swing && position != null)
-				await CloseShort(order, result, true, position.Quantity);
+				await CloseShort(bot, order, result, true, position.Quantity);
 		}
 
 		if (!bot.StopLossPrice.HasValue || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
@@ -117,15 +118,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderResult.Success) return result;
 
+		await AddPosition(bot, order);
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
 
-		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
 
-	private async Task<AMProviderResult> CloseLong(AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
+	private async Task<AMProviderResult> CloseLong(ADBot bot, AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
 		if (quantity == 0)
 		{
@@ -164,6 +166,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!force) result.WithSuccess();
 		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Sell", PositionType = "Long" }));
+		await ClosePosition(order);
 
 		return result;
 	}
@@ -194,7 +197,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else if (bot.OrderMode == OrderMode.Swing && position != null)
 			{
-				await CloseLong(order, result, true, position.Quantity);
+				await CloseLong(bot, order, result, true, position.Quantity);
 			}
 		}
 
@@ -209,14 +212,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderResult.Success) return result;
 
+		await AddPosition(bot, order);
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await PlaceStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await PlaceTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
 
-	private async Task<AMProviderResult> CloseShort(AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
+	private async Task<AMProviderResult> CloseShort(ADBot bot, AMOrderRequest order, AMProviderResult result, bool force = false, decimal quantity = 0)
 	{
 		if (quantity == 0)
 		{
@@ -255,6 +259,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!force) result.WithSuccess();
 		result.WithMessage("Placed close order successfully.").AddAudit(AuditType.CloseOrderPlaced, $"Placed close order successfully.", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Buy", PositionType = "Short" }));
+		await ClosePosition(order);
 
 		return result;
 	}
@@ -278,12 +283,80 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		for (var i = 0; i < closeOrder.Data.Count(); i++)
 		{
 			var response = closeOrder.Data.ElementAt(i);
+			if (response.Success)
+			{
+				await ClosePosition(new AMOrderRequest
+				{
+					Ticker = order.Ticker,
+					Type = response.Data.PositionSide == PositionSide.Long ? "close-long" : "close-short"
+				});
+			}
+
 			result.AddAudit(AuditType.CloseOrderPlaced, response.Success ? $"Placed close order successfully." : $"Failed placing close order: {response?.Error?.Message}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, response?.Data?.Quantity, response?.Data?.AveragePrice, OrderType = response?.Data?.Side.ToString(), PositionType = response?.Data?.PositionSide.ToString() }));
 		}
 
 		result.WithSuccess();
 
 		return result;
+	}
+
+	private async Task CreateStopLossOrder(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
+	{
+		var position = await GetPosition(order);
+		if (position == null) return;
+
+		if (bot.StopLossPrice <= 0)
+		{
+			result.AddAudit(AuditType.StopLossOrderPlaced, $"Failed placing stop loss order: Stop loss price is zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
+			return;
+		}
+
+		var stopPrice = GetStopLoss(bot, entryPrice, symbol.PricePrecision, order.PositionType);
+		await AddOrder(position, OrderTriggerType.StopLoss, stopPrice!.Value, quantity, true);
+	}
+
+	private async Task CreateTakeProfitOrders(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
+	{
+		var position = await GetPosition(order);
+		if (position == null) return;
+
+		if (bot.IsPositionSizeExpandable) await CancelTakeProfitOrders(position, order, result);
+
+		if (bot.TakeProfitTargets.Count == 0)
+		{
+			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: No target to place order.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
+			return;
+		}
+
+		var targets = bot.TakeProfitTargets;
+		if (targets.Any(x => !(x.Share > 0) || !(x.Activation > 0)))
+		{
+			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: Target(s) share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
+			return;
+		}
+
+		for (var i = 0; i < targets.Count; i++)
+		{
+			var target = targets[i];
+			var qty = Math.Round(quantity * target.Share / 100, symbol.QuantityPrecision);
+			var stopPrice = CalculateTakeProfit(target.Activation, entryPrice, symbol.PricePrecision, order.PositionType);
+			await AddOrder(position, OrderTriggerType.TakeProfit, target.Activation, qty, target.Share == 100);
+			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Placed take profit order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
+		}
+	}
+
+	private async Task CancelTakeProfitOrders(ADPosition position, AMOrderRequest order, AMProviderResult result)
+	{
+		var orders = await GetOrders(position, OrderTriggerType.TakeProfit);
+		if (orders.Count == 0) return;
+
+		foreach (var o in orders)
+		{
+			o.Status = Core.OrderStatus.Cancelled;
+			o.UpdatedDate = DateTime.UtcNow;
+		}
+
+		await Db.SaveChangesAsync();
 	}
 
 	private async Task PlaceStopLossOrder(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
@@ -310,7 +383,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (bot.StopLossCallbackRate > 0)
 		{
 			var cRate = bot.StopLossCallbackRate > 0 ? bot.StopLossCallbackRate : null;
-			var activation = CalculateStopActivation(bot, entryPrice, symbol.PricePrecision, order.PositionType);
 			var trailiginStopOrder = await Client.UsdFuturesApi.Trading
 				.PlaceOrderAsync(
 					order.Ticker,
@@ -318,7 +390,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					FuturesOrderType.TrailingStopMarket,
 					quantity,
 					positionSide: pSide,
-					activationPrice: activation,
 					callbackRate: cRate,
 					timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
 					workingType: WorkingType.Mark
@@ -530,7 +601,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task<AMOrderResult> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
 		var i = 0;
-		if (settings.ComputeEntryPoint) i = await GetEntryPointIndex(orderBook, pSide, settings);
+		if (settings.ComputeEntryPoint) i = await GetEntryPointIndex(orderBook, pSide == PositionSide.Long ? PositionType.Long : PositionType.Short, settings);
 
 		var endIndex = settings.OrderBookOffset + i;
 		while (i < endIndex)
@@ -672,15 +743,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (bot.StopLossPrice == null || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
 
 		return CalculateStopLoss(bot.StopLossPrice.Value, entryPrice, precision, type);
-	}
-
-	private static decimal? CalculateStopActivation(ADBot bot, decimal entryPrice, int precision, PositionType type)
-	{
-		if (bot.StopLossActivation == null || bot.StopLossActivation <= 0) return null;
-
-		if (type == PositionType.Long) return Math.Round(entryPrice + (entryPrice * bot.StopLossActivation!.Value / 100), precision);
-
-		return Math.Round(entryPrice - (entryPrice * bot.StopLossActivation!.Value / 100), precision);
 	}
 
 	private static decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)

@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
-using Binance.Net.Enums;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 
@@ -26,21 +26,21 @@ public abstract class ExchangeProviderBase : IDisposable
 		CorrelationId = GenerateCorrelationId();
 	}
 
-	public async Task<int> GetEntryPointIndex(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	public async Task<int> GetEntryPointIndex(AMOrderBook orderBook, PositionType pSide, LimitSettings settings)
 	{
 		var entryPoint = await GetEntryPoint(orderBook, pSide, settings);
-		var i = pSide == PositionSide.Long ? await orderBook.GetGreatestAskPriceLessThan(entryPoint) : await orderBook.GetLeastBidPriceGreaterThan(entryPoint);
+		var i = pSide == PositionType.Long ? await orderBook.GetGreatestAskPriceLessThan(entryPoint) : await orderBook.GetLeastBidPriceGreaterThan(entryPoint);
 
 		if (i <= 0) throw new Exception("Could not find entry point out of order book.");
 
 		return i;
 	}
 
-	public static async Task<decimal> GetEntryPoint(AMOrderBook orderBook, PositionSide pSide, LimitSettings settings)
+	public static async Task<decimal> GetEntryPoint(AMOrderBook orderBook, PositionType pSide, LimitSettings settings)
 	{
 		if (settings.ComputationMethod == OrderBookComputationMethod.Code)
 		{
-			var pairs = pSide == PositionSide.Long ? await orderBook.GetAsks(settings.OrderBookDepth) : await orderBook.GetBids(settings.OrderBookDepth);
+			var pairs = pSide == PositionType.Long ? await orderBook.GetAsks(settings.OrderBookDepth) : await orderBook.GetBids(settings.OrderBookDepth);
 			var entries = pairs.Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value }).ToList();
 
 			var result = CodeExecutor.ExecuteComputationMethod(settings.Code, entries);
@@ -49,12 +49,12 @@ public abstract class ExchangeProviderBase : IDisposable
 			return result.Data;
 		}
 
-		var prices = pSide == PositionSide.Long ? await orderBook.GetAskPrices(settings.OrderBookDepth) : await orderBook.GetBidPrices(settings.OrderBookDepth);
+		var prices = pSide == PositionType.Long ? await orderBook.GetAskPrices(settings.OrderBookDepth) : await orderBook.GetBidPrices(settings.OrderBookDepth);
 
 		var sDeviation = ComputeStandardDeviation(prices);
 		var mean = prices.Average();
 
-		return pSide == PositionSide.Long ? mean + (2 * sDeviation) : mean - (2 * sDeviation);
+		return pSide == PositionType.Long ? mean + (2 * sDeviation) : mean - (2 * sDeviation);
 	}
 
 	public static decimal ComputeStandardDeviation(IEnumerable<decimal> prices)
@@ -135,6 +135,73 @@ public abstract class ExchangeProviderBase : IDisposable
 		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 		return new string(Enumerable.Repeat(chars, 15)
 			.Select(s => s[random.Next(s.Length)]).ToArray());
+	}
+
+	public async Task<ADPosition?> GetPosition(AMOrderRequest order)
+	{
+		var position = await Db.Positions
+			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open && x.Type == order.PositionType)
+			.FirstOrDefaultAsync(x => x.Symbol == order.Ticker);
+		if (position == null) return null;
+
+		return position;
+	}
+
+	public async Task<List<ADOrder>> GetOrders(ADPosition position, OrderTriggerType triggerType) =>
+		await Db.Orders
+			.Where(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.TriggerType == triggerType)
+			.ToListAsync();
+
+	public async Task AddOrder(ADPosition position, OrderTriggerType triggerType, decimal price, decimal quantity, bool closePrice) =>
+		await Db.Orders.AddAsync(new ADOrder
+		{
+			Id = Guid.NewGuid(),
+			UserId = position.UserId,
+			BotId = position.BotId,
+			ExchangeId = Exchange.Id,
+			PositionId = position.Id,
+			Symbol = position.Symbol,
+			TriggerType = triggerType,
+			TriggerPrice = price,
+			Quantity = quantity,
+			ClosePosition = closePrice,
+			Status = OrderStatus.Open,
+			UpdatedDate = DateTime.MinValue,
+			CreatedDate = DateTime.UtcNow
+		});
+
+	public async Task AddPosition(ADBot bot, AMOrderRequest order)
+	{
+		await Db.Positions.AddAsync(new ADPosition
+		{
+			Id = Guid.NewGuid(),
+			UserId = bot.UserId,
+			BotId = bot.Id,
+			ExchangeId = Exchange.Id,
+			Symbol = order.Ticker,
+			EntryPrice = 0,
+			AvgEntryPrice = 0,
+			Quantity = 0,
+			Type = order.PositionType,
+			Status = PositionStatus.Open,
+			UpdatedDate = DateTime.UtcNow,
+			CreatedDate = DateTime.UtcNow
+		});
+		await Db.SaveChangesAsync();
+	}
+
+	public async Task<ADPosition?> ClosePosition(AMOrderRequest order)
+	{
+		var position = await Db.Positions
+			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open && x.Type == order.PositionType)
+			.FirstOrDefaultAsync(x => x.Symbol == order.Ticker);
+		if (position == null) return null;
+
+		position.Status = PositionStatus.Closed;
+		position.UpdatedDate = DateTime.UtcNow;
+		await Db.SaveChangesAsync();
+
+		return position;
 	}
 
 	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);
