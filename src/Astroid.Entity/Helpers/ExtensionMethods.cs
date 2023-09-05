@@ -14,19 +14,21 @@ public static class ContextExtentionMethods
 		set.Add(entity);
 	}
 
-	public static void AddAudit(this AstroidDb db, AuditType type, string description, string? correlationId = null, string? data = null)
+	public static async Task AddAudit(this AstroidDb db, Guid userId, Guid actorId, AuditType type, string description, Guid? targetId = null, string? correlationId = null, string? data = null)
 	{
 		var audit = new ADAudit
 		{
 			Id = Guid.NewGuid(),
-			UserId = Guid.Empty,
+			UserId = userId,
+			ActorId = actorId,
+			TargetId = targetId,
 			Type = type,
 			Description = description,
 			CorrelationId = correlationId,
 			Data = data,
 			CreatedDate = DateTime.UtcNow,
 		};
-		db.Audits.Add(audit);
+		await db.Audits.AddAsync(audit);
 	}
 
 	public static T GetAs<T>(this IEntity _, string json, bool returnDefault = false) where T : new()

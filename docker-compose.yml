@@ -13,6 +13,7 @@ services:
             - "astroid_db"
             - "astroid_cache"
             - "astroid_services"
+            - "astroid_mq"
         # uncomment below lines if you want to run without scaling and load balancing
         # container_name: astroid_web
         # ports:
@@ -23,8 +24,9 @@ services:
             - ASTROID_DB_CONNECTION_STRING=Server=astroid_db;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;
             - ASTROID_DB_PROVIDER=2
             - ASTROID_CACHE_CONNECTION_STRING=astroid_cache:6379,password=1234567890,allowAdmin=true
-            - ASTROID_BINANCE_TEST_KEY==********
-            - ASTROID_BINANCE_TEST_SECRET==********
+            - ASTROID_MQ_CONNECTION_STRING=amqp://rabbitmq:1234567890@astroid_mq:5672/vhost
+            - ASTROID_BINANCE_TEST_KEY=********
+            - ASTROID_BINANCE_TEST_SECRET=********
             - ASTROID_BINANCE_KEY=********
             - ASTROID_BINANCE_SECRET=********
         deploy:
@@ -44,13 +46,15 @@ services:
         depends_on:
             - "astroid_db"
             - "astroid_cache"
+            - "astroid_mq"
         environment:
             - ASPNETCORE_ENVIRONMENT=Production
             - ASTROID_DB_CONNECTION_STRING=Server=astroid_db;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;
             - ASTROID_DB_PROVIDER=2
             - ASTROID_CACHE_CONNECTION_STRING=astroid_cache:6379,password=1234567890,allowAdmin=true
-            - ASTROID_BINANCE_TEST_KEY==********
-            - ASTROID_BINANCE_TEST_SECRET==********
+            - ASTROID_MQ_CONNECTION_STRING=amqp://rabbitmq:1234567890@astroid_mq:5672/vhost
+            - ASTROID_BINANCE_TEST_KEY=********
+            - ASTROID_BINANCE_TEST_SECRET=********
             - ASTROID_BINANCE_KEY=********
             - ASTROID_BINANCE_SECRET=********
         networks:
@@ -80,7 +84,20 @@ services:
             - astroid_data:/data
         networks:
             - internal
-
+    astroid_mq:
+        image: rabbitmq:latest
+        container_name: astroid_mq
+        environment:
+            - RABBITMQ_DEFAULT_USER=rabbitmq
+            - RABBITMQ_DEFAULT_PASS=1234567890
+        ports:
+            - "5672:5672"
+            - "15672:15672"
+        restart: always
+        volumes:
+            - astroid_data:/var/lib/rabbitmq
+        networks:
+            - internal
     astroid_lb:
         image: nginx:latest
         depends_on:

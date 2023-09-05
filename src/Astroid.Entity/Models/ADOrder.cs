@@ -20,6 +20,7 @@ public class ADOrder : IEntity
 	public bool ClosePosition { get; set; }
 	public OrderStatus Status { get; set; }
 	public string ClientId { get; set; } = string.Empty;
+	public string? CorrelationId { get; set; }
 	public DateTime UpdatedDate { get; set; }
 	public DateTime CreatedDate { get; set; }
 

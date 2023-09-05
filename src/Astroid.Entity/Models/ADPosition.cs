@@ -18,6 +18,7 @@ public class ADPosition : IEntity
 	public decimal Quantity { get; set; }
 	public PositionType Type { get; set; }
 	public PositionStatus Status { get; set; }
+	public string? CorrelationId { get; set; }
 	public DateTime UpdatedDate { get; set; }
 	public DateTime CreatedDate { get; set; }
 
