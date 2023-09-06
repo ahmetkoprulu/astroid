@@ -17,11 +17,10 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddHostedService<BinanceCache>();
 		services.AddHostedService<BinanceTestCache>();
-
+		services.AddHostedService<OrderWatcher>();
 	})
 	.ConfigureLogging(logging =>
 	{
-
 		logging.ClearProviders();
 		logging.AddConsole();
 	});

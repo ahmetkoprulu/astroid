@@ -203,6 +203,7 @@ public class BotsController : SecureController
 			{
 				x.UserId = exchange.UserId;
 				x.ActorId = bot.Id;
+				x.CorrelationId = result.CorrelationId;
 				Db.Audits.Add(x);
 			});
 

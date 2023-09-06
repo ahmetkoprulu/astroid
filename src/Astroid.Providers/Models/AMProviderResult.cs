@@ -8,6 +8,7 @@ public class AMProviderResult
 	public bool Success { get; set; }
 	public string? Message { get; set; }
 	public List<ADAudit> Audits { get; set; } = new();
+	public string? CorrelationId { get; set; }
 
 	public AMProviderResult WithSuccess()
 	{

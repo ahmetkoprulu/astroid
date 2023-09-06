@@ -2,6 +2,7 @@ using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
 using Astroid.Providers;
+using Binance.Net.Enums;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Astroid.Providers.Extentions;
@@ -45,4 +46,12 @@ public static class ExtensionMethods
 
 		return list;
 	}
+
+	public static PositionType ToPositionType(this PositionSide type) =>
+		type switch
+		{
+			PositionSide.Long => PositionType.Long,
+			PositionSide.Short => PositionType.Short,
+			_ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+		};
 }

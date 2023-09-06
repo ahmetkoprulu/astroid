@@ -109,6 +109,7 @@ public class OrderWatcher : IHostedService
 	{
 		var orders = Db.Orders
 			.AsNoTracking()
+			.Include(x => x.Position)
 			.Include(x => x.Exchange)
 				.ThenInclude(x => x.Provider)
 			.Where(x => x.Status == OrderStatus.Open);

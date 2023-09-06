@@ -170,38 +170,54 @@ public abstract class ExchangeProviderBase : IDisposable
 			CreatedDate = DateTime.UtcNow
 		});
 
-	public async Task AddPosition(ADBot bot, AMOrderRequest order)
+	public async Task<ADPosition> AddPosition(ADBot bot, AMOrderRequest order, AMOrderResult result)
 	{
-		await Db.Positions.AddAsync(new ADPosition
+		var position = new ADPosition
 		{
 			Id = Guid.NewGuid(),
 			UserId = bot.UserId,
 			BotId = bot.Id,
 			ExchangeId = Exchange.Id,
 			Symbol = order.Ticker,
-			EntryPrice = 0,
-			AvgEntryPrice = 0,
-			Quantity = 0,
+			EntryPrice = result.EntryPrice,
+			AvgEntryPrice = result.EntryPrice,
+			Quantity = result.Quantity,
 			Type = order.PositionType,
 			Status = PositionStatus.Open,
 			UpdatedDate = DateTime.UtcNow,
 			CreatedDate = DateTime.UtcNow
-		});
-		await Db.SaveChangesAsync();
+		};
+
+		await Db.Positions.AddAsync(position);
+
+		return position;
 	}
 
-	public async Task<ADPosition?> ClosePosition(AMOrderRequest order)
+	public void UpdatePosition(ADPosition position, AMOrderResult result)
+	{
+		position.AvgEntryPrice = (position.AvgEntryPrice + result.EntryPrice) / 2;
+		position.Quantity += result.Quantity;
+	}
+
+	public async Task ClosePosition(AMOrderRequest order)
 	{
 		var position = await Db.Positions
 			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open && x.Type == order.PositionType)
 			.FirstOrDefaultAsync(x => x.Symbol == order.Ticker);
-		if (position == null) return null;
+		if (position == null) return;
 
 		position.Status = PositionStatus.Closed;
 		position.UpdatedDate = DateTime.UtcNow;
 		await Db.SaveChangesAsync();
+	}
 
-		return position;
+	public async Task ClosePosition(ADPosition position)
+	{
+		if (position == null) return;
+
+		position.Status = PositionStatus.Closed;
+		position.UpdatedDate = DateTime.UtcNow;
+		await Db.SaveChangesAsync();
 	}
 
 	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);
