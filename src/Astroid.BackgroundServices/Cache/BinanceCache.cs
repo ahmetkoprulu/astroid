@@ -4,6 +4,8 @@ using Astroid.Providers;
 using Binance.Net.Clients;
 using Binance.Net.Objects;
 using Binance.Net.Objects.Models.Futures;
+using Binance.Net.Objects.Options;
+using CryptoExchange.Net.Authentication;
 
 namespace Astroid.BackgroundServices.Cache;
 
@@ -14,7 +16,7 @@ public class BinanceCache : IHostedService
 	private ILogger<BinanceCache> Logger { get; set; }
 
 	private BinanceSocketClient SocketClient { get; set; }
-	private BinanceClient Client { get; set; }
+	private BinanceRestClient Client { get; set; }
 
 	public BinanceCache(ExchangeInfoStore exchangeStore, ICacheService cache, ILogger<BinanceCache> logger)
 	{
@@ -27,24 +29,16 @@ public class BinanceCache : IHostedService
 		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
 			throw new Exception("Binance credentials not found.");
 
-		var creds = new BinanceApiCredentials(key, secret);
+		var creds = new ApiCredentials(key, secret);
 
-		SocketClient = new BinanceSocketClient(new BinanceSocketClientOptions
+		SocketClient = new BinanceSocketClient(o =>
 		{
-			UsdFuturesStreamsOptions = new BinanceSocketApiClientOptions
-			{
-				ApiCredentials = creds,
-			},
-			LogLevel = LogLevel.Debug
+			o.ApiCredentials = creds;
 		});
 
-		Client = new BinanceClient(new BinanceClientOptions
+		Client = new BinanceRestClient(o =>
 		{
-			UsdFuturesApiOptions = new BinanceApiClientOptions
-			{
-				ApiCredentials = creds,
-			},
-			LogLevel = LogLevel.Debug
+			o.ApiCredentials = creds;
 		});
 	}
 
@@ -78,7 +72,7 @@ public class BinanceCache : IHostedService
 	{
 		Logger.LogInformation("Subscribing Sockets.");
 		await GetExchangeInfo();
-		await SocketClient.UsdFuturesStreams.SubscribeToAllTickerUpdatesAsync(async data =>
+		await SocketClient.UsdFuturesApi.SubscribeToAllTickerUpdatesAsync(async data =>
 		{
 			var prices = data.Data;
 
@@ -92,7 +86,7 @@ public class BinanceCache : IHostedService
 			}
 		});
 
-		await SocketClient.UsdFuturesStreams.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
+		await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
 		{
 			var prices = data.Data;
 
@@ -115,7 +109,7 @@ public class BinanceCache : IHostedService
 
 		foreach (var ticker in symbolsToCache)
 		{
-			await SocketClient.UsdFuturesStreams.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, async data =>
+			await SocketClient.UsdFuturesApi.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, async data =>
 			{
 				var orderBook = await ExchangeStore.GetOrderBook(ACExchanges.BinanceUsdFutures, ticker.Name);
 				await orderBook.ProcessUpdate(data.Data);
@@ -135,7 +129,7 @@ public class BinanceCache : IHostedService
 	public async Task GetExchangeInfo(CancellationToken cancellationToken = default)
 	{
 		var info = await Client.UsdFuturesApi.ExchangeData.GetExchangeInfoAsync(cancellationToken);
-		if (!info.Success) throw new Exception("Failed to get Binance Test exchange info");
+		if (!info.Success) throw new Exception("Failed to get Binance exchange info");
 
 		var prices = await Client.UsdFuturesApi.ExchangeData.GetPricesAsync(cancellationToken);
 		if (!prices.Success) throw new Exception("Failed to get Binance Test prices");

@@ -1,9 +1,12 @@
 using Astroid.Core;
 using Astroid.Core.Cache;
 using Astroid.Providers;
+using Binance.Net;
 using Binance.Net.Clients;
 using Binance.Net.Objects;
 using Binance.Net.Objects.Models.Futures;
+using Binance.Net.Objects.Options;
+using CryptoExchange.Net.Authentication;
 
 namespace Astroid.BackgroundServices.Cache;
 
@@ -13,7 +16,7 @@ public class BinanceTestCache : IHostedService
 	private ICacheService Cache { get; set; }
 	private ILogger<BinanceTestCache> Logger { get; set; }
 	private BinanceSocketClient SocketClient { get; set; }
-	private BinanceClient Client { get; set; }
+	private BinanceRestClient Client { get; set; }
 
 	public BinanceTestCache(ExchangeInfoStore exchangeStore, ICacheService cache, ILogger<BinanceTestCache> logger)
 	{
@@ -26,26 +29,18 @@ public class BinanceTestCache : IHostedService
 		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
 			throw new Exception("Binance test credentials not found.");
 
-		var creds = new BinanceApiCredentials(key, secret);
+		var creds = new ApiCredentials(key, secret);
 
-		SocketClient = new BinanceSocketClient(new BinanceSocketClientOptions
+		SocketClient = new BinanceSocketClient(o =>
 		{
-			UsdFuturesStreamsOptions = new BinanceSocketApiClientOptions
-			{
-				BaseAddress = "wss://stream.binancefuture.com",
-				ApiCredentials = creds,
-			},
-			LogLevel = LogLevel.Debug
+			o.ApiCredentials = creds;
+			o.Environment = BinanceEnvironment.Testnet;
 		});
 
-		Client = new BinanceClient(new BinanceClientOptions
+		Client = new BinanceRestClient(o =>
 		{
-			UsdFuturesApiOptions = new BinanceApiClientOptions
-			{
-				BaseAddress = "https://testnet.binancefuture.com",
-				ApiCredentials = creds,
-			},
-			LogLevel = LogLevel.Debug
+			o.ApiCredentials = creds;
+			o.Environment = BinanceEnvironment.Testnet;
 		});
 	}
 
@@ -78,7 +73,7 @@ public class BinanceTestCache : IHostedService
 	{
 		Logger.LogInformation("Subscribing Sockets.");
 		await GetExchangeInfo();
-		await SocketClient.UsdFuturesStreams.SubscribeToAllTickerUpdatesAsync(async data =>
+		await SocketClient.UsdFuturesApi.SubscribeToAllTickerUpdatesAsync(async data =>
 		{
 			var prices = data.Data;
 
@@ -92,7 +87,7 @@ public class BinanceTestCache : IHostedService
 			}
 		});
 
-		await SocketClient.UsdFuturesStreams.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
+		await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
 		{
 			var prices = data.Data;
 
