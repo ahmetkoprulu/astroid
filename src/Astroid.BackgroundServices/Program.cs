@@ -23,6 +23,9 @@ var builder = Host.CreateDefaultBuilder(args)
 	{
 		logging.ClearProviders();
 		logging.AddConsole();
+	}).ConfigureHostConfiguration(config =>
+	{
+		config.AddJsonFile("config.json", optional: true, reloadOnChange: true);
 	});
 
 var app = builder.Build();

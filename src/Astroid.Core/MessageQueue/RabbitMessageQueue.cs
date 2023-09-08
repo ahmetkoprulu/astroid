@@ -16,7 +16,7 @@ public class RabbitMessageQueue : IMessageQueue
 	{
 		var settings = config.Get<AConfAppSettings>() ?? new();
 		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_MQ_CONNECTION_STRING");
-		ConnectionString = connStringEnvVariable ?? settings.Cache.ConnectionString;
+		ConnectionString = connStringEnvVariable ?? settings.MessageQueue.ConnectionString;
 		Bus = RabbitHutch.CreateBus(ConnectionString ?? throw new NullReferenceException("Invalid Message Queue Connection String"));
 	}
 

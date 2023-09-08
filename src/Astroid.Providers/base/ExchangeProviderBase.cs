@@ -21,6 +21,7 @@ public abstract class ExchangeProviderBase : IDisposable
 	protected ExchangeProviderBase(IServiceProvider serviceProvider, ADExchange exchange)
 	{
 		ServiceProvider = serviceProvider;
+		Db = ServiceProvider.GetRequiredService<AstroidDb>();
 		ExchangeStore = ServiceProvider.GetRequiredService<ExchangeInfoStore>();
 		Exchange = exchange;
 		CorrelationId = GenerateCorrelationId();

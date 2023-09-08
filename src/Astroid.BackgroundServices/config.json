@@ -8,7 +8,7 @@
     "ConnectionString": "localhost:6379,allowAdmin=true"
   },
   "MessageQueue": {
-    "ConnectionString": "host=localhost;username=guest;password=guest"
+    "ConnectionString": "amqp://guest:guest@localhost/"
   },
   "Logging": {
     "LogLevel": {

@@ -8,6 +8,7 @@ public class AQOrder
 	public AQOrder(IMessageQueue mq) => Mq = mq;
 
 	public async Task<AMMessageQueueResult> Publish(AQOrderMessage message, CancellationToken cancellationToken = default) => await Mq.Publish(QueueName, message, cancellationToken);
+	public async Task Subscribe(Func<Guid, Task> action, CancellationToken cancellationToken = default) => await Mq.Subscribe(QueueName, action, cancellationToken);
 }
 
 public class AQOrderMessage

@@ -180,13 +180,6 @@ public class BotsController : SecureController
 			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
 		}
 
-		var isPositionExist = await Db.Positions.AnyAsync(x => x.ExchangeId == exchange.Id && x.Status == PositionStatus.Open && x.Symbol == orderRequest.Ticker && x.BotId != bot.Id);
-		if (isPositionExist)
-		{
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position for {orderRequest.Ticker} already opened by other bot");
-			return BadRequest($"Position for {orderRequest.Ticker} already opened by other bot");
-		}
-
 		try
 		{
 			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
@@ -203,6 +196,7 @@ public class BotsController : SecureController
 			{
 				x.UserId = exchange.UserId;
 				x.ActorId = bot.Id;
+				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
 				x.CorrelationId = result.CorrelationId;
 				Db.Audits.Add(x);
 			});

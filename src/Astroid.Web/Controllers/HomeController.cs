@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 using Astroid.Providers;
 using Binance.Net.Objects;
 using Binance.Net.Clients;
+using Binance.Net;
+using CryptoExchange.Net.Authentication;
 
 namespace Astroid.Web;
 
@@ -99,17 +101,11 @@ public class HomeController : BaseController
 		if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(secret))
 			throw new Exception("Binance credentials not found.");
 
-		var creds = new BinanceApiCredentials(key, secret);
-
-		var options = new BinanceApiClientOptions { ApiCredentials = creds };
-
-		if (exchange == ACExchanges.BinanceUsdFuturesTest)
-			options.BaseAddress = "https://testnet.binancefuture.com";
-
-		var client = new BinanceClient(new BinanceClientOptions
+		var client = new BinanceRestClient(o =>
 		{
-			UsdFuturesApiOptions = options,
-			LogLevel = LogLevel.Debug
+			o.ApiCredentials = new ApiCredentials(key, secret);
+			if (exchange == ACExchanges.BinanceUsdFuturesTest)
+				o.Environment = BinanceEnvironment.Testnet;
 		});
 
 		var snapshot = await client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker, 200);

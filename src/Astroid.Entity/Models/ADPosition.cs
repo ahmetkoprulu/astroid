@@ -16,6 +16,7 @@ public class ADPosition : IEntity
 	public decimal EntryPrice { get; set; }
 	public decimal AvgEntryPrice { get; set; }
 	public decimal Quantity { get; set; }
+	public int Leverage { get; set; }
 	public PositionType Type { get; set; }
 	public PositionStatus Status { get; set; }
 	public DateTime UpdatedDate { get; set; }

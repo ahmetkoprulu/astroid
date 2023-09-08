@@ -35,8 +35,5 @@ public class SecureController : BaseController
 
 	public ICacheService Cache { get; set; }
 
-	public SecureController(AstroidDb db, ICacheService cache) : base(db)
-	{
-		Cache = cache;
-	}
+	public SecureController(AstroidDb db, ICacheService cache) : base(db) => Cache = cache;
 }

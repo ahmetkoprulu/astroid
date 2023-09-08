@@ -17,12 +17,12 @@ public class RedisCache : ICacheService
 		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_CACHE_CONNECTION_STRING");
 		ConnectionString = connStringEnvVariable ?? settings.Cache.ConnectionString;
 		_redisConnection = ConnectionMultiplexer.Connect(ConnectionString ?? throw new NullReferenceException("Invalid Redis Connection String"));
-		_redisDatabase = _redisConnection.GetDatabase();
 	}
 
 	public async Task<T?> Get<T>(string key, T defaultValue = default)
 	{
-		var redisValue = await _redisDatabase.StringGetAsync(key);
+		var database = _redisConnection.GetDatabase(0);
+		var redisValue = await database.StringGetAsync(key);
 		if (redisValue.IsNullOrEmpty) return defaultValue;
 
 		return JsonConvert.DeserializeObject<T>(redisValue.ToString());
@@ -30,16 +30,22 @@ public class RedisCache : ICacheService
 
 	public async Task Set<T>(string key, T value, TimeSpan expiresIn = default)
 	{
+		var database = _redisConnection.GetDatabase(0);
 		var serializedValue = JsonConvert.SerializeObject(value);
-		if (expiresIn == default) await _redisDatabase.StringSetAsync(key, serializedValue);
-		else await _redisDatabase.StringSetAsync(key, serializedValue, expiresIn);
+		if (expiresIn == default) await database.StringSetAsync(key, serializedValue);
+		else await database.StringSetAsync(key, serializedValue, expiresIn);
 	}
 
-	public async Task Remove(string key) => await _redisDatabase.KeyDeleteAsync(key);
+	public async Task Remove(string key)
+	{
+		var database = _redisConnection.GetDatabase(0);
+		await database.KeyDeleteAsync(key);
+	}
 
 
 	public async Task<IEnumerable<T>> GetStartsWith<T>(string key)
 	{
+		var database = _redisConnection.GetDatabase(0);
 		var pattern = $"{key}*";
 		var keys = new List<string>();
 
@@ -50,7 +56,7 @@ public class RedisCache : ICacheService
 			keys.AddRange(ks.Select(k => k.ToString()));
 		}
 
-		var values = (await _redisDatabase.StringGetAsync(keys.Select(k => (RedisKey)k).ToArray()))
+		var values = (await database.StringGetAsync(keys.Select(k => (RedisKey)k).ToArray()))
 			.Where(v => !v.IsNullOrEmpty)
 			.Select(v => JsonConvert.DeserializeObject<T>(v!));
 
@@ -59,11 +65,21 @@ public class RedisCache : ICacheService
 
 	public async Task<object?> AcquireLock(string key, TimeSpan expiresIn = default)
 	{
-		var lockAcquired = await _redisDatabase.LockTakeAsync(key, "lockValue", expiresIn);
+		var database = _redisConnection.GetDatabase(1);
+		var lockAcquired = await database.LockTakeAsync(key, "lockValue", expiresIn);
 		return lockAcquired ? new object() : null;
 	}
 
-	public async Task<bool> IsLocked(string key) => (await _redisDatabase.LockQueryAsync(key)).HasValue;
+	public async Task<bool> IsLocked(string key)
+	{
+		var database = _redisConnection.GetDatabase(1);
+		var lockValue = await database.LockQueryAsync(key);
+		return lockValue.HasValue;
+	}
 
-	public async Task ReleaseLock(string key) => await _redisDatabase.LockReleaseAsync(key, "lockValue");
+	public async Task ReleaseLock(string key)
+	{
+		var database = _redisConnection.GetDatabase(1);
+		await database.LockReleaseAsync(key, "lockValue");
+	}
 }

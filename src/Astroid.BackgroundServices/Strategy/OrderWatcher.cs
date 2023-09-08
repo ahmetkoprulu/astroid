@@ -55,7 +55,7 @@ public class OrderWatcher : IHostedService
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.");
+				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
@@ -77,7 +77,7 @@ public class OrderWatcher : IHostedService
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.");
+				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
@@ -120,7 +120,7 @@ public class OrderWatcher : IHostedService
 		return await orders.ToListAsync(cancellationToken);
 	}
 
-	public async Task AddAudit(ADOrder order, AuditType type, string description) => await Db.AddAudit(order.UserId, order.BotId, type, description, order.Id, order.CorrelationId);
+	public async Task AddAudit(ADOrder order, AuditType type, string description, string? corellationId = null) => await Db.AddAudit(order.UserId, order.BotId, type, description, order.Id, corellationId);
 
 	public Task StopAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
 }

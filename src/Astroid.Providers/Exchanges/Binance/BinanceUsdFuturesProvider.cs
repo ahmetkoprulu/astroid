@@ -9,6 +9,8 @@ using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Models;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Providers.Extentions;
+using CryptoExchange.Net.Authentication;
+using Binance.Net;
 
 namespace Astroid.Providers;
 
@@ -23,7 +25,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	[PropertyMetadata("Test Net", Type = PropertyTypes.Boolean, Group = "General")]
 	public bool IsTestNet { get; set; }
 
-	private BinanceClient Client { get; set; }
+	private BinanceRestClient Client { get; set; }
 
 	public BinanceUsdFuturesProvider(IServiceProvider serviceProvider, ADExchange exchange) : base(serviceProvider, exchange) => Context();
 
@@ -31,22 +33,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	{
 		base.Context();
 
-		var options = new BinanceClientOptions
+		Client = new BinanceRestClient(o =>
 		{
-			ApiCredentials = new BinanceApiCredentials(Key, Secret)
-		};
-
-		if (IsTestNet)
-			options.UsdFuturesApiOptions = new BinanceApiClientOptions { BaseAddress = "https://testnet.binancefuture.com" };
-
-		options.LogLevel = LogLevel.Debug;
-
-		Client = new BinanceClient(options);
+			o.ApiCredentials = new ApiCredentials(Key, Secret);
+			if (IsTestNet) o.Environment = BinanceEnvironment.Testnet;
+		});
 	}
 
 	public override async Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order)
 	{
-		var result = new AMProviderResult();
+		var result = new AMProviderResult() { CorrelationId = CorrelationId };
 		try
 		{
 			if (order.OrderType == OrderType.Buy && order.PositionType == PositionType.Long)
@@ -142,6 +138,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 		}
 
+		result.CorrelationId = position.Id.ToString();
 		if (position.BotId != bot.Id)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {order.Ticker} - {position.Type} managed by {position.Bot.Label}.", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Buy", PositionType = "Long" }));
@@ -226,6 +223,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 		}
 
+		result.CorrelationId = position.Id.ToString();
 		if (position.BotId != bot.Id)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {order.Ticker} - {position.Type} managed by {position.Bot.Label}.", CorrelationId, data: JsonConvert.SerializeObject(new { order.Ticker, OrderType = "Buy", PositionType = "Long" }));
@@ -604,8 +602,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 					orderResponseType: OrderResponseType.Result
 				);
 
-			var openPosition = await GetCurrentPosition(ticker, pSide.ToPositionType());
-			if (openPosition != null)
+			// var openPosition = await GetPosition(ticker, pSide.ToPositionType());
+			// if (openPosition != null)
+			if (orderResponse.Success)
 			{
 				result.WithSuccess().AddAudit(AuditType.OpenOrderPlaced, $"Placed OBO limit order at {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { Ticker = ticker, EntryPrice = p, Quantity = quantity, OrderType = oSide.ToString(), PositionType = pSide.ToString() }));
 				var data = orderResponse.Data;
