@@ -28,7 +28,24 @@
 							v-model="model.exchangeId"
 							:options="exchangeOptions"
 							placeholder="Select a wallet"
-						/>
+						>
+							<div slot="value-label" slot-scope="{ node }">
+								<img
+									:src="$consts.EXCHANGE_ICONS[node.raw.provider]"
+									class="mr-2"
+									height="20"
+								/>
+								<span>{{ node.label }}</span>
+							</div>
+							<label slot="option-label" slot-scope="{ node }">
+								<img
+									:src="$consts.EXCHANGE_ICONS[node.raw.provider]"
+									class="mr-2"
+									height="20"
+								/>
+								<span>{{ node.label }}</span>
+							</label>
+						</v-select>
 					</v-validated-input>
 				</ValidationObserver>
 				<b-form-group label="Position Size">
@@ -311,7 +328,8 @@ export default {
 			return this.markets.map((x) => {
 				return {
 					id: x.id,
-					label: `${x.name} (${x.providerName})`,
+					label: `${x.name}`,
+					provider: x.providerName,
 				};
 			});
 		},

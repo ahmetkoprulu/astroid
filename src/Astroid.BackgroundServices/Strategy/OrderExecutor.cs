@@ -33,7 +33,7 @@ public class OrderExecutor : IHostedService
 
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
-		Logger.LogInformation("Starting Order Watcher Service.");
+		Logger.LogInformation("Starting Order Executor Service.");
 		_ = Task.Run(() => DoJob(cancellationToken), cancellationToken);
 
 		return Task.CompletedTask;

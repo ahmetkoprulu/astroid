@@ -31,13 +31,13 @@ export default {
 			});
 		};
 
-		Vue.prototype.$alert.remove = function (title, text, onConfirm) {
+		Vue.prototype.$alert.remove = function (title, text, onConfirm, confirmButtonText = "<i class='fas fa-fw fa-trash'></i> Yes, delete it!") {
 			Vue.prototype.$alert(
 				title,
 				text,
 				"warning",
 				onConfirm,
-				"<i class='fas fa-fw fa-trash'></i> Yes, delete it!",
+				confirmButtonText,
 				"#d33"
 			);
 		};

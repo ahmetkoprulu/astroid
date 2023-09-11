@@ -92,6 +92,19 @@ public class HomeController : BaseController
 		});
 	}
 
+	[HttpGet("status/symbol-info/{exchange}/{ticker}")]
+	public async Task<IActionResult> GetSymbolInfoStatus(string exchange, string ticker)
+	{
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange, ticker);
+		if (symbolInfo == null) return BadRequest("Invalid ticker");
+
+		return Ok(new
+		{
+			ServerTime = DateTime.UtcNow,
+			SymbolInfo = symbolInfo
+		});
+	}
+
 	[HttpGet("status/snapshot/{ticker}")]
 	public async Task<IActionResult> Snapshot(string exchange, string ticker, [FromQuery(Name = "depth")] int depth = 100)
 	{

@@ -218,6 +218,14 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		position.Status = PositionStatus.Closed;
 		position.UpdatedDate = DateTime.UtcNow;
+
+		await Db.Orders.Where(x => x.PositionId == position.Id && x.Status == OrderStatus.Open)
+			.ForEachAsync(x =>
+			{
+				x.Status = OrderStatus.Cancelled;
+				x.UpdatedDate = DateTime.UtcNow;
+			});
+
 		await Db.SaveChangesAsync();
 	}
 

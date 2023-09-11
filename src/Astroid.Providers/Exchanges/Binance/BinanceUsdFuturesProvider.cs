@@ -123,8 +123,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -208,8 +208,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, quantity, result);
 
 		return result;
 	}
@@ -282,9 +282,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return result;
 	}
 
-	private async Task CreateStopLossOrder(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
+	private async Task CreateStopLossOrder(ADBot bot, ADPosition position, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
-		var position = await GetPosition(order);
 		if (position == null) return;
 
 		if (bot.StopLossPrice <= 0)
@@ -297,9 +296,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		await AddOrder(position, OrderTriggerType.StopLoss, stopPrice!.Value, quantity, true);
 	}
 
-	private async Task CreateTakeProfitOrders(ADBot bot, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
+	private async Task CreateTakeProfitOrders(ADBot bot, ADPosition position, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
-		var position = await GetPosition(order);
 		if (position == null) return;
 
 		if (bot.IsPositionSizeExpandable) await CancelTakeProfitOrders(position, order, result);
@@ -322,7 +320,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Share / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculateTakeProfit(target.Activation, entryPrice, symbol.PricePrecision, order.PositionType);
-			await AddOrder(position, OrderTriggerType.TakeProfit, target.Activation, qty, target.Share == 100);
+			await AddOrder(position, OrderTriggerType.TakeProfit, stopPrice, qty, i == targets.Count - 1);
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Placed take profit order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}

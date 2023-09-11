@@ -9,16 +9,16 @@ using Astroid.Core.MessageQueue;
 
 namespace Astroid.BackgroundServices.Cache;
 
-public class OrderWatcher : IHostedService
+public class TakeProfitWatcher : IHostedService
 {
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private ICacheService Cache { get; set; }
-	private ILogger<OrderWatcher> Logger { get; set; }
+	private ILogger<TakeProfitWatcher> Logger { get; set; }
 	private IServiceProvider Services { get; set; }
 	private AstroidDb Db { get; set; }
 	private AQOrder OrderQueue { get; set; }
 
-	public OrderWatcher(AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
+	public TakeProfitWatcher(AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<TakeProfitWatcher> logger, IServiceProvider services)
 	{
 		Db = db;
 		ExchangeStore = exchangeStore;
@@ -30,10 +30,8 @@ public class OrderWatcher : IHostedService
 
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
-		Logger.LogInformation("Starting Order Watcher Service.");
-		_ = Task.Run(() => DoJob(WatchStopLossOrders, cancellationToken), cancellationToken);
+		Logger.LogInformation("Starting Take Profit Watcher Service.");
 		_ = Task.Run(() => DoJob(WatchTakeProfitOrders, cancellationToken), cancellationToken);
-		// _ = Task.Run(() => DoJob(WatchPyramidingOrders, cancellationToken), cancellationToken);
 
 		return Task.CompletedTask;
 	}
@@ -43,29 +41,7 @@ public class OrderWatcher : IHostedService
 		while (!cancellationToken.IsCancellationRequested)
 		{
 			await action(cancellationToken);
-			await Task.Delay(1000 * 60 * 10, cancellationToken);
-		}
-	}
-
-	public async Task WatchStopLossOrders(CancellationToken cancellationToken)
-	{
-		var orders = await GetOpenOrders(cancellationToken, OrderTriggerType.StopLoss);
-		foreach (var order in orders)
-		{
-			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
-			if (symbolInfo == null)
-			{
-				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
-				continue;
-			}
-
-			if (symbolInfo.MarkPrice > order.TriggerPrice) continue;
-
-			var msg = new AQOrderMessage { OrderId = order.Id };
-			order.Status = OrderStatus.Triggered;
-			order.UpdatedDate = DateTime.UtcNow;
-			await Db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
+			await Task.Delay(1000, cancellationToken);
 		}
 	}
 
@@ -77,17 +53,17 @@ public class OrderWatcher : IHostedService
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				await AddAudit(order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
-			if (symbolInfo.MarkPrice < order.TriggerPrice) continue;
+			if (symbolInfo.LastPrice < order.TriggerPrice) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
+			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await Db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
 		}
 	}
 
@@ -108,7 +84,6 @@ public class OrderWatcher : IHostedService
 	public async Task<List<ADOrder>> GetOpenOrders(CancellationToken cancellationToken, OrderTriggerType triggerType = OrderTriggerType.Unknown)
 	{
 		var orders = Db.Orders
-			.AsNoTracking()
 			.Include(x => x.Position)
 			.Include(x => x.Exchange)
 				.ThenInclude(x => x.Provider)

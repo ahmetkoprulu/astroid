@@ -17,7 +17,8 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddHostedService<BinanceCache>();
 		services.AddHostedService<BinanceTestCache>();
-		services.AddHostedService<OrderWatcher>();
+		services.AddHostedService<StopLossWatcher>();
+		services.AddHostedService<TakeProfitWatcher>();
 	})
 	.ConfigureLogging(logging =>
 	{

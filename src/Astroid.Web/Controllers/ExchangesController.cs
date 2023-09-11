@@ -33,7 +33,8 @@ public class ExchangesController : SecureController
 			Name = x.Label,
 			Description = x.Description,
 			ProviderId = x.Provider.Id,
-			ProviderName = x.Provider.Title
+			ProviderName = x.Provider.Name,
+			ProviderLabel = x.Provider.Title,
 		}));
 	}
 
@@ -49,7 +50,8 @@ public class ExchangesController : SecureController
 				Id = x.Id,
 				Name = x.Label,
 				ProviderId = x.Provider.Id,
-				ProviderName = x.Provider.Title
+				ProviderName = x.Provider.Name,
+				ProviderLabel = x.Provider.Title,
 			})
 			.ToListAsync();
 
@@ -76,7 +78,8 @@ public class ExchangesController : SecureController
 			Name = exchange.Label,
 			Description = exchange.Description,
 			ProviderId = exchange.Provider.Id,
-			ProviderName = exchange.Provider.Title,
+			ProviderName = exchange.Provider.Name,
+			ProviderLabel = exchange.Provider.Title,
 			Properties = exchange.Properties
 		});
 	}
