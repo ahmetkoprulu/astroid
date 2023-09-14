@@ -138,6 +138,13 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 		}
 
+		var ordr = order.OrderId.HasValue ? await GetOrder(order.OrderId.Value) : null;
+		if (order.OrderId.HasValue && ordr == null)
+		{
+			result.WithMessage("The order not found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", CorrelationId, data: JsonConvert.SerializeObject(new { order.OrderId, order.Ticker, OrderType = "Sell", PositionType = "Long" }));
+			return false;
+		}
+
 		result.CorrelationId = position.Id.ToString();
 		if (position.BotId != bot.Id)
 		{
@@ -150,14 +157,19 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (order.Quantity > 0)
 		{
 			var symbolInfo = await GetSymbolInfo(order.Ticker);
-			quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
+			if (order.QuantityType == QuantityType.Exact)
+				quantity = order.Quantity.Value;
+			else
+				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
 
 		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result);
 		if (!orderResult.Success) return false;
 
-		await ClosePosition(position);
+		await ReducePosition(position, orderResult, ordr);
+		if (!orderResult.Success) return false;
 
+		result.WithSuccess();
 		return true;
 	}
 
@@ -223,6 +235,13 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 		}
 
+		var ordr = order.OrderId.HasValue ? await GetOrder(order.OrderId.Value) : null;
+		if (order.OrderId.HasValue && ordr == null)
+		{
+			result.WithMessage("The order not found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", CorrelationId, data: JsonConvert.SerializeObject(new { order.OrderId, order.Ticker, OrderType = "Sell", PositionType = "Long" }));
+			return false;
+		}
+
 		result.CorrelationId = position.Id.ToString();
 		if (position.BotId != bot.Id)
 		{
@@ -235,14 +254,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (order.Quantity > 0)
 		{
 			var symbolInfo = await GetSymbolInfo(order.Ticker);
-			quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
+			if (order.QuantityType == QuantityType.Exact)
+				quantity = order.Quantity.Value;
+			else
+				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
 
 		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result);
+
+		await ReducePosition(position, orderResult, ordr);
 		if (!orderResult.Success) return false;
 
-		await ClosePosition(position);
-
+		result.WithSuccess();
 		return true;
 	}
 
@@ -452,7 +475,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Cancelled {cancelResult.Data.Count(x => x.Success)} take profit order(s) out of {cancelResult.Data.Count()}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker }));
 	}
 
-	private async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result)
+	private async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result, bool closePosition = false)
 	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
@@ -654,6 +677,14 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			.ToListAsync();
 
 		return positions;
+	}
+	private async Task<ADOrder> GetOrder(Guid orderId)
+	{
+		var order = await Db.Orders
+			.Include(x => x.Position)
+			.FirstOrDefaultAsync(x => x.Id == orderId);
+
+		return order!;
 	}
 
 	private async Task<IEnumerable<BinancePositionDetailsUsdt>> GetPositions()

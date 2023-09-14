@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
+using CryptoExchange.Net.CommonObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -212,12 +213,54 @@ public abstract class ExchangeProviderBase : IDisposable
 		await Db.SaveChangesAsync();
 	}
 
-	public async Task ClosePosition(ADPosition position)
+	public async Task ReducePosition(ADPosition position, AMOrderResult result, ADOrder? order = null)
+	{
+		if (!result.Success)
+		{
+			RejectOrder(order);
+			return;
+		}
+
+		if (order == null)
+		{
+			await CancelOpenOrders(position);
+			ClosePosition(position);
+			return;
+		}
+
+		// TODO: Cancel Open Orders
+		if (order.ClosePosition)
+		{
+			await CancelOpenOrders(position);
+			ClosePosition(position);
+		}
+
+		order.Status = OrderStatus.Filled;
+		order.UpdatedDate = DateTime.UtcNow;
+		order.FilledQuantity = result.Quantity;
+
+		await Db.SaveChangesAsync();
+	}
+
+	public void RejectOrder(ADOrder? order)
+	{
+		if (order == null) return;
+
+		order.Status = OrderStatus.Rejected;
+		order.UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void ClosePosition(ADPosition position)
 	{
 		if (position == null) return;
 
 		position.Status = PositionStatus.Closed;
 		position.UpdatedDate = DateTime.UtcNow;
+	}
+
+	public async Task CancelOpenOrders(ADPosition position)
+	{
+		if (position == null) return;
 
 		await Db.Orders.Where(x => x.PositionId == position.Id && x.Status == OrderStatus.Open)
 			.ForEachAsync(x =>
@@ -225,8 +268,6 @@ public abstract class ExchangeProviderBase : IDisposable
 				x.Status = OrderStatus.Cancelled;
 				x.UpdatedDate = DateTime.UtcNow;
 			});
-
-		await Db.SaveChangesAsync();
 	}
 
 	public abstract Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order);

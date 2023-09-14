@@ -4,11 +4,13 @@ namespace Astroid.Providers;
 
 public class AMOrderRequest
 {
+	public Guid? OrderId { get; set; }
 	public string Ticker { get; set; }
 	public int Leverage { get; set; }
 	public string? Type { get; set; }
 	public int Risk { get; set; } = 1;
 	public decimal? Quantity { get; set; }
+	public QuantityType QuantityType { get; set; } = QuantityType.Percentage;
 	public string Key { get; set; }
 
 	public OrderType OrderType => Type switch
@@ -32,4 +34,11 @@ public class AMOrderRequest
 	};
 
 	public string? Timestamp { get; set; }
+}
+
+public enum QuantityType : short
+{
+	Unknown = 0,
+	Percentage = 1,
+	Exact = 2
 }

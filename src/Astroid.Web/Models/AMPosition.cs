@@ -10,6 +10,7 @@ namespace Astroid.Web.Models
 		public decimal AveragePrice { get; set; }
 		public decimal EntryPrice { get; set; }
 		public decimal Quantity { get; set; }
+		public decimal CurrentQuantity { get; set; }
 		public decimal Leverage { get; set; }
 		public PositionType Type { get; set; }
 		public PositionStatus Status { get; set; }
