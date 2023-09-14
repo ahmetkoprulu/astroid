@@ -163,8 +163,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
 
-		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result);
-		if (!orderResult.Success) return false;
+		var closePosition = ordr == null || ordr.ClosePosition;
+		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result, closePosition);
 
 		await ReducePosition(position, orderResult, ordr);
 		if (!orderResult.Success) return false;
@@ -259,8 +259,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			else
 				quantity = Math.Round(position.Quantity * (order.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
-
-		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result);
+		var closePosition = ordr == null || ordr.ClosePosition;
+		var orderResult = await PlaceMarketOrder(order.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result, closePosition);
 
 		await ReducePosition(position, orderResult, ordr);
 		if (!orderResult.Success) return false;
