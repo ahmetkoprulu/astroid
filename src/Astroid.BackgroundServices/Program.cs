@@ -7,7 +7,7 @@ using Astroid.Providers;
 var builder = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((hostContext, services) =>
 	{
-		services.AddDbContext<AstroidDb>();
+		services.AddDbContext<AstroidDb>(ServiceLifetime.Transient);
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();
@@ -17,8 +17,8 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddHostedService<BinanceCache>();
 		services.AddHostedService<BinanceTestCache>();
-		services.AddHostedService<StopLossWatcher>();
-		services.AddHostedService<TakeProfitWatcher>();
+		services.AddHostedService<OrderWatcher>();
+		services.AddHostedService<OrderExecutor>();
 	})
 	.ConfigureLogging(logging =>
 	{
