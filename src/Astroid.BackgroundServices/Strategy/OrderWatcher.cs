@@ -9,16 +9,16 @@ using Astroid.Core.MessageQueue;
 
 namespace Astroid.BackgroundServices.Cache;
 
-public class TakeProfitWatcher : IHostedService
+public class OrderWatcher : IHostedService
 {
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private ICacheService Cache { get; set; }
-	private ILogger<TakeProfitWatcher> Logger { get; set; }
+	private ILogger<OrderWatcher> Logger { get; set; }
 	private IServiceProvider Services { get; set; }
 	private AstroidDb Db { get; set; }
 	private AQOrder OrderQueue { get; set; }
 
-	public TakeProfitWatcher(AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<TakeProfitWatcher> logger, IServiceProvider services)
+	public OrderWatcher(AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
 	{
 		Db = db;
 		ExchangeStore = exchangeStore;
@@ -28,26 +28,55 @@ public class TakeProfitWatcher : IHostedService
 		Services = services;
 	}
 
-	public Task StartAsync(CancellationToken cancellationToken)
+	public async Task StartAsync(CancellationToken cancellationToken)
 	{
+		Logger.LogInformation("Setting Up Orders Message Queue.");
+		await OrderQueue.Setup(cancellationToken);
 		Logger.LogInformation("Starting Take Profit Watcher Service.");
-		_ = Task.Run(() => DoJob(WatchTakeProfitOrders, cancellationToken), cancellationToken);
-
-		return Task.CompletedTask;
+		_ = Task.Run(() => DoJob(cancellationToken), cancellationToken);
 	}
 
-	public async Task DoJob(Func<CancellationToken, Task> action, CancellationToken cancellationToken)
+	public async Task DoJob(CancellationToken cancellationToken)
 	{
 		while (!cancellationToken.IsCancellationRequested)
 		{
-			await action(cancellationToken);
+			var orders = await GetOpenOrders(cancellationToken);
+			var lossTask = WatchStopLossOrders(orders, cancellationToken);
+			var profitTask = WatchTakeProfitOrders(orders, cancellationToken);
+
+			Task.WaitAll(new Task[] { lossTask, profitTask }, cancellationToken: cancellationToken);
+
 			await Task.Delay(1000, cancellationToken);
 		}
 	}
 
-	public async Task WatchTakeProfitOrders(CancellationToken cancellationToken)
+	public async Task WatchStopLossOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
 	{
-		var orders = await GetOpenOrders(cancellationToken, OrderTriggerType.TakeProfit);
+		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.StopLoss).ToList();
+		Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
+		foreach (var order in orders)
+		{
+			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
+			if (symbolInfo == null)
+			{
+				await AddAudit(order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				continue;
+			}
+
+			if (symbolInfo.MarkPrice > order.TriggerPrice) continue;
+
+			var msg = new AQOrderMessage { OrderId = order.Id };
+			await OrderQueue.Publish(msg, cancellationToken);
+			order.Status = OrderStatus.Triggered;
+			order.UpdatedDate = DateTime.UtcNow;
+			await Db.SaveChangesAsync(cancellationToken);
+		}
+	}
+
+	public async Task WatchTakeProfitOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
+	{
+		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit).ToList();
+		Logger.LogInformation($"Watching {orders.Count} take profit orders.");
 		foreach (var order in orders)
 		{
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
@@ -90,7 +119,7 @@ public class TakeProfitWatcher : IHostedService
 			.Where(x => x.Status == OrderStatus.Open);
 
 		if (triggerType != OrderTriggerType.Unknown)
-			orders = orders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit);
+			orders = orders.Where(x => x.TriggerType == OrderTriggerType.StopLoss);
 
 		return await orders.ToListAsync(cancellationToken);
 	}

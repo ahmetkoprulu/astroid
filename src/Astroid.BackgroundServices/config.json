@@ -14,14 +14,15 @@
     "LogLevel": {
       "Default": "Debug",
       "Microsoft.AspNetCore": "Information",
-      "Microsoft.Hosting.Lifetime": "Information",
-      "Microsoft.EntityFrameworkCore.Database.Command": "Information",
-      "Microsoft.EntityFrameworkCore.Infrastructure": "Information",
-      "Microsoft.EntityFrameworkCore.Storage": "Information",
-      "Microsoft.EntityFrameworkCore.Update": "Information",
-      "Microsoft.EntityFrameworkCore.ChangeTracking": "Information",
-      "Microsoft.EntityFrameworkCore.Query": "Information",
-      "Microsoft.EntityFrameworkCore.Model": "Information"
+      "Microsoft.Hosting.Lifetime": "Error",
+      "Microsoft.EntityFrameworkCore.Database.Connection": "Error",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Error",
+      "Microsoft.EntityFrameworkCore.Infrastructure": "Error",
+      "Microsoft.EntityFrameworkCore.Storage": "Error",
+      "Microsoft.EntityFrameworkCore.Update": "Error",
+      "Microsoft.EntityFrameworkCore.ChangeTracking": "Error",
+      "Microsoft.EntityFrameworkCore.Query": "Error",
+      "Microsoft.EntityFrameworkCore.Model": "Error"
     }
   }
 }
