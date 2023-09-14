@@ -56,6 +56,12 @@ public class OrderWatcher : IHostedService
 		Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
 		foreach (var order in orders)
 		{
+			if (order.Position.Status == PositionStatus.Closed)
+			{
+				await CancelOrder(order, cancellationToken);
+				continue;
+			}
+
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
@@ -94,6 +100,12 @@ public class OrderWatcher : IHostedService
 			order.UpdatedDate = DateTime.UtcNow;
 			await Db.SaveChangesAsync(cancellationToken);
 		}
+	}
+
+	public async Task CancelOrder(ADOrder order, CancellationToken cancellationToken)
+	{
+		order.Status = OrderStatus.Cancelled;
+		await Db.SaveChangesAsync(cancellationToken);
 	}
 
 	// public async Task WatchPyramidingOrders(CancellationToken cancellationToken)
