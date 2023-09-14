@@ -30,4 +30,8 @@ public class ADPosition : IEntity
 
 	[ForeignKey(nameof(UserId))]
 	public ADUser User { get; set; } = null!;
+
+	public List<ADOrder> Orders { get; set; } = new();
+
+	public decimal CurrentQuantity => Quantity - Orders.Where(x => x.Status == OrderStatus.Filled && !x.ClosePosition).Sum(x => x.FilledQuantity);
 }

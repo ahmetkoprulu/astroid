@@ -123,8 +123,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.MarkPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.MarkPrice, symbolInfo, position.CurrentQuantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 
 		return result;
 	}
@@ -220,8 +220,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.LastPrice, symbolInfo, quantity, result);
-		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, quantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, order, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
+		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, order, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 
 		return result;
 	}
@@ -664,6 +664,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	{
 		var position = await Db.Positions
 			.Include(x => x.Bot)
+			.Include(x => x.Orders)
 			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open)
 			.FirstOrDefaultAsync(x => x.Symbol == ticker && x.Type == side);
 
