@@ -79,6 +79,35 @@ public class OrderWatcher : IHostedService
 		}
 	}
 
+	public async Task WatchPyramidingOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
+	{
+		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.Pyramiding).ToList();
+		Logger.LogInformation($"Watching {orders.Count} pyramiding orders.");
+		foreach (var order in orders)
+		{
+			if (order.Position.Status == PositionStatus.Closed)
+			{
+				await CancelOrder(order, cancellationToken);
+				continue;
+			}
+
+			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
+			if (symbolInfo == null)
+			{
+				await AddAudit(order, AuditType.OpenOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				continue;
+			}
+
+			if (symbolInfo.LastPrice < order.TriggerPrice) continue;
+
+			var msg = new AQOrderMessage { OrderId = order.Id };
+			await OrderQueue.Publish(msg, cancellationToken);
+			order.Status = OrderStatus.Triggered;
+			order.UpdatedDate = DateTime.UtcNow;
+			await Db.SaveChangesAsync(cancellationToken);
+		}
+	}
+
 	public async Task WatchTakeProfitOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
 	{
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit).ToList();
@@ -131,7 +160,7 @@ public class OrderWatcher : IHostedService
 			.Where(x => x.Status == OrderStatus.Open);
 
 		if (triggerType != OrderTriggerType.Unknown)
-			orders = orders.Where(x => x.TriggerType == OrderTriggerType.StopLoss);
+			orders = orders.Where(x => x.TriggerType == triggerType);
 
 		return await orders.ToListAsync(cancellationToken);
 	}
