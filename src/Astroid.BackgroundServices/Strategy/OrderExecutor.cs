@@ -71,28 +71,72 @@ public class OrderExecutor : IHostedService
 			return;
 		}
 
+		if (order.Status == OrderStatus.Cancelled)
+		{
+			order.Reject();
+			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled.", order.Position.Id.ToString());
+			await Db.SaveChangesAsync(cancellationToken);
+
+			return;
+		}
+
+		var isClosing = await db.IsPositionClosing(order.Position.Id);
+		if (isClosing)
+		{
+			order.Reject();
+			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled because position is about to be closed.", order.Position.Id.ToString());
+			await Db.SaveChangesAsync(cancellationToken);
+
+			return;
+		}
+
+		if (await Cache.IsLocked($"lock:bot:{order.BotId}:{order.Symbol}"))
+		{
+			order.Reject();
+			await AddAudit(db, order, AuditType.OrderRequest, "The position has been already managing by another process.", order.Position.Id.ToString());
+			await Db.SaveChangesAsync(cancellationToken);
+		}
+
 		var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
 		if (exchanger == null)
 		{
-			await AddAudit(db, order, AuditType.OpenOrderPlaced, $"Exchanger type {order.Exchange.Label} not found", order.Position.Id.ToString());
+			await AddAudit(db, order, AuditType.OrderRequest, $"Exchanger type {order.Exchange.Label} not found", order.Position.Id.ToString());
+			await Db.SaveChangesAsync(cancellationToken);
+
 			return;
 		}
 
 		var request = GenerateRequest(order);
-		var result = await exchanger.ExecuteOrder(order.Bot, request);
-		result.Audits.ForEach(x =>
+		var needToLock = order.ClosePosition;
+
+		try
 		{
-			x.UserId = order.UserId;
-			x.ActorId = order.BotId;
-			x.TargetId = order.Id;
-			x.CorrelationId = result.CorrelationId;
-			db.Audits.Add(x);
-		});
+			if (needToLock) await Cache.AcquireLock($"lock:bot:{order.BotId}:{order.Symbol}", TimeSpan.FromMinutes(5));
 
-		if (!result.Success)
-			Logger.LogError($"Order execution failed for {order.Id}.");
+			var result = await exchanger.ExecuteOrder(order.Bot, request);
+			result.Audits.ForEach(x =>
+			{
+				x.UserId = order.UserId;
+				x.ActorId = order.BotId;
+				x.TargetId = order.Id;
+				x.CorrelationId = result.CorrelationId;
+				db.Audits.Add(x);
+			});
 
-		await db.SaveChangesAsync(cancellationToken);
+			if (!result.Success)
+				Logger.LogError($"Order execution failed for {order.Id}.");
+
+			await db.SaveChangesAsync(cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, order.Position.Id.ToString());
+			await Db.SaveChangesAsync(cancellationToken);
+		}
+		finally
+		{
+			if (needToLock) await Cache.ReleaseLock($"lock:bot:{order.BotId}:{order.Symbol}");
+		}
 	}
 
 	public AMOrderRequest GenerateRequest(ADOrder order)
