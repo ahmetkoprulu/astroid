@@ -15,12 +15,11 @@ public class OrderWatcher : IHostedService
 	private ICacheService Cache { get; set; }
 	private ILogger<OrderWatcher> Logger { get; set; }
 	private IServiceProvider Services { get; set; }
-	private AstroidDb Db { get; set; }
+	// private AstroidDb Db { get; set; }
 	private AQOrder OrderQueue { get; set; }
 
-	public OrderWatcher(AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
+	public OrderWatcher(ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
 	{
-		Db = db;
 		ExchangeStore = exchangeStore;
 		OrderQueue = orderQueue;
 		Cache = cache;
@@ -40,9 +39,8 @@ public class OrderWatcher : IHostedService
 	{
 		while (!cancellationToken.IsCancellationRequested)
 		{
-			var orders = await GetOpenOrders(cancellationToken);
-			var lossTask = WatchStopLossOrders(orders, cancellationToken);
-			var profitTask = WatchTakeProfitOrders(orders, cancellationToken);
+			var lossTask = WatchStopLossOrders(cancellationToken);
+			var profitTask = WatchTakeProfitOrders(cancellationToken);
 
 			Task.WaitAll(new Task[] { lossTask, profitTask }, cancellationToken: cancellationToken);
 
@@ -50,91 +48,121 @@ public class OrderWatcher : IHostedService
 		}
 	}
 
-	public async Task WatchStopLossOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
+	public async Task WatchStopLossOrders(CancellationToken cancellationToken)
 	{
+		var scope = Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.StopLoss);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.StopLoss).ToList();
 		Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
+
 		foreach (var order in orders)
 		{
 			if (order.Position.Status == PositionStatus.Closed)
 			{
-				await CancelOrder(order, cancellationToken);
+				await CancelOrder(db, order, cancellationToken);
 				continue;
 			}
 
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				await AddAudit(db, order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
-			if (symbolInfo.MarkPrice > order.TriggerPrice) continue;
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.MarkPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
 		}
 	}
 
-	public async Task WatchPyramidingOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
+	public async Task WatchPyramidingOrders(CancellationToken cancellationToken)
 	{
+		var scope = Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Pyramiding);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.Pyramiding).ToList();
 		Logger.LogInformation($"Watching {orders.Count} pyramiding orders.");
 		foreach (var order in orders)
 		{
 			if (order.Position.Status == PositionStatus.Closed)
 			{
-				await CancelOrder(order, cancellationToken);
+				await CancelOrder(db, order, cancellationToken);
 				continue;
 			}
 
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(order, AuditType.OpenOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				await AddAudit(db, order, AuditType.OpenOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
-			if (symbolInfo.LastPrice < order.TriggerPrice) continue;
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
 		}
 	}
 
-	public async Task WatchTakeProfitOrders(List<ADOrder> openOrders, CancellationToken cancellationToken)
+	public async Task WatchTakeProfitOrders(CancellationToken cancellationToken)
 	{
+		var scope = Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.TakeProfit);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit).ToList();
 		Logger.LogInformation($"Watching {orders.Count} take profit orders.");
 		foreach (var order in orders)
 		{
-			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
-			if (symbolInfo == null)
+			if (order.Position.Status == PositionStatus.Closed)
 			{
-				await AddAudit(order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				await CancelOrder(db, order, cancellationToken);
 				continue;
 			}
 
-			if (symbolInfo.LastPrice < order.TriggerPrice) continue;
+			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
+			if (symbolInfo == null)
+			{
+				await AddAudit(db, order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				continue;
+			}
+
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
 		}
 	}
 
-	public async Task CancelOrder(ADOrder order, CancellationToken cancellationToken)
+	public bool NeedToTriggerOrder(ADPosition position, ADOrder order, decimal symbolPrice)
+	{
+		if (order.TriggerType == OrderTriggerType.StopLoss)
+			return position.Type == PositionType.Long ? symbolPrice < order.TriggerPrice : symbolPrice > order.TriggerPrice;
+
+		if (order.TriggerType == OrderTriggerType.TakeProfit)
+			return position.Type == PositionType.Long ? symbolPrice > order.TriggerPrice : symbolPrice < order.TriggerPrice;
+
+		if (order.TriggerType == OrderTriggerType.Pyramiding)
+			return position.Type == PositionType.Long ? symbolPrice > order.TriggerPrice : symbolPrice < order.TriggerPrice;
+
+		return false;
+	}
+
+	public async Task CancelOrder(AstroidDb db, ADOrder order, CancellationToken cancellationToken)
 	{
 		order.Status = OrderStatus.Cancelled;
-		await Db.SaveChangesAsync(cancellationToken);
+		await db.SaveChangesAsync(cancellationToken);
 	}
 
 	// public async Task WatchPyramidingOrders(CancellationToken cancellationToken)
@@ -151,9 +179,9 @@ public class OrderWatcher : IHostedService
 	// 	}
 	// }
 
-	public async Task<List<ADOrder>> GetOpenOrders(CancellationToken cancellationToken, OrderTriggerType triggerType = OrderTriggerType.Unknown)
+	public async Task<List<ADOrder>> GetOpenOrders(AstroidDb db, CancellationToken cancellationToken, OrderTriggerType triggerType = OrderTriggerType.Unknown)
 	{
-		var orders = Db.Orders
+		var orders = db.Orders
 			.Include(x => x.Position)
 			.Include(x => x.Exchange)
 				.ThenInclude(x => x.Provider)
@@ -165,7 +193,7 @@ public class OrderWatcher : IHostedService
 		return await orders.ToListAsync(cancellationToken);
 	}
 
-	public async Task AddAudit(ADOrder order, AuditType type, string description, string? corellationId = null) => await Db.AddAudit(order.UserId, order.BotId, type, description, order.Id, corellationId);
+	public async Task AddAudit(AstroidDb db, ADOrder order, AuditType type, string description, string? corellationId = null) => await db.AddAudit(order.UserId, order.BotId, type, description, order.Id, corellationId);
 
 	public Task StopAsync(CancellationToken cancellationToken) => throw new NotImplementedException();
 }

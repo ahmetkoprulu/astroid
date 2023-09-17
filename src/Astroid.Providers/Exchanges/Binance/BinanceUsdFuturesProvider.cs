@@ -121,7 +121,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var order = await GetOrder(request.OrderId);
-		if (request.ValidateCloseRequest(position, order, bot, result))
+		if (!request.ValidateCloseRequest(position, order, bot, result))
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
@@ -191,7 +191,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var order = await GetOrder(request.OrderId);
-		if (request.ValidateCloseRequest(position, order, bot, result))
+		if (!request.ValidateCloseRequest(position, order, bot, result))
 			return false;
 
 		result.CorrelationId = position.Id.ToString();

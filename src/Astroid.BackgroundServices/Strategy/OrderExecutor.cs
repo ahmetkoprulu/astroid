@@ -16,7 +16,7 @@ public class OrderExecutor : IHostedService
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private ICacheService Cache { get; set; }
 	private ILogger<OrderExecutor> Logger { get; set; }
-	private AstroidDb Db { get; set; }
+	// private AstroidDb Db { get; set; }
 	private AQOrder OrderQueue { get; set; }
 	private List<IDisposable> Consumers { get; set; } = new();
 
@@ -24,10 +24,9 @@ public class OrderExecutor : IHostedService
 	private const string SubscriptionId2 = "2";
 	private const string SubscriptionId3 = "3";
 
-	public OrderExecutor(IServiceProvider serviceProvider, AstroidDb db, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderExecutor> logger)
+	public OrderExecutor(IServiceProvider serviceProvider, ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderExecutor> logger)
 	{
 		ServiceProvider = serviceProvider;
-		Db = db;
 		ExchangeStore = exchangeStore;
 		OrderQueue = orderQueue;
 		Cache = cache;
@@ -61,7 +60,7 @@ public class OrderExecutor : IHostedService
 	public async Task ExecuteOrder(IServiceProvider sp, AQOrderMessage message, CancellationToken cancellationToken = default)
 	{
 		var scope = sp.CreateScope();
-		using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		Logger.LogInformation($"Executing order {message.OrderId}.");
 
 		var order = await GetOrder(db, message.OrderId, cancellationToken);
@@ -75,17 +74,19 @@ public class OrderExecutor : IHostedService
 		{
 			order.Reject();
 			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled.", order.Position.Id.ToString());
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
+			Logger.LogError($"Order is cancelled {message.OrderId}.");
 
 			return;
 		}
 
-		var isClosing = await db.IsPositionClosing(order.Position.Id);
+		var isClosing = !order.ClosePosition && await db.IsPositionClosing(order.Position.Id);
 		if (isClosing)
 		{
 			order.Reject();
 			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled because position is about to be closed.", order.Position.Id.ToString());
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
+			Logger.LogError($"Order is cancelled because position is about to be closed {message.OrderId}.");
 
 			return;
 		}
@@ -94,14 +95,18 @@ public class OrderExecutor : IHostedService
 		{
 			order.Reject();
 			await AddAudit(db, order, AuditType.OrderRequest, "The position has been already managing by another process.", order.Position.Id.ToString());
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
+			Logger.LogInformation($"Executing order {message.OrderId}.");
+
+			return;
 		}
 
 		var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
 		if (exchanger == null)
 		{
+			order.Reject();
 			await AddAudit(db, order, AuditType.OrderRequest, $"Exchanger type {order.Exchange.Label} not found", order.Position.Id.ToString());
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
 
 			return;
 		}
@@ -131,7 +136,8 @@ public class OrderExecutor : IHostedService
 		catch (Exception ex)
 		{
 			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, order.Position.Id.ToString());
-			await Db.SaveChangesAsync(cancellationToken);
+			await db.SaveChangesAsync(cancellationToken);
+			Logger.LogError($"[{message.OrderId}] Error {ex.Message}.");
 		}
 		finally
 		{
@@ -147,7 +153,7 @@ public class OrderExecutor : IHostedService
 			Ticker = order.Symbol,
 			Leverage = order.Position.Leverage,
 			Type = GetType(order),
-			Quantity = order.Quantity,
+			Quantity = order.ClosePosition ? 0 : order.Quantity,
 			QuantityType = QuantityType.Exact,
 			Key = order.Bot.Key
 		};
@@ -172,7 +178,6 @@ public class OrderExecutor : IHostedService
 
 	public async Task<ADOrder?> GetOrder(AstroidDb db, Guid orderId, CancellationToken cancellationToken = default) =>
 		await db.Orders
-			.AsNoTracking()
 			.Include(x => x.Position)
 			.Include(x => x.Bot)
 			.Include(x => x.Exchange)
