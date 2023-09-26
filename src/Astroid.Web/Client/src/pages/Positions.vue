@@ -50,13 +50,16 @@
 						<td><v-datetime v-model="props.row.createdDate" pretty /></td>
 						<td>
 							<v-dropdown class="pull-right">
+								<v-dropdown-item @click="showHistory(props.row.orders)">
+									<i class="fa-solid fa-xmark" /> Show Order History
+								</v-dropdown-item>
 								<v-dropdown-item @click="closePosition(props.row.id)">
 									<i class="fa-solid fa-xmark" /> Close
 								</v-dropdown-item>
 							</v-dropdown>
 						</td>
 					</tr>
-					<tr>
+					<tr v-if="props.row.status !== 2">
 						<td class="p-0" colspan="8">
 							<b-collapse
 								class="w-100"
@@ -65,7 +68,7 @@
 								:accordion="props.row.id"
 								role="tabpanel"
 							>
-								<span v-if="props.row.orders.length == 0">No orders</span>
+								<span v-if="props.row.orders.length == 0">No open orders</span>
 								<table
 									class="table table-condensed mt-0 w-100 d-block d-md-table flex-grow-1"
 									v-else
@@ -80,7 +83,12 @@
 										</tr>
 									</thead>
 									<tbody>
-										<tr v-for="order in props.row.orders" :key="order.id">
+										<tr
+											v-for="order in props.row.orders.filter(
+												(x) => x.status != 4 && x.status != 5
+											)"
+											:key="order.id"
+										>
 											<td>
 												<b-badge pill variant="light">{{
 													$consts.ORDER_TRIGGER_TYPES[order.triggerType].title
@@ -117,6 +125,7 @@
 				</template>
 			</v-table>
 		</div>
+		<OrderHistoryModal ref="orderHistoryModal" />
 	</div>
 </template>
 
@@ -124,6 +133,7 @@
 import Service from "../services/positions";
 import { EXCHANGE_ICONS } from "../core/consts";
 
+import OrderHistoryModal from "../components/Positions/PositionHistory.vue";
 export default {
 	data() {
 		return {
@@ -147,6 +157,9 @@ export default {
 	methods: {
 		async requestFunction(filters, sorts, currentPage, perPage) {
 			return await Service.list(filters, sorts, currentPage, perPage);
+		},
+		showHistory(orders) {
+			this.$refs.orderHistoryModal.show(orders);
 		},
 		closePosition(id) {
 			console.log(id);
@@ -174,6 +187,7 @@ export default {
 			);
 		},
 	},
+	components: { OrderHistoryModal },
 };
 </script>
 
