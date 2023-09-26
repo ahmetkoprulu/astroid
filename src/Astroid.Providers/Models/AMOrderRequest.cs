@@ -14,6 +14,7 @@ public class AMOrderRequest
 	public decimal? Quantity { get; set; }
 	public QuantityType QuantityType { get; set; } = QuantityType.Percentage;
 	public string Key { get; set; } = string.Empty;
+	public bool IsPyramiding { get; set; }
 
 	public OrderType OrderType => Type switch
 	{

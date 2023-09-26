@@ -118,7 +118,21 @@ public class OrderExecutor : IHostedService
 		{
 			if (needToLock) await Cache.AcquireLock($"lock:bot:{order.BotId}:{order.Symbol}", TimeSpan.FromMinutes(5));
 
-			var result = await exchanger.ExecuteOrder(order.Bot, request);
+			var bot = await db.Bots
+				.Where(x => x.UserId == order.UserId)
+				.AsNoTracking()
+				.FirstOrDefaultAsync(x => x.Id == order.BotId, cancellationToken);
+
+			if (bot == null)
+			{
+				order.Reject();
+				await AddAudit(db, order, AuditType.OrderRequest, $"Bot {order.BotId} not found", order.Position.Id.ToString());
+				await db.SaveChangesAsync(cancellationToken);
+
+				return;
+			}
+
+			var result = await exchanger.ExecuteOrder(bot, request);
 			result.Audits.ForEach(x =>
 			{
 				x.UserId = order.UserId;
@@ -129,13 +143,17 @@ public class OrderExecutor : IHostedService
 			});
 
 			if (!result.Success)
+			{
 				Logger.LogError($"Order execution failed for {order.Id}.");
+				order.Reject();
+			}
 
 			await db.SaveChangesAsync(cancellationToken);
 		}
 		catch (Exception ex)
 		{
 			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, order.Position.Id.ToString());
+			order.Reject();
 			await db.SaveChangesAsync(cancellationToken);
 			Logger.LogError($"[{message.OrderId}] Error {ex.Message}.");
 		}
@@ -155,6 +173,7 @@ public class OrderExecutor : IHostedService
 			Type = GetType(order),
 			Quantity = order.ClosePosition ? 0 : order.Quantity,
 			QuantityType = QuantityType.Exact,
+			IsPyramiding = order.TriggerType == OrderTriggerType.Pyramiding,
 			Key = order.Bot.Key
 		};
 

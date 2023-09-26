@@ -148,3 +148,10 @@ public enum StopLossType
 	Trailing,
 	TrailingProfit
 }
+
+public enum OrderConditionType : short
+{
+	Unknown = 0,
+	Increasing = 1,
+	Decreasing = 2
+}

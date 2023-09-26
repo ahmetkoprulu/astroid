@@ -16,6 +16,7 @@ public class ADOrder : IEntity
 	public string Symbol { get; set; } = string.Empty;
 	public OrderTriggerType TriggerType { get; set; }
 	public decimal TriggerPrice { get; set; }
+	public OrderConditionType ConditionType { get; set; }
 	public decimal Quantity { get; set; }
 	public decimal FilledQuantity { get; set; }
 	public bool ClosePosition { get; set; }

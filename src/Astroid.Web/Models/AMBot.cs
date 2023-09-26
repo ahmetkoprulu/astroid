@@ -1,4 +1,5 @@
 using Astroid.Core;
+using Astroid.Entity;
 
 namespace Astroid.Web.Models;
 
@@ -14,8 +15,10 @@ public class AMBot
 	public LimitSettings LimitSettings { get; set; } = new();
 	public decimal? PositionSize { get; set; } = null;
 	public bool IsPositionSizeExpandable { get; set; }
+	public bool IsPyramidingEnabled { get; set; }
+	public PyramidingSettings PyramidingSettings { get; set; } = new();
 	public bool IsTakePofitEnabled { get; set; }
-	public List<TakeProfitTarget> TakeProfitTargets { get; set; } = new();
+	public TakeProfitSettings TakeProfitSettings { get; set; } = new();
 	public bool IsStopLossEnabled { get; set; }
 	public StopLossType StopLossType { get; set; } = StopLossType.Fixed;
 	public decimal? StopLossPrice { get; set; }

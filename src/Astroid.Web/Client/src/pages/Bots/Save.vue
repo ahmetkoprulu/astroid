@@ -176,29 +176,36 @@
 						:options="orderTypeOptions"
 					/>
 				</b-form-group>
+				<b-form-group label="Pyramiding">
+					<b-form-checkbox v-model="model.isPyramidingEnabled" switch />
+				</b-form-group>
+				<b-form-group label="Entry Target(s)" v-if="model.isPyramidingEnabled">
+					<MultipleQuantityTarget
+						v-model="model.pyramidingSettings.targets"
+						quantityLabel="Quantity (Position Size)"
+						targetLabel="Target (%)(+/-)"
+					/>
+				</b-form-group>
 				<b-form-group label="Take Profit">
 					<b-form-checkbox v-model="model.isTakePofitEnabled" switch />
 				</b-form-group>
-				<b-form-group v-if="model.isTakePofitEnabled">
-					<template #label>
-						<div class="d-flex justify-content-between">
-							<span>Profit Targets</span>
-							<a
-								class="text-primary"
-								href="javascript:;"
-								@click="
-									model.takeProfitTargets.push({
-										activation: null,
-										share: null,
-									})
-								"
-							>
-								<i class="fas fa-plus fa-fw" />
-							</a>
-						</div>
-					</template>
-					<MultipleTakeProfit v-model="model.takeProfitTargets" />
-				</b-form-group>
+				<div v-if="model.isTakePofitEnabled">
+					<b-form-group label="Price Reference">
+						<v-radio-group
+							v-model="model.takeProfitSettings.calculationBase"
+							:options="priceReferenceOptions"
+						/>
+					</b-form-group>
+					<b-form-group
+						label="Profit Target(s)"
+						v-if="model.isTakePofitEnabled"
+					>
+						<MultipleQuantityTarget
+							v-model="model.takeProfitSettings.targets"
+							quantityLabel="Quantity (%)"
+						/>
+					</b-form-group>
+				</div>
 				<b-form-group label="Stop Loss">
 					<b-form-checkbox v-model="model.isStopLossEnabled" switch />
 				</b-form-group>
@@ -242,7 +249,7 @@
 import Service from "@/services/bots";
 import MarketService from "@/services/markets";
 
-import MultipleTakeProfit from "@/components/Bots/MultipleTakeProfit.vue";
+import MultipleQuantityTarget from "@/components/Bots/MultipleQuantityTarget.vue";
 import WebhookInfo from "@/components/Bots/WebhookInfo.vue";
 import DropDownSelect from "@/components/shared/DropdownSelect.vue";
 import ComputationMethodModal from "@/components/Bots/ComputationMethodModal.vue";
@@ -304,8 +311,13 @@ export default {
 					orderBookOffset: 3,
 					deviation: 1,
 				},
+				isPyramidingEnabled: false,
+				pyramidingSettings: [],
 				isTakePofitEnabled: false,
-				takeProfitTargets: [],
+				takeProfitSettings: {
+					calculationBase: 1,
+					targets: [],
+				},
 				isStopLossActivated: false,
 				stopLossType: 1,
 				stopLossActivation: null,
@@ -379,6 +391,17 @@ export default {
 					icon: value.icon,
 				};
 			});
+		},
+		priceReferenceOptions() {
+			return Object.entries(this.$consts.PRICE_REFERENCE_TYPES).map(
+				([key, value]) => {
+					return {
+						text: value.title,
+						value: Number.parseInt(key),
+						icon: value.icon,
+					};
+				}
+			);
 		},
 	},
 	async mounted() {
@@ -467,7 +490,7 @@ export default {
 	},
 	components: {
 		WebhookInfo,
-		MultipleTakeProfit,
+		MultipleQuantityTarget,
 		DropDownSelect,
 		ComputationMethodModal,
 		ComputationMethodTestModal,

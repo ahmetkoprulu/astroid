@@ -66,8 +66,10 @@ public class BotsController : SecureController
 			PositionSizeType = bot.PositionSizeType,
 			PositionSize = bot.PositionSize,
 			IsPositionSizeExpandable = bot.IsPositionSizeExpandable,
+			IsPyramidingEnabled = bot.IsPyramidingEnabled,
+			PyramidingSettings = bot.PyramidingSettings,
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
-			TakeProfitTargets = bot.TakeProfitTargets,
+			TakeProfitSettings = bot.TakeProfitSettings,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
 			StopLossType = bot.StopLossType,
 			StopLossPrice = bot.StopLossPrice,
@@ -97,8 +99,10 @@ public class BotsController : SecureController
 				PositionSizeType = model.PositionSizeType,
 				PositionSize = model.PositionSize,
 				IsPositionSizeExpandable = model.IsPositionSizeExpandable,
+				IsPyramidingEnabled = model.IsPyramidingEnabled,
+				PyramidingSettings = model.PyramidingSettings,
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
-				TakeProfitTargets = model.TakeProfitTargets,
+				TakeProfitSettings = model.TakeProfitSettings,
 				IsStopLossEnabled = model.IsStopLossEnabled,
 				StopLossType = model.StopLossType,
 				StopLossPrice = model.StopLossPrice,
@@ -126,8 +130,10 @@ public class BotsController : SecureController
 			bot.PositionSizeType = model.PositionSizeType;
 			bot.PositionSize = model.PositionSize;
 			bot.IsPositionSizeExpandable = model.IsPositionSizeExpandable;
+			bot.IsPyramidingEnabled = model.IsPyramidingEnabled;
+			bot.PyramidingSettings = model.PyramidingSettings;
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
-			bot.TakeProfitTargets = model.TakeProfitTargets;
+			bot.TakeProfitSettings = model.TakeProfitSettings;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
 			bot.StopLossType = model.StopLossType;
 			bot.StopLossPrice = model.StopLossPrice;

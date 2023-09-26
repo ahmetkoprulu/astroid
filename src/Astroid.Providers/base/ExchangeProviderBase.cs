@@ -149,12 +149,12 @@ public abstract class ExchangeProviderBase : IDisposable
 		return position;
 	}
 
-	public async Task<List<ADOrder>> GetOrders(ADPosition position, OrderTriggerType triggerType) =>
+	public async Task<List<ADOrder>> GetOpenOrders(ADPosition position, OrderTriggerType triggerType) =>
 		await Db.Orders
-			.Where(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.TriggerType == triggerType)
+			.Where(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.Status == OrderStatus.Open && x.TriggerType == triggerType)
 			.ToListAsync();
 
-	public async Task AddOrder(ADPosition position, OrderTriggerType triggerType, decimal price, decimal quantity, bool closePrice) =>
+	public async Task AddOrder(ADPosition position, OrderTriggerType triggerType, OrderConditionType conditionType, decimal price, decimal quantity, bool closePrice) =>
 		await Db.Orders.AddAsync(new ADOrder
 		{
 			Id = Guid.NewGuid(),
@@ -164,6 +164,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			PositionId = position.Id,
 			Symbol = position.Symbol,
 			TriggerType = triggerType,
+			ConditionType = conditionType,
 			TriggerPrice = price,
 			Quantity = quantity,
 			ClosePosition = closePrice,
@@ -183,6 +184,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			Symbol = order.Ticker,
 			EntryPrice = result.EntryPrice,
 			AvgEntryPrice = result.EntryPrice,
+			Leverage = order.Leverage,
 			Quantity = result.Quantity,
 			Type = order.PositionType,
 			Status = PositionStatus.Open,
@@ -195,8 +197,9 @@ public abstract class ExchangeProviderBase : IDisposable
 		return position;
 	}
 
-	public void UpdatePosition(ADPosition position, AMOrderResult result)
+	public void UpdatePosition(ADPosition position, AMOrderRequest order, AMOrderResult result)
 	{
+		position.Leverage = order.Leverage;
 		position.AvgEntryPrice = (position.AvgEntryPrice + result.EntryPrice) / 2;
 		position.Quantity += result.Quantity;
 	}

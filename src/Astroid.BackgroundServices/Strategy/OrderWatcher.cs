@@ -41,8 +41,9 @@ public class OrderWatcher : IHostedService
 		{
 			var lossTask = WatchStopLossOrders(cancellationToken);
 			var profitTask = WatchTakeProfitOrders(cancellationToken);
+			var pyramidingTask = WatchPyramidingOrders(cancellationToken);
 
-			Task.WaitAll(new Task[] { lossTask, profitTask }, cancellationToken: cancellationToken);
+			Task.WaitAll(new Task[] { lossTask, profitTask, pyramidingTask }, cancellationToken: cancellationToken);
 
 			await Task.Delay(1000, cancellationToken);
 		}
@@ -74,10 +75,10 @@ public class OrderWatcher : IHostedService
 			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.MarkPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
-			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
+			await OrderQueue.Publish(msg, cancellationToken);
 		}
 	}
 
@@ -106,10 +107,10 @@ public class OrderWatcher : IHostedService
 			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
-			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
+			await OrderQueue.Publish(msg, cancellationToken);
 		}
 	}
 
@@ -138,22 +139,19 @@ public class OrderWatcher : IHostedService
 			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
-			await OrderQueue.Publish(msg, cancellationToken);
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
+			await OrderQueue.Publish(msg, cancellationToken);
 		}
 	}
 
 	public bool NeedToTriggerOrder(ADPosition position, ADOrder order, decimal symbolPrice)
 	{
-		if (order.TriggerType == OrderTriggerType.StopLoss)
+		if (order.ConditionType == OrderConditionType.Decreasing)
 			return position.Type == PositionType.Long ? symbolPrice < order.TriggerPrice : symbolPrice > order.TriggerPrice;
 
-		if (order.TriggerType == OrderTriggerType.TakeProfit)
-			return position.Type == PositionType.Long ? symbolPrice > order.TriggerPrice : symbolPrice < order.TriggerPrice;
-
-		if (order.TriggerType == OrderTriggerType.Pyramiding)
+		if (order.ConditionType == OrderConditionType.Increasing)
 			return position.Type == PositionType.Long ? symbolPrice > order.TriggerPrice : symbolPrice < order.TriggerPrice;
 
 		return false;

@@ -3,6 +3,7 @@ using System;
 using Astroid.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Astroid.Entity.Migrations
 {
     [DbContext(typeof(AstroidDb))]
-    partial class AstroidDbModelSnapshot : ModelSnapshot
+    [Migration("20230919101156_AddedPyramidColumnsToBotTable")]
+    partial class AddedPyramidColumnsToBotTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -116,10 +119,10 @@ namespace Astroid.Entity.Migrations
                     b.Property<short>("PositionSizeType")
                         .HasColumnType("smallint");
 
-                    b.Property<string>("PyramidingSettingsJson")
+                    b.Property<string>("PyramidingTargetsJson")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("PyramidingSettings");
+                        .HasColumnName("PyramidingTargets");
 
                     b.Property<decimal?>("StopLossCallbackRate")
                         .HasColumnType("numeric");
@@ -130,10 +133,10 @@ namespace Astroid.Entity.Migrations
                     b.Property<int>("StopLossType")
                         .HasColumnType("integer");
 
-                    b.Property<string>("TakeProfitSettingsJson")
+                    b.Property<string>("TakeProfitTargetsJson")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("TakeProfitSettings");
+                        .HasColumnName("TakeProfitTargets");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -261,9 +264,6 @@ namespace Astroid.Entity.Migrations
 
                     b.Property<bool>("ClosePosition")
                         .HasColumnType("boolean");
-
-                    b.Property<short>("ConditionType")
-                        .HasColumnType("smallint");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("timestamp without time zone");
