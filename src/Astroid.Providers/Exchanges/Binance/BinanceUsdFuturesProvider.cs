@@ -116,7 +116,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!orderResult.Success) return result;
 
 		if (position == null) position = await AddPosition(bot, order, orderResult);
-		else UpdatePosition(position, order, orderResult);
+		else position.Expand(orderResult.Quantity, orderResult.EntryPrice, order.Leverage);
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
@@ -152,10 +152,26 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				quantity = Math.Round(position.Quantity * (request.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
 
-		var closePosition = order == null || order.ClosePosition;
-		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result, closePosition);
+		if (order!.ClosePosition)
+		{
+			var exPosition = await GetPosition(order.Symbol, position.Type);
+			if (exPosition == null)
+			{
+				await CancelOpenOrders(position);
+				position.Close();
+				await Db.SaveChangesAsync();
+
+				return true;
+			}
+
+			quantity = Math.Max(quantity, Math.Abs(exPosition.Quantity));
+		}
+
+		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result, true);
 
 		await ReducePosition(position, orderResult, order);
+		await Db.SaveChangesAsync();
+
 		if (!orderResult.Success) return false;
 
 		result.WithSuccess();
@@ -187,7 +203,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!orderResult.Success) return result;
 
 		if (position == null) position = await AddPosition(bot, order, orderResult);
-		else UpdatePosition(position, order, orderResult);
+		else position.Expand(orderResult.Quantity, orderResult.EntryPrice, order.Leverage);
 
 		result.CorrelationId = position.Id.ToString();
 		if (order.IsPyramiding) return result;
@@ -224,10 +240,27 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			else
 				quantity = Math.Round(position.Quantity * (request.Quantity.Value / 100), symbolInfo.QuantityPrecision);
 		}
-		var closePosition = order == null || order.ClosePosition;
-		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result, closePosition);
+
+		if (order!.ClosePosition)
+		{
+			var exPosition = await GetPosition(order.Symbol, position.Type);
+			if (exPosition == null)
+			{
+				await CancelOpenOrders(position);
+				position.Close();
+				await Db.SaveChangesAsync();
+
+				return true;
+			}
+
+			quantity = Math.Max(quantity, Math.Abs(exPosition.Quantity));
+		}
+
+		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result, true);
 
 		await ReducePosition(position, orderResult, order);
+		await Db.SaveChangesAsync();
+
 		if (!orderResult.Success) return false;
 
 		result.WithSuccess();
@@ -265,7 +298,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		order.Fill(orderResult.Quantity);
-		UpdatePosition(position, request, orderResult);
+		position.Expand(orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
 		var symbolInfo = await GetSymbolInfo(order.Symbol);
 		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.MarkPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
@@ -335,6 +368,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task CreatePyramidingOrders(ADBot bot, ADPosition position, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
 		if (position == null) return;
+		await CancelOrders(position, order, OrderTriggerType.Pyramiding, result);
 
 		if (bot.PyramidingSettings.Targets.Count == 0)
 		{
@@ -365,7 +399,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (position == null) return;
 		await CancelOrders(position, order, OrderTriggerType.TakeProfit, result);
 
-		if (bot.PyramidingSettings.Targets.Count == 0)
+		if (bot.TakeProfitSettings.Targets.Count == 0)
 		{
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: No target to place order.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
 			return;
@@ -515,7 +549,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Cancelled {cancelResult.Data.Count(x => x.Success)} take profit order(s) out of {cancelResult.Data.Count()}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker }));
 	}
 
-	private async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result, bool closePosition = false)
+	private async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, AMProviderResult result, bool reduceOnly = false)
 	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
@@ -526,7 +560,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				positionSide: pSide,
 				workingType: WorkingType.Contract,
 				orderResponseType: OrderResponseType.Result,
-				closePosition: closePosition
+				reduceOnly: reduceOnly
 			);
 
 		if (!orderResponse.Success)
@@ -729,6 +763,15 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			.FirstOrDefaultAsync(x => x.Id == orderId);
 
 		return order;
+	}
+
+	private async Task<BinancePositionDetailsUsdt?> GetPosition(string ticker, PositionType type)
+	{
+		var side = type == PositionType.Long ? PositionSide.Long : PositionSide.Short;
+		var positions = await GetPositions();
+		var position = positions.FirstOrDefault(x => x.Symbol == ticker && x.PositionSide == side && x.Quantity != 0);
+
+		return position;
 	}
 
 	private async Task<IEnumerable<BinancePositionDetailsUsdt>> GetPositions()
