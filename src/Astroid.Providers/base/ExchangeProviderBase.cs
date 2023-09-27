@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
+using Astroid.Entity.Extentions;
 using CryptoExchange.Net.CommonObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -186,6 +187,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			AvgEntryPrice = result.EntryPrice,
 			Leverage = order.Leverage,
 			Quantity = result.Quantity,
+			CurrentQuantity = result.Quantity,
 			Type = order.PositionType,
 			Status = PositionStatus.Open,
 			UpdatedDate = DateTime.UtcNow,
@@ -195,13 +197,6 @@ public abstract class ExchangeProviderBase : IDisposable
 		await Db.Positions.AddAsync(position);
 
 		return position;
-	}
-
-	public void UpdatePosition(ADPosition position, AMOrderRequest order, AMOrderResult result)
-	{
-		position.Leverage = order.Leverage;
-		position.AvgEntryPrice = (position.AvgEntryPrice + result.EntryPrice) / 2;
-		position.Quantity += result.Quantity;
 	}
 
 	public async Task ClosePosition(AMOrderRequest order)
@@ -220,45 +215,25 @@ public abstract class ExchangeProviderBase : IDisposable
 	{
 		if (!result.Success)
 		{
-			RejectOrder(order);
+			order?.Reject();
 			return;
 		}
 
 		if (order == null)
 		{
 			await CancelOpenOrders(position);
-			ClosePosition(position);
+			position.Close();
 			return;
 		}
 
-		// TODO: Cancel Open Orders
 		if (order.ClosePosition)
 		{
 			await CancelOpenOrders(position);
-			ClosePosition(position);
+			position.Close();
 		}
 
-		order.Status = OrderStatus.Filled;
-		order.UpdatedDate = DateTime.UtcNow;
-		order.FilledQuantity = result.Quantity;
-
-		await Db.SaveChangesAsync();
-	}
-
-	public void RejectOrder(ADOrder? order)
-	{
-		if (order == null) return;
-
-		order.Status = OrderStatus.Rejected;
-		order.UpdatedDate = DateTime.UtcNow;
-	}
-
-	public void ClosePosition(ADPosition position)
-	{
-		if (position == null) return;
-
-		position.Status = PositionStatus.Closed;
-		position.UpdatedDate = DateTime.UtcNow;
+		order.Fill(result.Quantity);
+		position.Reduce(result.Quantity);
 	}
 
 	public async Task CancelOpenOrders(ADPosition position)

@@ -16,6 +16,7 @@ public class ADPosition : IEntity
 	public decimal EntryPrice { get; set; }
 	public decimal AvgEntryPrice { get; set; }
 	public decimal Quantity { get; set; }
+	public decimal CurrentQuantity { get; set; }
 	public int Leverage { get; set; }
 	public PositionType Type { get; set; }
 	public PositionStatus Status { get; set; }
@@ -33,5 +34,24 @@ public class ADPosition : IEntity
 
 	public List<ADOrder> Orders { get; set; } = new();
 
-	public decimal CurrentQuantity => Quantity - Orders.Where(x => x.Status == OrderStatus.Filled && !x.ClosePosition).Sum(x => x.FilledQuantity);
+	public void Close()
+	{
+		Status = PositionStatus.Closed;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void Reduce(decimal quantity)
+	{
+		CurrentQuantity -= quantity;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void Expand(decimal quantity, decimal entryPrice, int leverage)
+	{
+		Leverage = leverage;
+		AvgEntryPrice = (AvgEntryPrice + entryPrice) / 2;
+		Quantity += quantity;
+		CurrentQuantity += quantity;
+		UpdatedDate = DateTime.UtcNow;
+	}
 }
