@@ -354,7 +354,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculatePyramid(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
-			var condition = target.Target > 0 ? OrderConditionType.Decreasing : OrderConditionType.Increasing;
+			var condition = target.Target < 0 ? OrderConditionType.Decreasing : OrderConditionType.Increasing;
 			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, qty, false);
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Placed pyramiding order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
@@ -525,9 +525,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				quantity,
 				positionSide: pSide,
 				workingType: WorkingType.Contract,
-				orderResponseType: OrderResponseType.Result
+				orderResponseType: OrderResponseType.Result,
+				closePosition: closePosition
 			);
-
 
 		if (!orderResponse.Success)
 		{

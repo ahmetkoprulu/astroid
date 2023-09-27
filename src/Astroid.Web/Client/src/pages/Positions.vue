@@ -50,11 +50,11 @@
 						<td><v-datetime v-model="props.row.createdDate" pretty /></td>
 						<td>
 							<v-dropdown class="pull-right">
-								<v-dropdown-item @click="showHistory(props.row.orders)">
-									<i class="fa-solid fa-xmark" /> Show Order History
+								<v-dropdown-item @click="showHistory($event, props.row.orders)">
+									<i class="fa-regular fa-file-lines mr-2" /> Show order history
 								</v-dropdown-item>
-								<v-dropdown-item @click="closePosition(props.row.id)">
-									<i class="fa-solid fa-xmark" /> Close
+								<v-dropdown-item @click="closePosition($event, props.row.id)">
+									<i class="fa-solid fa-xmark mr-2" /> Close
 								</v-dropdown-item>
 							</v-dropdown>
 						</td>
@@ -158,10 +158,11 @@ export default {
 		async requestFunction(filters, sorts, currentPage, perPage) {
 			return await Service.list(filters, sorts, currentPage, perPage);
 		},
-		showHistory(orders) {
+		showHistory(e, orders) {
+			console.log(e);
 			this.$refs.orderHistoryModal.show(orders);
 		},
-		closePosition(id) {
+		closePosition(e, id) {
 			console.log(id);
 			this.$alert.remove(
 				"Close The Position?",
