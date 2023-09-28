@@ -11,8 +11,8 @@ public class AMOrderRequest
 	public int Leverage { get; set; }
 	public string Type { get; set; } = string.Empty;
 	public int Risk { get; set; } = 1;
-	public decimal? Quantity { get; set; }
-	public QuantityType QuantityType { get; set; } = QuantityType.Percentage;
+	public decimal Quantity { get; set; } = 0;
+	public string QuantityType = "percentage";
 	public string Key { get; set; } = string.Empty;
 	public bool IsPyramiding { get; set; }
 
@@ -34,6 +34,22 @@ public class AMOrderRequest
 		"close-short" => PositionType.Short,
 		"close-all" => PositionType.Both,
 		_ => throw new Exception("Invalid position type")
+	};
+
+	public PositionSizeType QtyType => QuantityType switch
+	{
+		"percentage" => PositionSizeType.Ratio,
+		"fixed-usd" => PositionSizeType.FixedInUsd,
+		"fixed-asset" => PositionSizeType.FixedInAsset,
+		_ => throw new NotImplementedException(),
+	};
+
+	public void SetQuantityType(PositionSizeType type) => QuantityType = type switch
+	{
+		PositionSizeType.Ratio => QuantityType = "percentage",
+		PositionSizeType.FixedInUsd => QuantityType = "fixed-usd",
+		PositionSizeType.FixedInAsset => QuantityType = "fixed-asset",
+		_ => throw new NotImplementedException(),
 	};
 
 	public string? Timestamp { get; set; }
@@ -78,9 +94,11 @@ public class AMOrderRequest
 		return true;
 	}
 
+	public bool IsClose => Type.StartsWith("close");
+
 	public AMOrderRequest? GetSwingRequest()
 	{
-		if (Type.StartsWith("close")) return null;
+		if (IsClose) return null;
 
 		return new AMOrderRequest
 		{
@@ -91,9 +109,3 @@ public class AMOrderRequest
 	}
 }
 
-public enum QuantityType : short
-{
-	Unknown = 0,
-	Percentage = 1,
-	Exact = 2
-}

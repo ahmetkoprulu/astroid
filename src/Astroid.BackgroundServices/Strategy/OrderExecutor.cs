@@ -172,10 +172,10 @@ public class OrderExecutor : IHostedService
 			Leverage = order.Position.Leverage,
 			Type = GetType(order),
 			Quantity = order.ClosePosition ? 0 : order.Quantity,
-			QuantityType = QuantityType.Exact,
 			IsPyramiding = order.TriggerType == OrderTriggerType.Pyramiding,
 			Key = order.Bot.Key
 		};
+		request.SetQuantityType(order.QuantityType);
 
 		return request;
 	}

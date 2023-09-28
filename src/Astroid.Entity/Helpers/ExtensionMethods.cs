@@ -10,24 +10,7 @@ public static class ContextExtentionMethods
 
 	public static bool IsClosing(this ADPosition position) => position.Orders.Any(x => x.Status == OrderStatus.Triggered && x.ClosePosition);
 
-	public static void Cancel(this ADOrder order)
-	{
-		order.Status = OrderStatus.Cancelled;
-		order.UpdatedDate = DateTime.UtcNow;
-	}
-
-	public static void Reject(this ADOrder order)
-	{
-		order.Status = OrderStatus.Rejected;
-		order.UpdatedDate = DateTime.UtcNow;
-	}
-
-	public static void Fill(this ADOrder order, decimal quantity)
-	{
-		order.Status = OrderStatus.Filled;
-		order.UpdatedDate = DateTime.UtcNow;
-		order.FilledQuantity = quantity;
-	}
+	public static Task<ADPosition?> Get(this DbSet<ADPosition> set, string symbol, PositionType type) => set.FirstOrDefaultAsync(x => x.Symbol == symbol && x.Type == type && x.Status == PositionStatus.Open);
 
 	public static void Upsert<T>(this DbSet<T> set, T entity, Func<T, bool> condition) where T : class
 	{

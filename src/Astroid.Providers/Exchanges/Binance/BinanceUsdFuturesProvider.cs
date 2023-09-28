@@ -106,7 +106,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 		}
 
-		var quantity = await ConvertUsdtToCoin(bot, order);
+		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		AMOrderResult orderResult;
@@ -141,16 +141,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
-		var quantity = position.Quantity;
-
-		if (request.Quantity > 0)
-		{
-			var symbolInfo = await GetSymbolInfo(request.Ticker);
-			if (request.QuantityType == QuantityType.Exact)
-				quantity = request.Quantity.Value;
-			else
-				quantity = Math.Round(position.Quantity * (request.Quantity.Value / 100), symbolInfo.QuantityPrecision);
-		}
+		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
 
 		if (order!.ClosePosition)
 		{
@@ -193,7 +184,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 		}
 
-		var quantity = await ConvertUsdtToCoin(bot, order);
+		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, order);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(order.Ticker, order.Leverage);
 
 		AMOrderResult orderResult;
@@ -230,16 +221,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
-		var quantity = position.Quantity;
-
-		if (request.Quantity > 0)
-		{
-			var symbolInfo = await GetSymbolInfo(request.Ticker);
-			if (request.QuantityType == QuantityType.Exact)
-				quantity = request.Quantity.Value;
-			else
-				quantity = Math.Round(position.Quantity * (request.Quantity.Value / 100), symbolInfo.QuantityPrecision);
-		}
+		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
 
 		if (order!.ClosePosition)
 		{
@@ -351,7 +333,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var order = await Db.Orders.FirstOrDefaultAsync(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.TriggerType == OrderTriggerType.StopLoss && x.Status == Core.OrderStatus.Open);
 		if (order != null)
 		{
-			order.Quantity = position.Quantity;
+			// order.Quantity = position.Quantity;
 			return;
 		}
 
@@ -362,7 +344,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var stopPrice = GetStopLoss(bot, entryPrice, symbol.PricePrecision, request.PositionType);
-		await AddOrder(position, OrderTriggerType.StopLoss, OrderConditionType.Decreasing, stopPrice!.Value, quantity, true);
+		await AddOrder(position, OrderTriggerType.StopLoss, OrderConditionType.Decreasing, stopPrice!.Value, 100, PositionSizeType.Ratio, true);
 	}
 
 	private async Task CreatePyramidingOrders(ADBot bot, ADPosition position, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
@@ -389,7 +371,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculatePyramid(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
 			var condition = target.Target < 0 ? OrderConditionType.Decreasing : OrderConditionType.Increasing;
-			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, qty, false);
+			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, target.Target, bot.PositionSizeType, false);
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Placed pyramiding order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
@@ -417,7 +399,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculateTakeProfit(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
-			await AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, i == targets.Count - 1);
+			await AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, PositionSizeType.FixedInAsset, i == targets.Count - 1);
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Placed take profit order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
@@ -783,27 +765,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return response.Data;
 	}
 
-	private async Task<decimal> ConvertUsdtToCoin(ADBot bot, AMOrderRequest order)
+	private async Task<decimal> ConvertUsdtToCoin(decimal size, PositionSizeType type, AMOrderRequest order)
 	{
-		if (order.Quantity > 0) bot.PositionSize = order.Quantity;
+		if (order.Quantity > 0) size = order.Quantity;
 
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
-		if (bot.PositionSizeType == PositionSizeType.FixedInAsset) return Math.Round(bot.PositionSize!.Value, symbolInfo.QuantityPrecision);
+		if (type == PositionSizeType.FixedInAsset) return Math.Round(size, symbolInfo.QuantityPrecision);
 
 		symbolInfo = await GetSymbolInfo(order.Ticker);
 
-		// TODO: Dynamic position size calculation
-		// if (!bot.PositionSize.HasValue || bot.PositionSize <= 0)
-		// {
-		// 	if (bot.StopLossPrice == 0 || order.Leverage == 0) throw new Exception("Stoploss or leverage is not set");
-
-		// 	bot.PositionSize = wallet / bot.StopLossPrice / order.Leverage;
-
-		// 	return Math.Round(bot.PositionSize!.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
-		// }
-		// order.Leverage = order.Leverage <= 0 ? (int)(wallet / bot.PositionSize!.Value / bot.StopLossPrice!.Value) : order.Leverage;
-
-		if (bot.PositionSizeType == PositionSizeType.FixedInUsd) return Math.Round(bot.PositionSize!.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
+		if (type == PositionSizeType.FixedInUsd) return Math.Round(size / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 
 		var balancesResponse = Client.UsdFuturesApi.Account.GetBalancesAsync().GetAwaiter().GetResult();
 		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
@@ -811,9 +782,21 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var usdtBalanceInfo = balancesResponse.Data.FirstOrDefault(x => x.Asset == "USDT") ?? throw new Exception("Could not find USDT balance");
 		var wallet = usdtBalanceInfo.AvailableBalance / order.Risk;
 
-		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(bot.PositionSize) / 100;
+		var usdQuantity = usdtBalanceInfo.AvailableBalance * Convert.ToDecimal(size) / 100;
 
 		return Math.Round(usdQuantity / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
+	}
+
+	private async Task<decimal> GetAssetQuantity(decimal size, PositionSizeType type, string ticker, decimal amount)
+	{
+		if (size == 0) return amount;
+
+		if (type == PositionSizeType.FixedInAsset) return size;
+
+		var symbolInfo = await GetSymbolInfo(ticker);
+		if (type == PositionSizeType.FixedInUsd) return Math.Round(size / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
+
+		return amount * size / 100;
 	}
 
 	private static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)

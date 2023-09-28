@@ -18,6 +18,7 @@ public class ADOrder : IEntity
 	public decimal TriggerPrice { get; set; }
 	public OrderConditionType ConditionType { get; set; }
 	public decimal Quantity { get; set; }
+	public PositionSizeType QuantityType { get; set; }
 	public decimal FilledQuantity { get; set; }
 	public bool ClosePosition { get; set; }
 	public OrderStatus Status { get; set; }
@@ -36,4 +37,23 @@ public class ADOrder : IEntity
 
 	[ForeignKey(nameof(UserId))]
 	public ADUser User { get; set; } = null!;
+
+	public void Cancel()
+	{
+		Status = OrderStatus.Cancelled;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void Reject()
+	{
+		Status = OrderStatus.Rejected;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void Fill(decimal quantity)
+	{
+		Status = OrderStatus.Filled;
+		UpdatedDate = DateTime.UtcNow;
+		FilledQuantity = quantity;
+	}
 }

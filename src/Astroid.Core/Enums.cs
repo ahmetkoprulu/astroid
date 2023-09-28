@@ -128,6 +128,8 @@ public enum OrderTriggerType
 	StopLoss = 1,
 	TakeProfit = 2,
 	Pyramiding = 3,
+	Sell = 4,
+	Buy = 5
 }
 
 public enum OrderStatus
@@ -153,5 +155,6 @@ public enum OrderConditionType : short
 {
 	Unknown = 0,
 	Increasing = 1,
-	Decreasing = 2
+	Decreasing = 2,
+	Immediate = 3
 }
