@@ -270,6 +270,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var orderSide = request.PositionType == PositionType.Long ? OrderSide.Buy : OrderSide.Sell;
 		var positionSide = request.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
 		var quantity = await ConvertUsdtToCoin(order.Quantity, request.QtyType, request);
+
 		if (bot.OrderType == OrderEntryType.Market) orderResult = await PlaceMarketOrder(request.Ticker, quantity, orderSide, positionSide, result);
 		else orderResult = await PlaceLimitOrder(request.Ticker, quantity, orderSide, positionSide, bot.LimitSettings, result);
 

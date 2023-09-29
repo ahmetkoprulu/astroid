@@ -48,6 +48,7 @@ public class PositionsController : SecureController
 				AveragePrice = x.AvgEntryPrice,
 				EntryPrice = x.EntryPrice,
 				Quantity = x.Quantity,
+				CurrentQuantity = x.CurrentQuantity,
 				Leverage = x.Leverage,
 				Type = x.Type,
 				Status = x.Status,

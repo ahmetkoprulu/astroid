@@ -30,7 +30,20 @@
 								</span>
 							</div>
 						</td>
-						<td>{{ props.row.quantity }}</td>
+						<td>
+							<div>
+								{{ props.row.quantity }}
+							</div>
+							<div
+								v-if="
+									props.row.status !== 2 &&
+									props.row.quantity != props.row.currentQuantity
+								"
+							>
+								<span class="text-muted"> current: </span>
+								{{ props.row.currentQuantity }}
+							</div>
+						</td>
 						<td>
 							<div>
 								<span class="text-muted">entry: </span
@@ -69,56 +82,14 @@
 								role="tabpanel"
 							>
 								<span v-if="props.row.orders.length == 0">No open orders</span>
-								<table
-									class="table table-condensed mt-0 w-100 d-block d-md-table flex-grow-1"
+								<OrderHistoryTable
 									v-else
-								>
-									<thead>
-										<tr>
-											<th>Type</th>
-											<th>Quantity</th>
-											<th>Trigger Price</th>
-											<th>Close Position</th>
-											<th>Status</th>
-										</tr>
-									</thead>
-									<tbody>
-										<tr
-											v-for="order in props.row.orders.filter(
-												(x) => x.status != 4 && x.status != 5
-											)"
-											:key="order.id"
-										>
-											<td>
-												<b-badge pill variant="light">{{
-													$consts.ORDER_TRIGGER_TYPES[order.triggerType].title
-												}}</b-badge>
-											</td>
-											<td>{{ order.quantity }}</td>
-											<td>{{ order.triggerPrice }}</td>
-											<td>
-												<b-badge
-													pill
-													:variant="order.closePosition ? 'success' : 'light'"
-													>{{ order.closePosition ? "Yes" : "No" }}
-												</b-badge>
-											</td>
-											<td>
-												<b-badge
-													pill
-													:variant="
-														order.status == 4 || order.status == 5
-															? 'danger'
-															: 'light'
-													"
-													>{{
-														$consts.ORDER_STATUS[order.status].title
-													}}</b-badge
-												>
-											</td>
-										</tr>
-									</tbody>
-								</table>
+									:orders="
+										props.row.orders.filter(
+											(x) => x.status != 4 && x.status != 5
+										)
+									"
+								/>
 							</b-collapse>
 						</td>
 					</tr>
@@ -134,6 +105,8 @@ import Service from "../services/positions";
 import { EXCHANGE_ICONS } from "../core/consts";
 
 import OrderHistoryModal from "../components/Positions/PositionHistory.vue";
+import OrderHistoryTable from "../components/Positions/OrdersTable.vue";
+
 export default {
 	data() {
 		return {
@@ -188,7 +161,7 @@ export default {
 			);
 		},
 	},
-	components: { OrderHistoryModal },
+	components: { OrderHistoryModal, OrderHistoryTable },
 };
 </script>
 

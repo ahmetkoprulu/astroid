@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Astroid.Entity.Extentions;
 using Astroid.Core.MessageQueue;
 
-namespace Astroid.BackgroundServices.Cache;
+namespace Astroid.BackgroundServices.Order;
 
 public class OrderWatcher : IHostedService
 {
@@ -56,7 +56,6 @@ public class OrderWatcher : IHostedService
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Sell);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.Sell).ToList();
-		Logger.LogInformation($"Watching {orders.Count} [SELL] orders.");
 
 		foreach (var order in orders)
 		{
@@ -89,7 +88,7 @@ public class OrderWatcher : IHostedService
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.StopLoss);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.StopLoss).ToList();
-		Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
+		// Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
 
 		foreach (var order in orders)
 		{
@@ -122,7 +121,7 @@ public class OrderWatcher : IHostedService
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Pyramiding);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.Pyramiding).ToList();
-		Logger.LogInformation($"Watching {orders.Count} pyramiding orders.");
+
 		foreach (var order in orders)
 		{
 			if (order.Position.Status == PositionStatus.Closed)
@@ -154,7 +153,7 @@ public class OrderWatcher : IHostedService
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.TakeProfit);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit).ToList();
-		Logger.LogInformation($"Watching {orders.Count} take profit orders.");
+
 		foreach (var order in orders)
 		{
 			if (order.Position.Status == PositionStatus.Closed)

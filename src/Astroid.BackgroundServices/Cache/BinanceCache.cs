@@ -14,7 +14,6 @@ public class BinanceCache : IHostedService
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private ICacheService Cache { get; set; }
 	private ILogger<BinanceCache> Logger { get; set; }
-
 	private BinanceSocketClient SocketClient { get; set; }
 	private BinanceRestClient Client { get; set; }
 
@@ -41,7 +40,6 @@ public class BinanceCache : IHostedService
 			o.ApiCredentials = creds;
 		});
 	}
-
 
 	public async Task StartAsync(CancellationToken cancellationToken)
 	{
@@ -102,25 +100,25 @@ public class BinanceCache : IHostedService
 			}
 		});
 
-		var binanceInfo = await ExchangeStore.Get(ACExchanges.BinanceUsdFutures);
-		var symbolsToCache = binanceInfo!.Symbols
-			.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "SOLUSDT" || x.Name == "MATICUSDT")
-			.ToList();
+		// var binanceInfo = await ExchangeStore.Get(ACExchanges.BinanceUsdFutures);
+		// var symbolsToCache = binanceInfo!.Symbols
+		// 	.Where(x => x.Name == "BTCUSDT" || x.Name == "ETHUSDT" || x.Name == "SOLUSDT" || x.Name == "MATICUSDT")
+		// 	.ToList();
 
-		foreach (var ticker in symbolsToCache)
-		{
-			await SocketClient.UsdFuturesApi.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, async data =>
-			{
-				var orderBook = await ExchangeStore.GetOrderBook(ACExchanges.BinanceUsdFutures, ticker.Name);
-				await orderBook.ProcessUpdate(data.Data);
-				if (await orderBook.ReadLastUpdateTime() == 0)
-				{
-					await orderBook.SetLastUpdateTime(-1);
-					Console.WriteLine("Getting snapshot");
-					await GetDepthSnapshot(orderBook);
-				}
-			});
-		}
+		// foreach (var ticker in symbolsToCache)
+		// {
+		// 	await SocketClient.UsdFuturesApi.SubscribeToOrderBookUpdatesAsync(ticker.Name, 500, async data =>
+		// 	{
+		// 		var orderBook = await ExchangeStore.GetOrderBook(ACExchanges.BinanceUsdFutures, ticker.Name);
+		// 		await orderBook.ProcessUpdate(data.Data);
+		// 		if (await orderBook.ReadLastUpdateTime() == 0)
+		// 		{
+		// 			await orderBook.SetLastUpdateTime(-1);
+		// 			Console.WriteLine("Getting snapshot");
+		// 			await GetDepthSnapshot(orderBook);
+		// 		}
+		// 	});
+		// }
 		Logger.LogInformation("Subscribed Sockets.");
 	}
 

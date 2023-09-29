@@ -8,7 +8,7 @@ using Astroid.Entity.Extentions;
 using Astroid.Core.MessageQueue;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Astroid.BackgroundServices.Cache;
+namespace Astroid.BackgroundServices.Order;
 
 public class OrderExecutor : IHostedService
 {
