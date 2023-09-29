@@ -6,6 +6,12 @@ namespace Astroid.Entity.Extentions;
 
 public static class ContextExtentionMethods
 {
+	public static Task<bool> IsPositionClosing(this AstroidDb db, Guid positionId) => db.Orders.AnyAsync(x => x.PositionId == positionId && x.Status == OrderStatus.Triggered && x.ClosePosition);
+
+	public static bool IsClosing(this ADPosition position) => position.Orders.Any(x => x.Status == OrderStatus.Triggered && x.ClosePosition);
+
+	public static Task<ADPosition?> Get(this DbSet<ADPosition> set, string symbol, PositionType type) => set.FirstOrDefaultAsync(x => x.Symbol == symbol && x.Type == type && x.Status == PositionStatus.Open);
+
 	public static void Upsert<T>(this DbSet<T> set, T entity, Func<T, bool> condition) where T : class
 	{
 		var e = set.FirstOrDefault(condition);
@@ -14,19 +20,45 @@ public static class ContextExtentionMethods
 		set.Add(entity);
 	}
 
-	public static void AddAudit(this AstroidDb db, AuditType type, string description, string? correlationId = null, string? data = null)
+	public static async Task AddCloseOrder(this DbSet<ADOrder> set, ADPosition position, decimal price)
+	{
+		var order = new ADOrder
+		{
+			Id = Guid.NewGuid(),
+			UserId = position.UserId,
+			BotId = position.BotId,
+			ExchangeId = position.ExchangeId,
+			PositionId = position.Id,
+			Symbol = position.Symbol,
+			TriggerPrice = price,
+			TriggerType = OrderTriggerType.Sell,
+			ConditionType = OrderConditionType.Immediate,
+			Quantity = position.Quantity,
+			QuantityType = PositionSizeType.FixedInUsd,
+			ClosePosition = true,
+			Status = OrderStatus.Open,
+			UpdatedDate = DateTime.MinValue,
+			CreatedDate = DateTime.UtcNow
+		};
+
+		await set.AddAsync(order);
+	}
+
+	public static async Task AddAudit(this AstroidDb db, Guid userId, Guid actorId, AuditType type, string description, Guid? targetId = null, string? correlationId = null, string? data = null)
 	{
 		var audit = new ADAudit
 		{
 			Id = Guid.NewGuid(),
-			UserId = Guid.Empty,
+			UserId = userId,
+			ActorId = actorId,
+			TargetId = targetId,
 			Type = type,
 			Description = description,
 			CorrelationId = correlationId,
 			Data = data,
 			CreatedDate = DateTime.UtcNow,
 		};
-		db.Audits.Add(audit);
+		await db.Audits.AddAsync(audit);
 	}
 
 	public static T GetAs<T>(this IEntity _, string json, bool returnDefault = false) where T : new()

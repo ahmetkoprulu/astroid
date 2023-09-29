@@ -7,6 +7,7 @@
     <NoWarn>CS8618</NoWarn>
     <NoWarn>CS8601</NoWarn>
     <SpaRoot>Client/</SpaRoot>
+    <WarningsAsErrors>CS4014</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

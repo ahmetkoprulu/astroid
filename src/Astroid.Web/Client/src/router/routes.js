@@ -13,7 +13,7 @@ import Bots from "../pages/Bots/List.vue";
 import BotSave from "../pages/Bots/Save.vue";
 import BotAudits from "../pages/Bots/Audits.vue";
 
-// import Positions from "../pages/Positions.vue";
+import Positions from "../pages/Positions.vue";
 
 import Profile from "../pages/Profile.vue";
 
@@ -95,16 +95,16 @@ export const routes = [
 					visible: false,
 				}
 			},
-			// {
-			// 	name: "positions",
-			// 	path: "positions",
-			// 	component: Positions,
-			// 	meta: {
-			// 		title: "Positions",
-			// 		visible: true,
-			// 		icon: "list-nested"
-			// 	}
-			// },
+			{
+				name: "positions",
+				path: "positions",
+				component: Positions,
+				meta: {
+					title: "Positions",
+					visible: true,
+					icon: "fa-solid fa-bars-staggered"
+				}
+			},
 			{
 				name: "profile",
 				path: "profile/:id",

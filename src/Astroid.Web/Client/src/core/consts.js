@@ -17,6 +17,10 @@ export const PROPERTY_TYPES = {
 	DynamicSettings: 23
 }
 
+export const EXCHANGE_ICONS = {
+	"binance-usd-futures": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Binance_Logo.svg",
+}
+
 export const AUDIT_TYPE_DESCRIPTIONS = {
 	0: "Unknown",
 	1: "Order Request",
@@ -59,4 +63,36 @@ export const LIMIT_ORDER_BOOK_COMPUTATION_METHODS = {
 	// 3: { title: "Percentage Spread", icon: "fa fa-percent" },
 }
 
-export default { PROPERTY_TYPES, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES, LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS }
+export const STOP_LOSS_TYPE = {
+	1: { id: 1, title: "Fixed", icon: "fa fa-arrows-down-to-line" },
+	2: { id: 2, title: "Trailing", icon: "fa fa-stairs" },
+	3: { id: 3, title: "Trailing Profit", icon: "fa fa-bars" }
+}
+
+export const ORDER_TRIGGER_TYPES = {
+	1: { id: 1, title: "Stop Loss", icon: "fa fa-dollar-sign" },
+	2: { id: 2, title: "Take Profit", icon: "fa fa-dollar-sign" },
+	3: { id: 3, title: "Pyramiding", icon: "fa fa-dollar-sign" },
+	4: { id: 4, title: "Sell", icon: "fa fa-dollar-sign" },
+}
+
+export const ORDER_STATUS = {
+	1: { id: 1, title: "Open", icon: "fa fa-dollar-sign" },
+	2: { id: 2, title: "Triggered", icon: "fa fa-dollar-sign" },
+	3: { id: 3, title: "Filled", icon: "fa fa-dollar-sign" },
+	4: { id: 4, title: "Rejected", icon: "fa fa-dollar-sign" },
+	5: { id: 5, title: "Cancelled", icon: "fa fa-dollar-sign" },
+	6: { id: 6, title: "Expired", icon: "fa fa-dollar-sign" },
+}
+
+export const PRICE_REFERENCE_TYPES = {
+	1: { id: 1, title: "Entry", icon: "" },
+	2: { id: 2, title: "Average", icon: "" },
+	3: { id: 3, title: "Last", icon: "" },
+}
+
+export default {
+	PROPERTY_TYPES, EXCHANGE_ICONS, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES,
+	LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS, STOP_LOSS_TYPE, ORDER_TRIGGER_TYPES, ORDER_STATUS,
+	PRICE_REFERENCE_TYPES
+}

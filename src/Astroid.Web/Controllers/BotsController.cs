@@ -7,7 +7,8 @@ using Astroid.Providers;
 using Astroid.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Astroid.Core.Cache;
-using Binance.Net.Enums;
+using Astroid.Core.MessageQueue;
+using Astroid.Entity.Extentions;
 
 namespace Astroid.Web;
 
@@ -66,12 +67,14 @@ public class BotsController : SecureController
 			PositionSizeType = bot.PositionSizeType,
 			PositionSize = bot.PositionSize,
 			IsPositionSizeExpandable = bot.IsPositionSizeExpandable,
+			IsPyramidingEnabled = bot.IsPyramidingEnabled,
+			PyramidingSettings = bot.PyramidingSettings,
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
-			TakeProfitTargets = bot.TakeProfitTargets,
+			TakeProfitSettings = bot.TakeProfitSettings,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
+			StopLossType = bot.StopLossType,
 			StopLossPrice = bot.StopLossPrice,
 			StopLossCallbackRate = bot.StopLossCallbackRate,
-			StopLossActivation = bot.StopLossActivation,
 			Key = bot.Key,
 			IsEnabled = bot.IsEnabled,
 			LimitSettings = bot.LimitSettings
@@ -97,12 +100,14 @@ public class BotsController : SecureController
 				PositionSizeType = model.PositionSizeType,
 				PositionSize = model.PositionSize,
 				IsPositionSizeExpandable = model.IsPositionSizeExpandable,
+				IsPyramidingEnabled = model.IsPyramidingEnabled,
+				PyramidingSettings = model.PyramidingSettings,
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
-				TakeProfitTargets = model.TakeProfitTargets,
+				TakeProfitSettings = model.TakeProfitSettings,
 				IsStopLossEnabled = model.IsStopLossEnabled,
+				StopLossType = model.StopLossType,
 				StopLossPrice = model.StopLossPrice,
 				StopLossCallbackRate = model.StopLossCallbackRate,
-				StopLossActivation = model.StopLossActivation,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
 				UserId = CurrentUser.Id,
@@ -126,12 +131,14 @@ public class BotsController : SecureController
 			bot.PositionSizeType = model.PositionSizeType;
 			bot.PositionSize = model.PositionSize;
 			bot.IsPositionSizeExpandable = model.IsPositionSizeExpandable;
+			bot.IsPyramidingEnabled = model.IsPyramidingEnabled;
+			bot.PyramidingSettings = model.PyramidingSettings;
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
-			bot.TakeProfitTargets = model.TakeProfitTargets;
+			bot.TakeProfitSettings = model.TakeProfitSettings;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
+			bot.StopLossType = model.StopLossType;
 			bot.StopLossPrice = model.StopLossPrice;
 			bot.StopLossCallbackRate = model.StopLossCallbackRate;
-			bot.StopLossActivation = model.StopLossActivation;
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;
 			bot.ModifiedDate = DateTime.Now;
@@ -173,15 +180,30 @@ public class BotsController : SecureController
 			return BadRequest($"Exchange {bot.ExchangeId} not found");
 		}
 
-		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
-		if (exchanger == null)
-		{
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
-		}
-
 		try
 		{
+			if (orderRequest.IsClose)
+			{
+				var position = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
+				if (position == null)
+				{
+					await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
+					return BadRequest($"Position not found");
+				}
+				var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
+				await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
+				await Db.SaveChangesAsync();
+
+				return Success(null, "Order requested successfully");
+			}
+
+			var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
+			if (exchanger == null)
+			{
+				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
+				return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
+			}
+
 			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
 			{
 				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
@@ -196,6 +218,8 @@ public class BotsController : SecureController
 			{
 				x.UserId = exchange.UserId;
 				x.ActorId = bot.Id;
+				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
+				x.CorrelationId = result.CorrelationId;
 				Db.Audits.Add(x);
 			});
 
@@ -204,6 +228,7 @@ public class BotsController : SecureController
 		catch (Exception ex)
 		{
 			LogError(ex, ex.Message);
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
 			return Error(ex.Message);
 		}
 		finally
@@ -211,7 +236,7 @@ public class BotsController : SecureController
 			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
 		}
 
-		return Success(null, "Order executed successfully");
+		return Success(null, "Order requested successfully");
 	}
 
 	[HttpPost("{ticker}/test-computation-method")]
@@ -238,8 +263,8 @@ public class BotsController : SecureController
 
 		try
 		{
-			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Long, bot.LimitSettings);
-			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionSide.Short, bot.LimitSettings);
+			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Long, bot.LimitSettings);
+			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Short, bot.LimitSettings);
 
 			return Success(new
 			{

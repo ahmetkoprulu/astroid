@@ -9,5 +9,6 @@ public class AMExchange
 	public string? Description { get; set; }
 	public List<ProviderPropertyValue> Properties { get; set; }
 	public Guid ProviderId { get; set; }
-	public string? ProviderName { get; set; }
+	public string ProviderName { get; set; } = string.Empty;
+	public string ProviderLabel { get; set; } = string.Empty;
 }

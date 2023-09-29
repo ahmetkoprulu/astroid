@@ -1,0 +1,28 @@
+{
+  "Database": {
+    "ConnectionString": "Server=localhost;Port=5432;Database=astroid;User Id=postgres;Password=1234567890;",
+    "ConnectionStringMariaDb": "Server=localhost;Port=3306;Database=astroid;User Id=root;Password=1234;",
+    "DatabaseProvider": 2
+  },
+  "Cache": {
+    "ConnectionString": "localhost:6379,allowAdmin=true"
+  },
+  "MessageQueue": {
+    "ConnectionString": "amqp://guest:guest@localhost/"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft.AspNetCore": "Information",
+      "Microsoft.Hosting.Lifetime": "Error",
+      "Microsoft.EntityFrameworkCore.Database.Connection": "Error",
+      "Microsoft.EntityFrameworkCore.Database.Command": "Error",
+      "Microsoft.EntityFrameworkCore.Infrastructure": "Error",
+      "Microsoft.EntityFrameworkCore.Storage": "Error",
+      "Microsoft.EntityFrameworkCore.Update": "Error",
+      "Microsoft.EntityFrameworkCore.ChangeTracking": "Error",
+      "Microsoft.EntityFrameworkCore.Query": "Error",
+      "Microsoft.EntityFrameworkCore.Model": "Error"
+    }
+  }
+}

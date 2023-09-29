@@ -8,12 +8,12 @@
     <NoWarn>CS8601</NoWarn>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Binance.Net" Version="8.6.0" />
+    <PackageReference Include="Binance.Net" Version="9.1.2" />
     <PackageReference Include="Serilog.Extensions.Logging.File" Version="3.0.1-dev-00077" />
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="7.0.0" />
     <PackageReference Include="StackExchange.Redis" Version="2.6.96" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3-beta1" />
-
+    <PackageReference Include="EasyNetQ" Version="7.5.5" />
     <PackageReference Include="MailKit" Version="3.0.0" />
   </ItemGroup>
 </Project>

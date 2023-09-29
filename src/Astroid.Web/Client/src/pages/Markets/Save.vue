@@ -16,8 +16,34 @@
 						placeholder="Select a market"
 						@input="onSelect"
 						v-if="!id"
-					/>
-					<span v-else> {{ model.providerName }}</span>
+					>
+						<div slot="value-label" slot-scope="{ node }">
+							<img
+								:src="$consts.EXCHANGE_ICONS[node.raw.provider]"
+								class="mr-2"
+								height="20"
+							/>
+							<span>{{ node.label }}</span>
+						</div>
+						<label slot="option-label" slot-scope="{ node }">
+							<img
+								:src="$consts.EXCHANGE_ICONS[node.raw.provider]"
+								class="mr-2"
+								height="20"
+							/>
+							<span>{{ node.label }}</span>
+						</label>
+					</v-select>
+					<span v-else>
+						<span>
+							<img
+								:src="$consts.EXCHANGE_ICONS[model.providerName]"
+								class="mr-2"
+								height="20"
+							/>
+						</span>
+						<span class="mt-2">{{ model.providerLabel }}</span>
+					</span>
 				</v-validated-input>
 				<v-validated-input
 					:label="property.displayName"
@@ -70,6 +96,7 @@ export default {
 				return {
 					id: provider.id,
 					label: provider.title,
+					provider: provider.name,
 				};
 			});
 		},

@@ -30,7 +30,7 @@ public class ADExchange : IEntity
 	public Guid ProviderId { get; set; }
 
 	[ForeignKey(nameof(ProviderId))]
-	public ADExchangeProvider Provider { get; set; }
+	public ADExchangeProvider Provider { get; set; } = null!;
 	public Guid UserId { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public DateTime ModifiedDate { get; set; }

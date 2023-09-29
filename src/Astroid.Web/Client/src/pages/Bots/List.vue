@@ -15,7 +15,7 @@
 					</router-link>
 				</template>
 				<template #column-createdDate="props">
-					<v-datetime v-model="props.row.createdDate" />
+					<v-datetime v-model="props.row.createdDate" pretty />
 				</template>
 				<template #column-actions="props">
 					<v-dropdown class="pull-right">

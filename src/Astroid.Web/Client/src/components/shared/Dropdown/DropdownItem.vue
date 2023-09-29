@@ -1,17 +1,17 @@
 <template>
-  <b-dropdown-item @click="onClick">
-    <slot></slot>
-  </b-dropdown-item>
+	<b-dropdown-item @click.stop="onClick">
+		<slot></slot>
+	</b-dropdown-item>
 </template>
 
 <script>
 export default {
-  name: "v-dropdown-item",
-  props: {},
-  methods: {
-    onClick() {
-      this.$emit("click");
-    },
-  },
+	name: "v-dropdown-item",
+	props: {},
+	methods: {
+		onClick() {
+			this.$emit("click");
+		},
+	},
 };
 </script>

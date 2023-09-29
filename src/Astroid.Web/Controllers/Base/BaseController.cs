@@ -18,10 +18,7 @@ public class BaseController : Controller
 
 	public BaseController(AstroidDb db) => Db = db;
 
-	public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
-	{
-		await base.OnActionExecutionAsync(context, next);
-	}
+	public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next) => await base.OnActionExecutionAsync(context, next);
 
 	[NonAction]
 	public async Task AuthenticateUser(ADUser user, Guid sessionId, bool isPermanent)

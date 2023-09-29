@@ -14,10 +14,12 @@ public class AstroidDb : DbContext
 
 	public DbSet<ADAudit> Audits { get; set; }
 	public DbSet<ADBot> Bots { get; set; }
-	public DbSet<ADUser> Users { get; set; }
 	public DbSet<ADExchange> Exchanges { get; set; }
 	public DbSet<ADExchangeProvider> ExchangeProviders { get; set; }
 	public DbSet<ADNotification> Notifications { get; set; }
+	public DbSet<ADOrder> Orders { get; set; }
+	public DbSet<ADPosition> Positions { get; set; }
+	public DbSet<ADUser> Users { get; set; }
 
 	#endregion DbSets
 

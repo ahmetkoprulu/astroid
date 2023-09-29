@@ -44,6 +44,9 @@ namespace Astroid.Entity.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("TargetId")
+                        .HasColumnType("uuid");
+
                     b.Property<short>("Type")
                         .HasColumnType("smallint");
 
@@ -74,6 +77,9 @@ namespace Astroid.Entity.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsPositionSizeExpandable")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPyramidingEnabled")
                         .HasColumnType("boolean");
 
                     b.Property<bool>("IsStopLossEnabled")
@@ -110,8 +116,10 @@ namespace Astroid.Entity.Migrations
                     b.Property<short>("PositionSizeType")
                         .HasColumnType("smallint");
 
-                    b.Property<decimal?>("StopLossActivation")
-                        .HasColumnType("numeric");
+                    b.Property<string>("PyramidingSettingsJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("PyramidingSettings");
 
                     b.Property<decimal?>("StopLossCallbackRate")
                         .HasColumnType("numeric");
@@ -119,10 +127,13 @@ namespace Astroid.Entity.Migrations
                     b.Property<decimal?>("StopLossPrice")
                         .HasColumnType("numeric");
 
-                    b.Property<string>("TakeProfitTargetsJson")
+                    b.Property<int>("StopLossType")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TakeProfitSettingsJson")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("TakeProfitTargets");
+                        .HasColumnName("TakeProfitSettings");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
@@ -235,6 +246,132 @@ namespace Astroid.Entity.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Astroid.Entity.ADOrder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ClientId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<bool>("ClosePosition")
+                        .HasColumnType("boolean");
+
+                    b.Property<short>("ConditionType")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("ExchangeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("FilledQuantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("PositionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<short>("QuantityType")
+                        .HasColumnType("smallint");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("TriggerPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("TriggerType")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BotId");
+
+                    b.HasIndex("ExchangeId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("Astroid.Entity.ADPosition", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("AvgEntryPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("BotId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<decimal>("CurrentQuantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("EntryPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<Guid>("ExchangeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Leverage")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<short>("Type")
+                        .HasColumnType("smallint");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BotId");
+
+                    b.HasIndex("ExchangeId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Positions");
+                });
+
             modelBuilder.Entity("Astroid.Entity.ADUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -287,6 +424,73 @@ namespace Astroid.Entity.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Astroid.Entity.ADOrder", b =>
+                {
+                    b.HasOne("Astroid.Entity.ADBot", "Bot")
+                        .WithMany()
+                        .HasForeignKey("BotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Astroid.Entity.ADExchange", "Exchange")
+                        .WithMany()
+                        .HasForeignKey("ExchangeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Astroid.Entity.ADPosition", "Position")
+                        .WithMany("Orders")
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Astroid.Entity.ADUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bot");
+
+                    b.Navigation("Exchange");
+
+                    b.Navigation("Position");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Astroid.Entity.ADPosition", b =>
+                {
+                    b.HasOne("Astroid.Entity.ADBot", "Bot")
+                        .WithMany()
+                        .HasForeignKey("BotId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Astroid.Entity.ADExchange", "Exchange")
+                        .WithMany()
+                        .HasForeignKey("ExchangeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Astroid.Entity.ADUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Bot");
+
+                    b.Navigation("Exchange");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Astroid.Entity.ADPosition", b =>
+                {
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }

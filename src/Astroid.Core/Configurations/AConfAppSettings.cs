@@ -6,6 +6,7 @@ public class AConfAppSettings
 	public AConfFrontend Frontend { get; set; } = new();
 	public AConfDatabase Database { get; set; } = new();
 	public AConfCache Cache { get; set; } = new();
+	public AConfMessageQueue MessageQueue { get; set; } = new();
 }
 
 public class AConfDatabase
@@ -15,6 +16,10 @@ public class AConfDatabase
 }
 
 public class AConfCache
+{
+	public string? ConnectionString { get; set; }
+}
+public class AConfMessageQueue
 {
 	public string? ConnectionString { get; set; }
 }
