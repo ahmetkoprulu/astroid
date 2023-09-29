@@ -7,16 +7,19 @@ using Astroid.Providers;
 using Astroid.Web.Helpers;
 using Microsoft.AspNetCore.Authorization;
 using Astroid.Core.Cache;
+using Astroid.Entity.Extentions;
 
 namespace Astroid.Web;
 
 public class PositionsController : SecureController
 {
 	private readonly IServiceProvider ServiceProvider;
+	private readonly ExchangeInfoStore ExchangeStore;
 
-	public PositionsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ILogger<BotsController> logger) : base(db, cache)
+	public PositionsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ExchangeInfoStore store, ILogger<BotsController> logger) : base(db, cache)
 	{
 		ServiceProvider = serviceProvider;
+		ExchangeStore = store;
 		Logger = logger;
 	}
 
@@ -144,48 +147,14 @@ public class PositionsController : SecureController
 			Type = position.Type == PositionType.Long ? "close-long" : "close-short",
 			Key = bot.Key
 		};
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, request.Ticker);
+		if (symbolInfo == null)
+			return BadRequest($"Symbol info not found for {request.Ticker}");
 
-		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
-		if (exchanger == null)
-		{
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
-		}
+		await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
+		await Db.SaveChangesAsync();
 
-		try
-		{
-			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{request.Ticker}"))
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
-				return BadRequest("Bot is busy");
-			}
-
-			var _ = await Cache.AcquireLock($"lock:bot:{bot.Id}:{request.Ticker}", TimeSpan.FromMinutes(1));
-			var result = await exchanger.ExecuteOrder(bot, request);
-			if (!result.Success) LogError(null, result.Message ?? string.Empty);
-
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = exchange.UserId;
-				x.ActorId = bot.Id;
-				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
-				x.CorrelationId = result.CorrelationId;
-				Db.Audits.Add(x);
-			});
-
-			await Db.SaveChangesAsync();
-		}
-		catch (Exception ex)
-		{
-			LogError(ex, ex.Message);
-			return Error(ex.Message);
-		}
-		finally
-		{
-			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{request.Ticker}");
-		}
-
-		return Success(null, "Order executed successfully");
+		return Success(null, "Order requested successfully");
 	}
 
 	[NonAction]

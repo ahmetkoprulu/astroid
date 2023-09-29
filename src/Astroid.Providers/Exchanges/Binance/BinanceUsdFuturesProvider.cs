@@ -269,9 +269,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		AMOrderResult orderResult;
 		var orderSide = request.PositionType == PositionType.Long ? OrderSide.Buy : OrderSide.Sell;
 		var positionSide = request.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
-
-		if (bot.OrderType == OrderEntryType.Market) orderResult = await PlaceMarketOrder(request.Ticker, order.Quantity, orderSide, positionSide, result);
-		else orderResult = await PlaceLimitOrder(request.Ticker, order.Quantity, orderSide, positionSide, bot.LimitSettings, result);
+		var quantity = await ConvertUsdtToCoin(order.Quantity, request.QtyType, request);
+		if (bot.OrderType == OrderEntryType.Market) orderResult = await PlaceMarketOrder(request.Ticker, quantity, orderSide, positionSide, result);
+		else orderResult = await PlaceLimitOrder(request.Ticker, quantity, orderSide, positionSide, bot.LimitSettings, result);
 
 		if (!orderResult.Success)
 		{
@@ -371,7 +371,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculatePyramid(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
 			var condition = target.Target < 0 ? OrderConditionType.Decreasing : OrderConditionType.Increasing;
-			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, target.Target, bot.PositionSizeType, false);
+			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, target.Quantity, bot.PositionSizeType, false);
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Placed pyramiding order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
@@ -541,8 +541,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				quantity,
 				positionSide: pSide,
 				workingType: WorkingType.Contract,
-				orderResponseType: OrderResponseType.Result,
-				reduceOnly: reduceOnly
+				orderResponseType: OrderResponseType.Result
 			);
 
 		if (!orderResponse.Success)

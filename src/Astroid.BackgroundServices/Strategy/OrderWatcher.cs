@@ -39,13 +39,47 @@ public class OrderWatcher : IHostedService
 	{
 		while (!cancellationToken.IsCancellationRequested)
 		{
+			var sellTask = WatchSellOrders(cancellationToken);
 			var lossTask = WatchStopLossOrders(cancellationToken);
 			var profitTask = WatchTakeProfitOrders(cancellationToken);
 			var pyramidingTask = WatchPyramidingOrders(cancellationToken);
 
-			Task.WaitAll(new Task[] { lossTask, profitTask, pyramidingTask }, cancellationToken: cancellationToken);
+			Task.WaitAll(new Task[] { sellTask, lossTask, profitTask, pyramidingTask }, cancellationToken: cancellationToken);
 
 			await Task.Delay(1000, cancellationToken);
+		}
+	}
+
+	public async Task WatchSellOrders(CancellationToken cancellationToken)
+	{
+		var scope = Services.CreateScope();
+		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Sell);
+		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.Sell).ToList();
+		Logger.LogInformation($"Watching {orders.Count} [SELL] orders.");
+
+		foreach (var order in orders)
+		{
+			if (order.Position.Status == PositionStatus.Closed)
+			{
+				await CancelOrder(db, order, cancellationToken);
+				continue;
+			}
+
+			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
+			if (symbolInfo == null)
+			{
+				await AddAudit(db, order, AuditType.CloseOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				continue;
+			}
+
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.MarkPrice)) continue;
+
+			var msg = new AQOrderMessage { OrderId = order.Id };
+			order.Status = OrderStatus.Triggered;
+			order.UpdatedDate = DateTime.UtcNow;
+			await db.SaveChangesAsync(cancellationToken);
+			await OrderQueue.Publish(msg, cancellationToken);
 		}
 	}
 
@@ -68,7 +102,7 @@ public class OrderWatcher : IHostedService
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 			if (symbolInfo == null)
 			{
-				await AddAudit(db, order, AuditType.TakeProfitOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
+				await AddAudit(db, order, AuditType.StopLossOrderPlaced, $"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.", order.Position.Id.ToString());
 				continue;
 			}
 
@@ -148,6 +182,9 @@ public class OrderWatcher : IHostedService
 
 	public bool NeedToTriggerOrder(ADPosition position, ADOrder order, decimal symbolPrice)
 	{
+		if (order.ConditionType == OrderConditionType.Immediate)
+			return true;
+
 		if (order.ConditionType == OrderConditionType.Decreasing)
 			return position.Type == PositionType.Long ? symbolPrice < order.TriggerPrice : symbolPrice > order.TriggerPrice;
 

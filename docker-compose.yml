@@ -30,7 +30,7 @@ services:
             - ASTROID_BINANCE_KEY=********
             - ASTROID_BINANCE_SECRET=********
         deploy:
-            replicas: 2
+            # replicas: 2
             restart_policy:
                 condition: on-failure
         networks:
@@ -59,7 +59,9 @@ services:
             - ASTROID_BINANCE_SECRET=********
         networks:
             - internal
-
+        deploy:
+            restart_policy:
+                condition: on-failure
     astroid_db:
         image: postgres:latest
         container_name: astroid_db

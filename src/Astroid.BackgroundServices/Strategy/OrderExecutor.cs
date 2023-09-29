@@ -96,7 +96,7 @@ public class OrderExecutor : IHostedService
 			order.Reject();
 			await AddAudit(db, order, AuditType.OrderRequest, "The position has been already managing by another process.", order.Position.Id.ToString());
 			await db.SaveChangesAsync(cancellationToken);
-			Logger.LogInformation($"Executing order {message.OrderId}.");
+			Logger.LogInformation($"The position has been already managing by another process {message.OrderId}.");
 
 			return;
 		}
@@ -190,6 +190,8 @@ public class OrderExecutor : IHostedService
 				return order.Position.Type == PositionType.Long ? "close-long" : "close-short";
 			case OrderTriggerType.Pyramiding:
 				return order.Position.Type == PositionType.Long ? "open-long" : "open-short";
+			case OrderTriggerType.Sell:
+				return order.Position.Type == PositionType.Long ? "close-long" : "close-short";
 			default:
 				throw new InvalidDataException("Invalid order trigger type.");
 		}

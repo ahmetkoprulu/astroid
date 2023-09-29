@@ -20,6 +20,30 @@ public static class ContextExtentionMethods
 		set.Add(entity);
 	}
 
+	public static async Task AddCloseOrder(this DbSet<ADOrder> set, ADPosition position, decimal price)
+	{
+		var order = new ADOrder
+		{
+			Id = Guid.NewGuid(),
+			UserId = position.UserId,
+			BotId = position.BotId,
+			ExchangeId = position.ExchangeId,
+			PositionId = position.Id,
+			Symbol = position.Symbol,
+			TriggerPrice = price,
+			TriggerType = OrderTriggerType.Sell,
+			ConditionType = OrderConditionType.Immediate,
+			Quantity = position.Quantity,
+			QuantityType = PositionSizeType.FixedInUsd,
+			ClosePosition = true,
+			Status = OrderStatus.Open,
+			UpdatedDate = DateTime.MinValue,
+			CreatedDate = DateTime.UtcNow
+		};
+
+		await set.AddAsync(order);
+	}
+
 	public static async Task AddAudit(this AstroidDb db, Guid userId, Guid actorId, AuditType type, string description, Guid? targetId = null, string? correlationId = null, string? data = null)
 	{
 		var audit = new ADAudit

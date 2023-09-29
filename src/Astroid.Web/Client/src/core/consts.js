@@ -73,6 +73,7 @@ export const ORDER_TRIGGER_TYPES = {
 	1: { id: 1, title: "Stop Loss", icon: "fa fa-dollar-sign" },
 	2: { id: 2, title: "Take Profit", icon: "fa fa-dollar-sign" },
 	3: { id: 3, title: "Pyramiding", icon: "fa fa-dollar-sign" },
+	4: { id: 4, title: "Sell", icon: "fa fa-dollar-sign" },
 }
 
 export const ORDER_STATUS = {
