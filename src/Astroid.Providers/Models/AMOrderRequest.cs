@@ -52,7 +52,14 @@ public class AMOrderRequest
 		_ => throw new NotImplementedException(),
 	};
 
-	public string? Timestamp { get; set; }
+	public void SetPositionType(OrderTriggerType triggerType, PositionType positionType) => Type = triggerType switch
+	{
+		OrderTriggerType.StopLoss => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.TakeProfit => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.Pyramiding => positionType == PositionType.Long ? "open-long" : "open-short",
+		OrderTriggerType.Sell => positionType == PositionType.Long ? "close-long" : "close-short",
+		_ => throw new InvalidDataException("Invalid order trigger type."),
+	};
 
 	public bool ValidateOpenRequest(ADPosition? position, ADBot bot, AMProviderResult result)
 	{
@@ -106,6 +113,23 @@ public class AMOrderRequest
 			Type = Type == "open-long" ? "close-short" : "close-long",
 			Key = Key
 		};
+	}
+
+	public static AMOrderRequest GenerateRequest(ADOrder order)
+	{
+		var request = new AMOrderRequest
+		{
+			OrderId = order.Id,
+			Ticker = order.Symbol,
+			Leverage = order.Position.Leverage,
+			Quantity = order.ClosePosition ? 0 : order.Quantity,
+			IsPyramiding = order.TriggerType == OrderTriggerType.Pyramiding,
+			Key = order.Bot.Key
+		};
+		request.SetQuantityType(order.QuantityType);
+		request.SetPositionType(order.TriggerType, order.Position.Type);
+
+		return request;
 	}
 }
 

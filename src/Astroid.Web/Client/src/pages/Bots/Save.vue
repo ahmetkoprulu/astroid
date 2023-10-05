@@ -8,13 +8,13 @@
 						<v-validated-input label="Label" class="w-100 mr-3">
 							<b-form-input type="text" v-model="model.label" />
 						</v-validated-input>
-						<b-form-group label="Enabled">
+						<!-- <b-form-group label="Enabled">
 							<b-form-checkbox
 								v-model="model.isEnabled"
 								switch
 								style="margin-top: 7px"
 							/>
-						</b-form-group>
+						</b-form-group> -->
 					</div>
 					<b-form-group label="Description">
 						<b-form-textarea

@@ -23,12 +23,12 @@
 							@click="
 								() =>
 									$router.push({
-										name: 'bot-save',
+										name: 'bot-enable',
 										params: { id: props.row.id },
 									})
 							"
 						>
-							<i class="fa-solid fa-pen-to-square" /> Edit
+							<i class="fa-solid fa-pen-to-square" /> Enable Bot
 						</v-dropdown-item>
 						<v-dropdown-item @click="showChangeMarginTypeModal(props.row.id)">
 							<i class="fa-solid fa-shuffle" /> Change Margin Type

@@ -16,23 +16,24 @@ public class OrderWatcher : IHostedService
 	private ILogger<OrderWatcher> Logger { get; set; }
 	private IServiceProvider Services { get; set; }
 	// private AstroidDb Db { get; set; }
-	private AQOrder OrderQueue { get; set; }
+	private IMessageQueue Mq { get; set; }
 
-	public OrderWatcher(ExchangeInfoStore exchangeStore, AQOrder orderQueue, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
+	public OrderWatcher(ExchangeInfoStore exchangeStore, IMessageQueue mq, ICacheService cache, ILogger<OrderWatcher> logger, IServiceProvider services)
 	{
 		ExchangeStore = exchangeStore;
-		OrderQueue = orderQueue;
+		Mq = mq;
 		Cache = cache;
 		Logger = logger;
 		Services = services;
 	}
 
-	public async Task StartAsync(CancellationToken cancellationToken)
+	public Task StartAsync(CancellationToken cancellationToken)
 	{
 		Logger.LogInformation("Setting Up Orders Message Queue.");
-		await OrderQueue.Setup(cancellationToken);
 		Logger.LogInformation("Starting Take Profit Watcher Service.");
 		_ = Task.Run(() => DoJob(cancellationToken), cancellationToken);
+
+		return Task.CompletedTask;
 	}
 
 	public async Task DoJob(CancellationToken cancellationToken)
@@ -78,7 +79,7 @@ public class OrderWatcher : IHostedService
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
+			await AQOrder.Publish(Mq, msg, order.BotId.ToString(), cancellationToken);
 		}
 	}
 
@@ -105,13 +106,13 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.MarkPrice)) continue;
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
+			await AQOrder.Publish(Mq, msg, order.BotId.ToString(), cancellationToken);
 		}
 	}
 
@@ -143,7 +144,7 @@ public class OrderWatcher : IHostedService
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
+			await AQOrder.Publish(Mq, msg, order.BotId.ToString(), cancellationToken);
 		}
 	}
 
@@ -175,7 +176,7 @@ public class OrderWatcher : IHostedService
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
 			await db.SaveChangesAsync(cancellationToken);
-			await OrderQueue.Publish(msg, cancellationToken);
+			await AQOrder.Publish(Mq, msg, order.BotId.ToString(), cancellationToken);
 		}
 	}
 

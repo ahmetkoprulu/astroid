@@ -16,12 +16,14 @@ public class BotsController : SecureController
 {
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private readonly IServiceProvider ServiceProvider;
+	public IMessageQueue Mq { get; set; }
 
-	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ExchangeInfoStore exchangeStore, ILogger<BotsController> logger) : base(db, cache)
+	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, IMessageQueue mq, ExchangeInfoStore exchangeStore, ILogger<BotsController> logger) : base(db, cache)
 	{
 		ServiceProvider = serviceProvider;
 		Logger = logger;
 		ExchangeStore = exchangeStore;
+		Mq = mq;
 	}
 
 	[HttpPost("list")]
@@ -148,6 +150,39 @@ public class BotsController : SecureController
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange saved successfully");
+	}
+
+	[HttpPatch("bot-enable/{id}")]
+	public async Task<IActionResult> Enable(Guid id)
+	{
+		if (id == Guid.Empty)
+			return BadRequest("Invalid exchange id");
+
+		var bot = await Db.Bots.FirstOrDefaultAsync(x => x.Id == id);
+		if (bot == null)
+			return NotFound("Exchange not found");
+
+		if (bot.IsEnabled)
+		{
+			bot.IsEnabled = false;
+			var managerId = await GetAvaibleBotManager();
+			if (managerId == null)
+			{
+				await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Not found any available resource");
+				return BadRequest("Not found any available resource");
+			}
+
+			bot.ManagedBy = managerId;
+		}
+		else
+		{
+			bot.IsEnabled = true;
+			bot.ManagedBy = null;
+		}
+
+		await Db.SaveChangesAsync();
+
+		return Success("Exchange enabled successfully");
 	}
 
 	[AllowAnonymous]
@@ -347,6 +382,25 @@ public class BotsController : SecureController
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange deleted successfully");
+	}
+
+	[NonAction]
+	public async Task<Guid?> GetAvaibleBotManager()
+	{
+		var managers = await Db.BotManagers
+			.Where(x => x.PingDate.AddMinutes(10) > DateTime.UtcNow)
+			.ToListAsync();
+
+		var manager = managers.Select(x => new
+		{
+			x.Id,
+			Count = Db.Bots.Count(x => x.ManagedBy == x.Id)
+		}).OrderBy(x => x.Count)
+		.FirstOrDefault();
+
+		if (manager == null) return null;
+
+		return manager.Id;
 	}
 
 	[NonAction]

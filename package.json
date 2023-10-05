@@ -14,9 +14,13 @@
     "db-update": "dotnet ef database update --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-migrate-rm": "dotnet ef migrations remove --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "publish": "cd src/Astroid.Web && dotnet publish -c Release -p:PublishProfile=FileSystem",
-    "build:frontend": "cd src/Astroid.Web && npm run build:frontend",
-    "build:docker:web": "docker build -t ahmetkoprulu/astroid:latest -f ./dockerfile-web .",
-    "build:docker:services": "docker build -t ahmetkoprulu/astroid-services:latest -f ./dockerfile-services ."
+    "build:frontend": "rm -rf ./src/Astroid.Web/wwwroot/dist && cd src/Astroid.Web && npm run build:frontend",
+    "build:docker:web": "npm run build:frontend && docker build -t ahmetkoprulu/astroid:latest -f ./dockerfile-web .",
+    "build:docker:services": "docker build -t ahmetkoprulu/astroid-services:latest -f ./dockerfile-services .",
+    "build:docker:bot-manager": "docker build -t ahmetkoprulu/astroid-bot-manager:latest -f ./dockerfile-bot-manager .",
+    "push:docker:web": "npm run build:docker:web && docker push ahmetkoprulu/astroid:latest",
+    "push:docker:services": "npm run build:docker:services && docker push ahmetkoprulu/astroid-services:latest",
+    "push:docker:bot-manager": "npm run build:docker:bot-manager && docker push ahmetkoprulu/astroid-bot-manager:latest"
   },
   "repository": {
     "type": "git",

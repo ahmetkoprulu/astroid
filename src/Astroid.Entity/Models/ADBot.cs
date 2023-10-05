@@ -33,9 +33,11 @@ public class ADBot : IEntity
 	public decimal? StopLossCallbackRate { get; set; }
 	public string Key { get; set; }
 	public bool IsEnabled { get; set; }
+	public BotState State { get; set; }
 	public Guid UserId { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public DateTime ModifiedDate { get; set; }
+	public Guid? ManagedBy { get; set; }
 
 	[NotMapped]
 	public PyramidingSettings PyramidingSettings
@@ -69,6 +71,15 @@ public class TakeProfitSettings
 	public CalculationBase CalculationBase { get; set; } = CalculationBase.LastPrice;
 	public PriceBase PriceBase { get; set; } = PriceBase.LastPrice;
 	public List<TakeProfitTarget> Targets { get; set; } = new();
+}
+
+public enum BotState : short
+{
+	Unknown = 0,
+	Preparing = 1,
+	Enabled = 2,
+	Disabled = 3,
+	Stopping = 4
 }
 
 public enum CalculationBase

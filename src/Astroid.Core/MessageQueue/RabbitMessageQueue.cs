@@ -16,17 +16,16 @@ public class RabbitMessageQueue : IMessageQueue
 
 	public RabbitMessageQueue(IConfiguration config)
 	{
-		var settings = config.Get<AConfAppSettings>() ?? new();
+		var settings = config.Get<WebConfig>() ?? new();
 		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_MQ_CONNECTION_STRING");
 		ConnectionString = connStringEnvVariable ?? settings.MessageQueue.ConnectionString;
 		Bus = RabbitHutch.CreateBus(ConnectionString ?? throw new NullReferenceException("Invalid Message Queue Connection String"));
 	}
 
-	public async Task CreateExchange(string exchangeName, string exchangeType, bool durable = true, CancellationToken cancellationToken = default)
+	public async Task<Exchange> CreateExchange(string exchangeName, string exchangeType, bool durable = true, CancellationToken cancellationToken = default)
 	{
 		exchangeName = string.Format(ExchangeFormat, exchangeName);
-		var exchange = new Exchange(exchangeName, exchangeType, durable);
-		await Bus.Advanced.ExchangeDeclareAsync(
+		return await Bus.Advanced.ExchangeDeclareAsync(
 			exchangeName,
 			c =>
 				{
@@ -37,11 +36,10 @@ public class RabbitMessageQueue : IMessageQueue
 		);
 	}
 
-	public async Task CreateQueue(string queueName, bool durable = true, CancellationToken cancellationToken = default)
+	public async Task<Queue> CreateQueue(Exchange exchange, string queueName, bool durable = true, CancellationToken cancellationToken = default)
 	{
 		queueName = string.Format(QueueFormat, queueName);
-		var queue = new Queue(queueName, durable);
-		await Bus.Advanced.QueueDeclareAsync(
+		var queue = await Bus.Advanced.QueueDeclareAsync(
 			queueName,
 			c =>
 				{
@@ -49,19 +47,20 @@ public class RabbitMessageQueue : IMessageQueue
 				},
 			cancellationToken
 		);
+		await Bus.Advanced.BindAsync(exchange, queue, queueName, cancellationToken);
+
+		return queue;
 	}
 
-	public async Task<AMMessageQueueResult> Publish<T>(string queueName, T message, CancellationToken cancellationToken = default)
+	public async Task<AMMessageQueueResult> Publish<T>(Exchange exchange, Queue queue, T message, CancellationToken cancellationToken = default)
 	{
-		var exchangeName = string.Format(ExchangeFormat, queueName);
-		var exchange = new Exchange(exchangeName);
-		var queue = string.Format(QueueFormat, queueName);
 		var msg = new Message<T>(message);
+
 		try
 		{
 			await Bus.Advanced.PublishAsync(
 				exchange,
-				queue,
+				queue.Name,
 				false,
 				msg,
 				cancellationToken
@@ -75,23 +74,13 @@ public class RabbitMessageQueue : IMessageQueue
 		}
 	}
 
-	public async Task<IDisposable> Subscribe<T>(string queueName, Func<T, CancellationToken, Task> callback, CancellationToken cancellationToken = default)
+	public Task<IDisposable> Subscribe<T>(Exchange exchange, Queue queue, Func<T, CancellationToken, Task> callback, CancellationToken cancellationToken = default)
 	{
-		var exchangeName = string.Format(ExchangeFormat, queueName);
-		var exchange = new Exchange(exchangeName);
-		queueName = string.Format(QueueFormat, queueName);
-		var queue = new Queue(queueName);
-
-		await Bus.Advanced.BindAsync(exchange, queue, queueName, cancellationToken);
-
 		var consumerCancellation = Bus.Advanced.Consume<T>(
 			queue,
 			(message, _) => callback(message.Body!, cancellationToken)
 		);
 
-		return new SubscriptionResult(exchange, queue, consumerCancellation);
+		return Task.FromResult(new SubscriptionResult(exchange, queue, consumerCancellation) as IDisposable);
 	}
-
-
-	public Task<IDisposable> Subscribe<T>(string queueName, Func<T, CancellationToken, Task> callback, Func<Exception, Task> errorCallback, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

@@ -1,4 +1,3 @@
-using Astroid.BackgroundServices.Cache;
 using Astroid.BackgroundServices.Order;
 using Astroid.Core.Cache;
 using Astroid.Core.MessageQueue;
@@ -14,11 +13,8 @@ var builder = Host.CreateDefaultBuilder(args)
 		services.AddSingleton<ExchangeInfoStore>();
 
 		services.AddSingleton<IMessageQueue, RabbitMessageQueue>();
-		services.AddSingleton<AQOrder>();
 
-		services.AddHostedService<BinanceCache>();
-		services.AddHostedService<BinanceTestCache>();
-		services.AddHostedService<OrderWatcher>();
+		services.AddHostedService<Worker>();
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -28,16 +24,6 @@ var builder = Host.CreateDefaultBuilder(args)
 	{
 		config.AddJsonFile("config.json", optional: true, reloadOnChange: true);
 	});
-
-ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
-Console.WriteLine($"Min worker threads: {workerThreads}, Min completion port threads: {completionPortThreads}");
-
-var success = ThreadPool.SetMinThreads(32, 32);
-if (success)
-{
-	ThreadPool.GetMinThreads(out var newWorkerThreads, out var newCompletionPortThreads);
-	Console.WriteLine($"Min worker threads: {newWorkerThreads}, Min completion port threads: {newCompletionPortThreads}");
-}
 
 var app = builder.Build();
 app.Run();

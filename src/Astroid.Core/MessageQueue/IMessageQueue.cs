@@ -1,13 +1,13 @@
 using System;
 using System.Threading;
+using EasyNetQ.Topology;
 
 namespace Astroid.Core.MessageQueue;
 
 public interface IMessageQueue
 {
-	Task<AMMessageQueueResult> Publish<T>(string queueName, T message, CancellationToken cancellationToken = default);
-	Task<IDisposable> Subscribe<T>(string queueName, Func<T, CancellationToken, Task> callback, CancellationToken cancellationToken = default);
-	Task<IDisposable> Subscribe<T>(string queueName, Func<T, CancellationToken, Task> callback, Func<Exception, Task> errorCallback, CancellationToken cancellationToken = default);
-	Task CreateExchange(string exchangeName, string exchangeType, bool durable = true, CancellationToken cancellationToken = default);
-	Task CreateQueue(string queueName, bool durable = true, CancellationToken cancellationToken = default);
+	Task<AMMessageQueueResult> Publish<T>(Exchange exchange, Queue queue, T message, CancellationToken cancellationToken = default);
+	Task<IDisposable> Subscribe<T>(Exchange exchange, Queue queue, Func<T, CancellationToken, Task> callback, CancellationToken cancellationToken = default);
+	Task<Exchange> CreateExchange(string exchangeName, string exchangeType, bool durable = true, CancellationToken cancellationToken = default);
+	Task<Queue> CreateQueue(Exchange exchange, string queueName, bool durable = true, CancellationToken cancellationToken = default);
 }
