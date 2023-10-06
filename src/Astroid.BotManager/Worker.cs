@@ -6,9 +6,8 @@ using Astroid.Providers;
 using Microsoft.EntityFrameworkCore;
 using Astroid.Entity.Extentions;
 using Astroid.Core.MessageQueue;
-using Astroid.Core.Helpers;
 
-namespace Astroid.BackgroundServices.Order;
+namespace Astroid.BotManager;
 
 public class Worker : IHostedService
 {
@@ -32,10 +31,12 @@ public class Worker : IHostedService
 
 	public async Task StartAsync(CancellationToken cancellationToken)
 	{
+		Logger.LogInformation("Starting Bot Manager Service.");
+		await BotManager.Setup(cancellationToken);
 		await BotManager.SubscribeToRegistrations(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
 		await BotManager.SubscribeToUnregistrations(cancellationToken);
+		Logger.LogInformation("Subscribed registration queues.");
 
-		Logger.LogInformation("Starting Order Executor Service.");
 		_ = Task.Run(() => Ping(cancellationToken), cancellationToken);
 		_ = Task.Run(() => RestoreBotConnections(cancellationToken), cancellationToken);
 	}
@@ -70,6 +71,7 @@ public class Worker : IHostedService
 			if (BotManager.TryGetOrderQueue(bot.Id) != null) continue;
 
 			await BotManager.Register(new AQBotRegistrationMessage { BotId = bot.Id }, async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
+			Logger.LogInformation($"Bot {bot.Id} registered.");
 		}
 	}
 
@@ -89,6 +91,7 @@ public class Worker : IHostedService
 			if (bot != null && bot.ManagedBy == Id) continue;
 
 			await BotManager.UnRegister(new AQBotRegistrationMessage { BotId = reg.Id }, cancellationToken);
+			Logger.LogInformation($"Bot {reg.Id} unregistered.");
 		}
 	}
 
@@ -106,9 +109,7 @@ public class Worker : IHostedService
 		var scope = ServiceProvider.CreateScope();
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 
-		var manager = await db.BotManagers
-			.AsNoTracking()
-			.FirstOrDefaultAsync(x => x.Id == Id, cancellationToken);
+		var manager = await db.BotManagers.FirstOrDefaultAsync(x => x.Id == Id, cancellationToken);
 
 		if (manager == null)
 			await db.BotManagers.AddAsync(new() { Id = Id, CreatedDate = DateTime.UtcNow, PingDate = DateTime.UtcNow }, cancellationToken);

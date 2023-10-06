@@ -16,14 +16,12 @@ public class BotsController : SecureController
 {
 	private ExchangeInfoStore ExchangeStore { get; set; }
 	private readonly IServiceProvider ServiceProvider;
-	public IMessageQueue Mq { get; set; }
 
-	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, IMessageQueue mq, ExchangeInfoStore exchangeStore, ILogger<BotsController> logger) : base(db, cache)
+	public BotsController(IServiceProvider serviceProvider, AstroidDb db, ICacheService cache, ExchangeInfoStore exchangeStore, ILogger<BotsController> logger) : base(db, cache)
 	{
 		ServiceProvider = serviceProvider;
 		Logger = logger;
 		ExchangeStore = exchangeStore;
-		Mq = mq;
 	}
 
 	[HttpPost("list")]
@@ -42,6 +40,8 @@ public class BotsController : SecureController
 			Id = x.Id,
 			Label = x.Label,
 			Description = x.Description,
+			IsEnabled = x.IsEnabled,
+			CreatedDate = x.CreatedDate
 		}));
 	}
 
@@ -152,7 +152,7 @@ public class BotsController : SecureController
 		return Success("Exchange saved successfully");
 	}
 
-	[HttpPatch("bot-enable/{id}")]
+	[HttpPatch("{id}/enable")]
 	public async Task<IActionResult> Enable(Guid id)
 	{
 		if (id == Guid.Empty)
@@ -162,9 +162,9 @@ public class BotsController : SecureController
 		if (bot == null)
 			return NotFound("Exchange not found");
 
-		if (bot.IsEnabled)
+		if (!bot.IsEnabled)
 		{
-			bot.IsEnabled = false;
+			bot.IsEnabled = true;
 			var managerId = await GetAvaibleBotManager();
 			if (managerId == null)
 			{
@@ -176,7 +176,7 @@ public class BotsController : SecureController
 		}
 		else
 		{
-			bot.IsEnabled = true;
+			bot.IsEnabled = false;
 			bot.ManagedBy = null;
 		}
 

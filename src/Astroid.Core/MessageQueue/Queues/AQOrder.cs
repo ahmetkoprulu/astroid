@@ -16,6 +16,7 @@ public class AQOrder : IDisposable
 
 	public async Task Setup(Guid id, CancellationToken cancellationToken = default)
 	{
+		Id = id;
 		var queueName = string.Format(QueueLabel, id);
 		Exchange = await Mq.CreateExchange(ExchangeLabel, "direct", true, cancellationToken);
 		Queue = await Mq.CreateQueue(Exchange, queueName, false, cancellationToken);

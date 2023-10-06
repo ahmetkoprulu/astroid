@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "cd src/Astroid.Web && dotnet watch run",
     "dev-services": "cd src/Astroid.BackgroundServices && dotnet watch run",
+    "dev-bot-manager": "cd src/Astroid.BotManager && dotnet watch run",
     "db-migrate": "dotnet ef migrations add --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-migrate-list": "dotnet ef migrations list --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",
     "db-update": "dotnet ef database update --project src/Astroid.Entity/ --startup-project src/Astroid.Web/",

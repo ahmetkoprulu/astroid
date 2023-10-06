@@ -35,6 +35,7 @@ public class ExchangesController : SecureController
 			ProviderId = x.Provider.Id,
 			ProviderName = x.Provider.Name,
 			ProviderLabel = x.Provider.Title,
+			CreatedDate = x.CreatedDate
 		}));
 	}
 

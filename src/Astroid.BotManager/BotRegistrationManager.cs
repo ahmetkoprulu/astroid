@@ -3,7 +3,7 @@ using Astroid.Core.MessageQueue;
 using Astroid.Entity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Astroid.Core.Helpers;
+namespace Astroid.BotManager;
 
 public class BotRegistrationManager : IDisposable
 {
