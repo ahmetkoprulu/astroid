@@ -38,6 +38,9 @@ public class ADBot : IEntity
 	public DateTime CreatedDate { get; set; }
 	public DateTime ModifiedDate { get; set; }
 	public Guid? ManagedBy { get; set; }
+	public bool IsRemoved { get; set; }
+
+	public ADExchange Exchange { get; set; }
 
 	[NotMapped]
 	public PyramidingSettings PyramidingSettings

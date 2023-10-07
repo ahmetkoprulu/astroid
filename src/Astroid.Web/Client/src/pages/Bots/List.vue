@@ -20,6 +20,13 @@
 					</b-badge>
 					<b-badge pill variant="default" v-else>Inactive</b-badge>
 				</template>
+				<template #column-market="props">
+					<img
+						:src="$consts.EXCHANGE_ICONS[props.row.exchange.providerName]"
+						height="20"
+					/>
+					{{ props.row.exchange.name }}
+				</template>
 				<template #column-createdDate="props">
 					<v-datetime v-model="props.row.createdDate" pretty />
 				</template>
@@ -76,6 +83,7 @@ export default {
 			],
 			columns: {
 				label: "Label",
+				market: "Market",
 				isEnabled: "Enabled",
 				createdDate: "Created Date",
 				actions: " ",

@@ -30,7 +30,9 @@ public class BotsController : SecureController
 		model ??= new MPViewDataList<ADBot>();
 
 		model = await Db.Bots
-			.Where(x => x.UserId == CurrentUser.Id)
+			.Include(x => x.Exchange)
+				.ThenInclude(x => x.Provider)
+			.Where(x => x.UserId == CurrentUser.Id && !x.IsRemoved)
 			.AsNoTracking()
 			.OrderByDescending(x => x.CreatedDate)
 			.ViewDataListAsync<ADBot>(model);
@@ -41,7 +43,15 @@ public class BotsController : SecureController
 			Label = x.Label,
 			Description = x.Description,
 			IsEnabled = x.IsEnabled,
-			CreatedDate = x.CreatedDate
+			CreatedDate = x.CreatedDate,
+			Exchange = new AMExchange
+			{
+				Id = x.Exchange.Id,
+				Name = x.Exchange.Label,
+				ProviderId = x.Exchange.Provider.Id,
+				ProviderName = x.Exchange.Provider.Name,
+				ProviderLabel = x.Exchange.Provider.Title,
+			}
 		}));
 	}
 
@@ -164,6 +174,13 @@ public class BotsController : SecureController
 
 		if (!bot.IsEnabled)
 		{
+			var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
+			if (isOpenPositionExists)
+			{
+				await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Cannot disable the bot; it has open position(s)");
+				return BadRequest("Bot has open positions");
+			}
+
 			bot.IsEnabled = true;
 			var managerId = await GetAvaibleBotManager();
 			if (managerId == null)
@@ -378,7 +395,7 @@ public class BotsController : SecureController
 		if (bot == null)
 			return NotFound("Exchange not found");
 
-		Db.Bots.Remove(bot);
+		bot.IsRemoved = true;
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange deleted successfully");

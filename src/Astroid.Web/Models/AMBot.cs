@@ -27,4 +27,5 @@ public class AMBot
 	public string Key { get; set; } = string.Empty;
 	public bool IsEnabled { get; set; }
 	public DateTime CreatedDate { get; set; }
+	public AMExchange Exchange { get; set; } = new();
 }
