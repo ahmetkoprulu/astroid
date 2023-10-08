@@ -1,11 +1,11 @@
 <template>
-	<b-overlay style="height: 100vh" :show="loading" :opacity="1" variant="white">
-		<div class="trading-container" v-if="!loading">
+	<b-overlay :show="loading" :opacity="1" variant="white">
+		<div class="trading-container d-flex" v-if="!loading">
 			<header>
 				<!-- <Navbar /> -->
 				<Sidebar />
 			</header>
-			<main>
+			<main class="w-100 mx-lg-5 mx-md-3 mx-sm-0">
 				<b-overlay
 					style="height: 100vh"
 					:show="$busy"
@@ -13,7 +13,7 @@
 					:opacity="1"
 					variant="white"
 				>
-					<div class="container-fluid">
+					<div>
 						<router-view></router-view>
 					</div>
 				</b-overlay>

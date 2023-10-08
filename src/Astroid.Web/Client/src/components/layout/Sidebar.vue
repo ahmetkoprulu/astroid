@@ -1,40 +1,54 @@
 <template>
-	<nav id="sidebarMenu" class="collapse d-lg-block sidebar collapse">
-		<div class="position-sticky h-100 d-flex flex-column">
-			<a class="navbar-brand d-flex text-dark mx-4 my-4" href="/">
-				<img src="../../assets/logo.png" width="35" height="35" alt="" />
-				<span class="mt-1">Astroid</span>
-			</a>
-
-			<div class="mx-3">
-				<div class="nav-item" v-for="route in routes" :key="route.name">
-					<RouterLink
-						:to="resolveRoute(route).fullPath"
-						v-slot="{ href, isActive, isExactActive }"
-						custom
-					>
-						<a
-							@click="(e) => onButtonClick(e, route, href)"
-							class="nav-item-row"
-							:class="[
-								isActive && 'router-active',
-								isExactActive && 'router-exact',
-							]"
-						>
-							<span class="nav-item-content">
-								<div class="nav-item-icon-container">
-									<i :class="route.meta.icon" />
-								</div>
-								<span>{{
-									(route.meta && route.meta.title) || route.name
-								}}</span>
-							</span>
-						</a>
-					</RouterLink>
+	<nav class="sidebar" :class="{ close: isClose }">
+		<header class="mt-4">
+			<i
+				class="fa-solid fa-chevron-right toggle"
+				@click="() => (isClose = !isClose)"
+			/>
+		</header>
+		<header class="mt-3">
+			<div class="image-text">
+				<span class="image">
+					<img src="../../assets/logo.png" width="35" height="35" alt="" />
+				</span>
+				<div class="text logo-text">
+					<span class="name">Astroid</span>
+					<!-- <span class="profession">Trading bot</span> -->
 				</div>
 			</div>
+		</header>
+		<div class="menu-bar">
+			<div class="menu">
+				<!-- <li class="search-box">
+					<i class="bx bx-search icon"></i>
+					<input type="text" placeholder="Search..." />
+				</li> -->
+				<ul class="menu-links">
+					<li class="sidebar-link" v-for="route in routes" :key="route.name">
+						<RouterLink
+							:to="resolveRoute(route).fullPath"
+							v-slot="{ href, isActive, isExactActive }"
+							custom
+						>
+							<a
+								@click="(e) => onButtonClick(e, route, href)"
+								class="nav-item-row"
+								:class="[
+									isActive && 'router-active',
+									isExactActive && 'router-exact',
+								]"
+							>
+								<i :class="`icon fa-fw ${route.meta.icon}`" />
+								<span class="text nav-text">
+									{{ (route.meta && route.meta.title) || route.name }}
+								</span>
+							</a>
+						</RouterLink>
+					</li>
+				</ul>
+			</div>
 
-			<div class="mx-4 mt-auto mb-5 d-flex">
+			<!-- <div class="mx-4 mt-auto mb-5 d-flex">
 				<div class="w-100 profile-widget">
 					<div>
 						<router-link
@@ -50,6 +64,21 @@
 					class="fa-solid fa-right-from-bracket fa-flip-horizontal fa-fw text-center align-self-center sign-out-icon"
 					@click="signOut"
 				/>
+			</div> -->
+
+			<div class="bottom-content">
+				<li class="">
+					<a @click="signOut">
+						<i
+							class="fa-solid fa-right-from-bracket fa-flip-horizontal fa-fw icon"
+						/>
+						<span class="text nav-text">Logout</span>
+					</a>
+				</li>
+				<li class="mode">
+					<i class="fa-solid fa-moon icon"></i>
+					<span class="text nav-text">Dark</span>
+				</li>
 			</div>
 		</div>
 	</nav>
@@ -57,6 +86,11 @@
 <script>
 import UserService from "@/services/home.js";
 export default {
+	data() {
+		return {
+			isClose: false,
+		};
+	},
 	computed: {
 		routes() {
 			const tradeRoutes = this.$router.options.routes.find(
@@ -98,186 +132,314 @@ export default {
 };
 </script>
 <style>
+/* Google Font Import - Poppins */
+/* @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"); */
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: "Poppins", sans-serif;
+}
+
+:root {
+	/* ===== Colors ===== */
+	--body-color: #e4e9f7;
+	--sidebar-color: #f9fafb;
+	--primary-color: #1e3a8a;
+	--primary-color-light: #f6f5ff;
+	--toggle-color: #d1d5db;
+	--text-color: #707070;
+
+	/* ====== Transition ====== */
+	--tran-03: all 0.2s ease;
+	--tran-03: all 0.3s ease;
+	--tran-04: all 0.3s ease;
+	--tran-05: all 0.3s ease;
+}
+
+body {
+	min-height: 100vh;
+	background-color: var(--body-color);
+	transition: var(--tran-05);
+}
+
+::selection {
+	background-color: var(--primary-color);
+	color: #fff;
+}
+
+body.dark {
+	--body-color: #18191a;
+	--sidebar-color: #242526;
+	--primary-color: #3a3b3c;
+	--primary-color-light: #dbeafe;
+	--toggle-color: #fff;
+	--text-color: #ccc;
+}
+
+/* ===== Sidebar ===== */
 .sidebar {
-	position: fixed;
-	top: 0;
-	bottom: 0;
-	left: 0;
-	box-shadow: 0 2px 5px 0 rgb(0 0 0 / 5%), 0 2px 10px 0 rgb(0 0 0 / 5%);
-	width: 240px;
-	z-index: 600;
-	background-color: rgba(249, 250, 251, var(--tw-bg-opacity));
-}
-
-@media (max-width: 991.98px) {
-	.sidebar {
-		width: 100%;
-	}
-}
-.sidebar .active {
-	border-radius: 5px;
-	box-shadow: 0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%);
-}
-
-.sidebar-sticky {
-	position: relative;
-	top: 0;
-	height: calc(100vh - 48px);
-	padding-top: 0.5rem;
-	overflow-x: hidden;
-	overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-}
-
-.nav-item {
-	margin-bottom: 4px;
-}
-
-.nav-item .nav-item .nav-item-row {
-	padding-left: 4px;
-}
-
-.nav-item .nav-item .nav-item-row .nav-item-content {
-	padding-left: 2px;
-}
-
-.nav-item .nav-item .nav-item-content {
-	height: 32px;
-}
-
-.nav-item-row {
-	user-select: none;
-
-	position: relative;
-	display: block;
-	text-decoration: none !important;
-	color: var(--mui-c-grey-500);
-	/* button \/ */
-	cursor: pointer;
-	font: inherit;
-	border: 0;
-	background-color: transparent;
-	width: 100%;
-	text-align: left;
-}
-
-.nav-item-row:before {
-	content: "";
-	position: absolute;
-	left: 0;
-	top: 0;
 	height: 100%;
-	width: 4px;
-	background-color: currentColor;
-	border-radius: 0 4px 4px 0;
-	opacity: 0;
+	width: 200px;
+	padding: 10px 14px;
+	background: var(--sidebar-color);
+	transition: var(--tran-05);
 }
 
-.nav-item-row:hover .nav-item-content {
-	background-color: #eee;
-	color: var(--mui-c-grey-800);
+.sidebar.close {
+	width: 88px;
 }
 
-/* OPEN */
-
-.nav-item-row.open .nav-item-arrow {
-	transform: rotate(180deg);
-}
-
-.navigation .nav-item .nav-item:first-child {
+/* ===== Reusable code - Here ===== */
+.sidebar li {
+	height: 40px;
+	list-style: none;
+	display: flex;
+	align-items: center;
 	margin-top: 10px;
 }
 
-.navigation .nav-item .nav-item:last-child {
-	margin-bottom: 10px;
+.sidebar li .router-active {
+	background-color: #6b728022 !important;
 }
 
-/* ACTIVE */
-.nav-item-row.router-active {
-	color: var(--mui-c-grey-800) !important;
-}
-
-.nav-item > .nav-item-row.router-active .nav-item-content {
-	background: rgb(4 40 96 / 11%) !important;
+.sidebar header .image,
+.sidebar .icon {
+	min-width: 60px;
 	border-radius: 6px;
 }
 
-.nav-item .nav-item .nav-item-row.router-active.child .nav-item-content {
-	background: none;
+.sidebar .icon {
+	min-width: 60px;
+	border-radius: 6px;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
 }
 
-.nav-item-row:hover .nav-item-icon {
-	color: inherit;
+.sidebar .text,
+.sidebar .icon {
+	color: var(--text-color);
+	transition: var(--tran-03);
 }
 
-.nav-item-row.router-active .nav-item-icon {
-	color: inherit;
-}
-
-/* EXACT */
-
-.nav-item-row.router-active.child,
-.nav-item-row.router-exact {
-	color: var(--mui-c-violet-600);
-}
-
-.nav-item .nav-item .nav-item-row.router-active.child:before,
-.nav-item .nav-item .nav-item-row.router-exact:before {
-	content: "";
-	position: absolute;
-	left: -2px;
-	top: 10px;
-	height: 16px;
-	width: 3px;
-	background-color: currentColor;
-	border-radius: 4px;
+.sidebar .text {
+	font-size: 14px;
+	font-weight: 500;
+	white-space: nowrap;
 	opacity: 1;
 }
+.sidebar.close .text {
+	opacity: 0;
+}
+/* =========================== */
 
-.nav-item-content {
-	font-size: var(--mui-text-sm);
-	width: 100%;
-	display: grid;
-	grid-template-columns: 24px 1fr 24px;
-	grid-gap: 8px;
-	align-items: center;
-	height: 36px;
-	color: inherit;
-	padding-left: 12px;
-	font-weight: var(--mui-text-semibold);
-	border-radius: var(--mui-radius);
+.sidebar header {
+	position: relative;
 }
 
-.nav-item-icon-container {
+.sidebar header .image-text {
+	display: flex;
+	align-items: center;
+}
+.sidebar header .logo-text {
+	display: flex;
+	flex-direction: column;
+}
+header .image-text .name {
+	margin-top: 2px;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+header .image-text .profession {
+	font-size: 16px;
+	margin-top: -2px;
+	display: block;
+}
+
+.sidebar header .image {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 }
 
-.nav-item-icon {
-	color: var(--mui-c-grey-500);
-	resize: "horizontal";
-	overflow: "hidden";
-	width: "1000px";
-	height: "auto";
+.sidebar header .image img {
+	width: 40px;
+	border-radius: 6px;
 }
 
-.nav-item-arrow {
-	color: var(--mui-c-grey-500);
-	transition: 100ms;
+.sidebar .toggle {
+	position: absolute;
+	top: 50%;
+	right: -25px;
+	transform: translateY(-50%) rotate(180deg);
+	height: 25px;
+	width: 25px;
+	background-color: #d1d5db;
+	color: var(--sidebar-color);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	cursor: pointer;
+	transition: var(--tran-05);
 }
 
-.profile-widget {
-	font-size: var(--mui-text-sm);
-	font-weight: var(--mui-text-semibold);
-	color: var(--mui-c-grey-500);
+body.dark .sidebar header .toggle {
+	color: var(--text-color);
 }
 
-.sign-out-icon {
+.sidebar.close .toggle {
+	transform: translateY(-50%) rotate(0deg);
+}
+
+.sidebar .menu {
+	margin-top: 40px;
+}
+
+.sidebar li.search-box {
+	border-radius: 6px;
+	background-color: var(--primary-color-light);
+	cursor: pointer;
+	transition: var(--tran-05);
+}
+
+.sidebar li.search-box input {
+	height: 100%;
+	width: 100%;
+	outline: none;
+	border: none;
+	background-color: var(--primary-color-light);
+	color: var(--text-color);
+	border-radius: 6px;
+	font-size: 17px;
+	font-weight: 500;
+	transition: var(--tran-05);
+}
+.sidebar li a {
+	list-style: none;
+	height: 100%;
+	background-color: transparent;
+	display: flex;
+	align-items: center;
+	height: 100%;
+	width: 100%;
+	border-radius: 6px;
+	text-decoration: none;
+	transition: var(--tran-03);
+}
+
+.sidebar li a:hover {
+	background-color: #f3f4f6;
+}
+.sidebar li a:hover .icon,
+.sidebar li a:hover .text {
+	color: var(#000);
+}
+body.dark .sidebar li a:hover .icon,
+body.dark .sidebar li a:hover .text {
+	color: var(--text-color);
+}
+
+.sidebar .menu-bar {
+	height: calc(100% - 55px);
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	overflow-y: scroll;
+}
+.menu-bar::-webkit-scrollbar {
+	display: none;
+}
+.sidebar .menu-bar .mode {
+	border-radius: 6px;
+	/* background-color: var(--primary-color-light); */
+	position: relative;
+	transition: var(--tran-05);
+}
+
+.menu-bar .mode .sun-moon {
+	height: 50px;
+	width: 60px;
+}
+
+.mode .sun-moon i {
+	position: absolute;
+}
+.mode .sun-moon i.sun {
+	opacity: 0;
+}
+body.dark .mode .sun-moon i.sun {
+	opacity: 1;
+}
+body.dark .mode .sun-moon i.moon {
+	opacity: 0;
+}
+
+.menu-bar .bottom-content .toggle-switch {
+	position: absolute;
+	right: 0;
+	height: 90%;
+	min-width: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
 	cursor: pointer;
 }
+.toggle-switch .switch {
+	position: relative;
+	height: 22px;
+	width: 40px;
+	border-radius: 25px;
+	background-color: var(--toggle-color);
+	transition: var(--tran-05);
+}
 
-.link {
-	color: var(--mui-c-grey-500);
-	text-decoration: none !important;
+.switch::before {
+	content: "";
+	position: absolute;
+	height: 15px;
+	width: 15px;
+	border-radius: 50%;
+	top: 50%;
+	left: 5px;
+	transform: translateY(-50%);
+	background-color: var(--sidebar-color);
+	transition: var(--tran-04);
+}
+
+body.dark .switch::before {
+	left: 20px;
+}
+
+.home {
+	position: absolute;
+	top: 0;
+	top: 0;
+	left: 250px;
+	height: 100vh;
+	width: calc(100% - 250px);
+	background-color: var(--body-color);
+	transition: var(--tran-05);
+}
+.home .text {
+	font-size: 30px;
+	font-weight: 500;
+	color: var(--text-color);
+	padding: 12px 60px;
+}
+
+.sidebar.close ~ .home {
+	left: 78px;
+	height: 100vh;
+	width: calc(100% - 78px);
+}
+body.dark .home .text {
+	color: var(--text-color);
 }
 </style>
