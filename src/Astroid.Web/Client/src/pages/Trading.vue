@@ -1,19 +1,18 @@
 <template>
 	<b-overlay :show="loading" :opacity="1" variant="white">
 		<div class="trading-container d-flex" v-if="!loading">
-			<header>
-				<!-- <Navbar /> -->
-				<Sidebar />
-			</header>
-			<main class="w-100 mx-lg-5 mx-md-3 mx-sm-0">
+			<!-- <Navbar /> -->
+			<Sidebar />
+			<main class="main-container w-100">
 				<b-overlay
+					class="mx-lg-5 mx-md-3 mx-sm-0"
 					style="height: 100vh"
 					:show="$busy"
 					no-fade
 					:opacity="1"
 					variant="white"
 				>
-					<div>
+					<div class="pb-5">
 						<router-view></router-view>
 					</div>
 				</b-overlay>

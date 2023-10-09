@@ -66,7 +66,7 @@
 				/>
 			</div> -->
 
-			<div class="bottom-content">
+			<div class="bottom-content mb-5">
 				<li class="">
 					<a @click="signOut">
 						<i
@@ -132,15 +132,6 @@ export default {
 };
 </script>
 <style>
-/* Google Font Import - Poppins */
-/* @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"); */
-* {
-	margin: 0;
-	padding: 0;
-	box-sizing: border-box;
-	font-family: "Poppins", sans-serif;
-}
-
 :root {
 	/* ===== Colors ===== */
 	--body-color: #e4e9f7;
@@ -179,8 +170,9 @@ body.dark {
 
 /* ===== Sidebar ===== */
 .sidebar {
+	position: fixed;
 	height: 100%;
-	width: 200px;
+	width: 250px;
 	padding: 10px 14px;
 	background: var(--sidebar-color);
 	transition: var(--tran-05);
@@ -278,7 +270,7 @@ header .image-text .profession {
 	transform: translateY(-50%) rotate(180deg);
 	height: 25px;
 	width: 25px;
-	background-color: #d1d5db;
+	background-color: #d4d6dc !important;
 	color: var(--sidebar-color);
 	border-radius: 50%;
 	display: flex;
@@ -415,31 +407,5 @@ body.dark .mode .sun-moon i.moon {
 
 body.dark .switch::before {
 	left: 20px;
-}
-
-.home {
-	position: absolute;
-	top: 0;
-	top: 0;
-	left: 250px;
-	height: 100vh;
-	width: calc(100% - 250px);
-	background-color: var(--body-color);
-	transition: var(--tran-05);
-}
-.home .text {
-	font-size: 30px;
-	font-weight: 500;
-	color: var(--text-color);
-	padding: 12px 60px;
-}
-
-.sidebar.close ~ .home {
-	left: 78px;
-	height: 100vh;
-	width: calc(100% - 78px);
-}
-body.dark .home .text {
-	color: var(--text-color);
 }
 </style>

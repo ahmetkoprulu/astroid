@@ -174,13 +174,6 @@ public class BotsController : SecureController
 
 		if (!bot.IsEnabled)
 		{
-			var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
-			if (isOpenPositionExists)
-			{
-				await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Cannot disable the bot; it has open position(s)");
-				return BadRequest("Bot has open positions");
-			}
-
 			bot.IsEnabled = true;
 			var managerId = await GetAvaibleBotManager();
 			if (managerId == null)
@@ -190,16 +183,23 @@ public class BotsController : SecureController
 			}
 
 			bot.ManagedBy = managerId;
-		}
-		else
-		{
-			bot.IsEnabled = false;
-			bot.ManagedBy = null;
+			await Db.SaveChangesAsync();
+
+			return Success(null, "Exchange enabled successfully");
 		}
 
+		var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
+		if (isOpenPositionExists)
+		{
+			await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Cannot disable the bot; it has open position(s)");
+			return BadRequest("Bot has open positions");
+		}
+
+		bot.IsEnabled = false;
+		bot.ManagedBy = null;
 		await Db.SaveChangesAsync();
 
-		return Success("Exchange enabled successfully");
+		return Success(null, "Exchange disabled successfully");
 	}
 
 	[AllowAnonymous]

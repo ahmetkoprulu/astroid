@@ -93,8 +93,6 @@ export default {
 	/* box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.1); */
 	padding-top: 24px;
 	padding-bottom: 24px;
-	padding-left: 1.5rem;
-	padding-right: 1.5rem;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

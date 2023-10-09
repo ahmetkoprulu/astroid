@@ -5,7 +5,7 @@
 			<div class="col-lg-5 col-md-12">
 				<ValidationObserver ref="form">
 					<div class="d-flex justify-content-between">
-						<v-validated-input label="Label" class="w-100 mr-3">
+						<v-validated-input label="Label" class="w-100">
 							<b-form-input type="text" v-model="model.label" />
 						</v-validated-input>
 						<!-- <b-form-group label="Enabled">
@@ -96,7 +96,7 @@
 						<v-radio-group
 							v-model="model.limitSettings.valorizationType"
 							:options="limitDeviationOptions"
-							width="120px"
+							width="140px"
 						/>
 					</b-form-group>
 					<div v-if="model.limitSettings.valorizationType !== 1">
@@ -174,6 +174,7 @@
 					<v-radio-group
 						v-model="model.orderMode"
 						:options="orderTypeOptions"
+						width="130px"
 					/>
 				</b-form-group>
 				<b-form-group label="Pyramiding">
@@ -214,7 +215,7 @@
 						<v-radio-group
 							v-model="model.stopLossType"
 							:options="stopLossOptions"
-							width="130px"
+							width="150px"
 						/>
 					</b-form-group>
 					<b-form-group
@@ -312,7 +313,9 @@ export default {
 					deviation: 1,
 				},
 				isPyramidingEnabled: false,
-				pyramidingSettings: [],
+				pyramidingSettings: {
+					targets: [],
+				},
 				isTakePofitEnabled: false,
 				takeProfitSettings: {
 					calculationBase: 1,

@@ -1,4 +1,12 @@
 /* SITE CSS for Override */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap");
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: "Poppins", sans-serif;
+}
+
 body {
 	font-size: 0.875rem !important;
 	font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
@@ -1311,4 +1319,27 @@ a:hover {
 .mx-calendar-content .cell.active {
 	color: #fff;
 	background-color: var(--mui-c-primary-900);
+}
+
+.main-container {
+	margin-left: 262px !important;
+	height: 100vh;
+	width: calc(500px - 200px);
+	transition: var(--tran-05);
+}
+
+.main-container .text {
+	font-size: 30px;
+	font-weight: 500;
+	color: var(--text-color);
+	padding: 12px 60px;
+}
+
+.sidebar.close ~ .main-container {
+	height: 100vh;
+	margin-left: 100px !important;
+}
+
+body.dark .main-container .text {
+	color: var(--text-color);
 }
