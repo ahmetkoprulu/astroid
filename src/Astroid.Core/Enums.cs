@@ -119,7 +119,8 @@ public enum PositionStatus
 	Unknown = 0,
 	Open = 1,
 	Closed = 2,
-	Cancelled = 3
+	Requested = 3,
+	Rejected = 4
 }
 
 public enum OrderTriggerType

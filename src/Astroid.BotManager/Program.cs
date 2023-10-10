@@ -7,7 +7,8 @@ using Astroid.Providers;
 var builder = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((hostContext, services) =>
 	{
-		services.AddDbContext<AstroidDb>(ServiceLifetime.Transient);
+		services.AddDbContext<AstroidDb>(ServiceLifetime.Scoped);
+		services.AddScoped<BinanceUsdFuturesProvider>();
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();
@@ -25,6 +26,8 @@ var builder = Host.CreateDefaultBuilder(args)
 	{
 		config.AddJsonFile("config.json", optional: true, reloadOnChange: true);
 	});
+
+builder.UseDefaultServiceProvider(options => options.ValidateScopes = false);
 
 var app = builder.Build();
 app.Run();

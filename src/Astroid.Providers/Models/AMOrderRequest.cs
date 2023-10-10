@@ -58,24 +58,31 @@ public class AMOrderRequest
 		OrderTriggerType.TakeProfit => positionType == PositionType.Long ? "close-long" : "close-short",
 		OrderTriggerType.Pyramiding => positionType == PositionType.Long ? "open-long" : "open-short",
 		OrderTriggerType.Sell => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.Buy => positionType == PositionType.Long ? "open-long" : "open-short",
 		_ => throw new InvalidDataException("Invalid order trigger type."),
 	};
 
 	public bool ValidateOpenRequest(ADPosition? position, ADBot bot, AMProviderResult result)
 	{
-		if (position != null && position.BotId != bot.Id)
+		if (position == null)
+		{
+			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {PositionType} not found.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
+			return false;
+		}
+
+		if (position.BotId != bot.Id)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
 		}
 
-		if (position != null && !bot.IsPositionSizeExpandable)
+		if (!bot.IsPositionSizeExpandable)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
 		}
 
-		if (bot.OrderMode == OrderMode.OneWay && position != null)
+		if (bot.OrderMode == OrderMode.OneWay)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {Ticker} - {position.Type}", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;

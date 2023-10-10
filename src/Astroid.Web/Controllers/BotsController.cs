@@ -222,6 +222,17 @@ public class BotsController : SecureController
 			return BadRequest($"Invalid request model");
 		}
 
+		if (!orderRequest.IsClose)
+		{
+			var pos = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
+			pos ??= await Db.Positions.AddRequestedPosition(bot, orderRequest.Ticker, orderRequest.Leverage, orderRequest.PositionType);
+
+			await Db.Orders.AddOpenOrder(bot, pos, orderRequest.Ticker);
+			await Db.SaveChangesAsync();
+
+			return Success(null, "Order requested successfully");
+		}
+
 		var exchange = await Db.Exchanges
 			.AsNoTracking()
 			.Include(x => x.Provider)
@@ -232,61 +243,16 @@ public class BotsController : SecureController
 			return BadRequest($"Exchange {bot.ExchangeId} not found");
 		}
 
-		try
+		var position = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
+		if (position == null)
 		{
-			if (orderRequest.IsClose)
-			{
-				var position = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
-				if (position == null)
-				{
-					await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
-					return BadRequest($"Position not found");
-				}
-				var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
-				await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
-				await Db.SaveChangesAsync();
-
-				return Success(null, "Order requested successfully");
-			}
-
-			var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
-			if (exchanger == null)
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-				return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
-			}
-
-			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
-				return BadRequest("Bot is busy");
-			}
-
-			var _ = await Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}", TimeSpan.FromMinutes(1));
-			var result = await exchanger.ExecuteOrder(bot, orderRequest);
-			if (!result.Success) LogError(null, result.Message ?? string.Empty);
-
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = exchange.UserId;
-				x.ActorId = bot.Id;
-				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
-				x.CorrelationId = result.CorrelationId;
-				Db.Audits.Add(x);
-			});
-
-			await Db.SaveChangesAsync();
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
+			return BadRequest($"Position not found");
 		}
-		catch (Exception ex)
-		{
-			LogError(ex, ex.Message);
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-			return Error(ex.Message);
-		}
-		finally
-		{
-			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
-		}
+
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
+		await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
+		await Db.SaveChangesAsync();
 
 		return Success(null, "Order requested successfully");
 	}

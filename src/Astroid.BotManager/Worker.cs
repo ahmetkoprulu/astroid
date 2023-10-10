@@ -132,53 +132,40 @@ public class Worker : IHostedService
 			return;
 		}
 
+		var position = await db.Positions.FirstOrDefaultAsync(x => x.Id == order.PositionId, cancellationToken);
 		if (order.Status == OrderStatus.Cancelled)
 		{
 			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled.", order.Position.Id.ToString());
+			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled.", position?.Id.ToString());
 			await db.SaveChangesAsync(cancellationToken);
 			Logger.LogError($"Order is cancelled {message.OrderId}.");
 
 			return;
 		}
 
-		var isClosing = !order.ClosePosition && await db.IsPositionClosing(order.Position.Id);
+		var isClosing = !order.ClosePosition && position != null && await db.IsPositionClosing(position.Id);
 		if (isClosing)
 		{
 			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled because position is about to be closed.", order.Position.Id.ToString());
+			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled because position is about to be closed.", position?.Id.ToString());
 			await db.SaveChangesAsync(cancellationToken);
 			Logger.LogError($"Order is cancelled because position is about to be closed {message.OrderId}.");
 
 			return;
 		}
 
-		if (await Cache.IsLocked($"lock:bot:{order.BotId}:{order.Symbol}"))
-		{
-			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, "The position has been already managing by another process.", order.Position.Id.ToString());
-			await db.SaveChangesAsync(cancellationToken);
-			Logger.LogInformation($"The position has been already managing by another process {message.OrderId}.");
-
-			return;
-		}
-
-		var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
-		if (exchanger == null)
-		{
-			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, $"Exchanger type {order.Exchange.Label} not found", order.Position.Id.ToString());
-			await db.SaveChangesAsync(cancellationToken);
-
-			return;
-		}
-
 		var request = AMOrderRequest.GenerateRequest(order);
-		var needToLock = order.ClosePosition;
-
 		try
 		{
-			if (needToLock) await Cache.AcquireLock($"lock:bot:{order.BotId}:{order.Symbol}", TimeSpan.FromMinutes(5));
+			var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
+			if (exchanger == null)
+			{
+				order.Reject();
+				await AddAudit(db, order, AuditType.OrderRequest, $"Exchanger type {order.Exchange.Label} not found", position?.Id.ToString());
+				await db.SaveChangesAsync(cancellationToken);
+
+				return;
+			}
 
 			var bot = await db.Bots
 				.Where(x => x.UserId == order.UserId)
@@ -188,7 +175,7 @@ public class Worker : IHostedService
 			if (bot == null)
 			{
 				order.Reject();
-				await AddAudit(db, order, AuditType.OrderRequest, $"Bot {order.BotId} not found", order.Position.Id.ToString());
+				await AddAudit(db, order, AuditType.OrderRequest, $"Bot {order.BotId} not found", position?.Id.ToString());
 				await db.SaveChangesAsync(cancellationToken);
 
 				return;
@@ -214,20 +201,15 @@ public class Worker : IHostedService
 		}
 		catch (Exception ex)
 		{
-			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, order.Position.Id.ToString());
+			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, position?.Id.ToString());
 			order.Reject();
 			await db.SaveChangesAsync(cancellationToken);
 			Logger.LogError($"[{message.OrderId}] Error {ex.Message}.");
-		}
-		finally
-		{
-			if (needToLock) await Cache.ReleaseLock($"lock:bot:{order.BotId}:{order.Symbol}");
 		}
 	}
 
 	public async Task<ADOrder?> GetOrder(AstroidDb db, Guid orderId, CancellationToken cancellationToken = default) =>
 		await db.Orders
-			.Include(x => x.Position)
 			.Include(x => x.Bot)
 			.Include(x => x.Exchange)
 				.ThenInclude(x => x.Provider)

@@ -34,8 +34,7 @@ public class PositionsController : SecureController
 			.Include(x => x.Bot)
 			.Where(x => x.UserId == CurrentUser.Id)
 			.AsNoTracking()
-			.OrderBy(x => x.Status)
-			.ThenByDescending(x => x.CreatedDate)
+			.OrderByDescending(x => x.CreatedDate)
 			.ViewDataListAsync<ADPosition>(model);
 
 		return Success(model.ForJson(x =>

@@ -12,7 +12,6 @@ namespace Astroid.Providers;
 
 public abstract class ExchangeProviderBase : IDisposable
 {
-	public IServiceProvider ServiceProvider { get; set; }
 	protected AstroidDb Db { get; set; }
 	protected ExchangeInfoStore ExchangeStore { get; set; }
 	protected ADExchange Exchange { get; set; }
@@ -20,12 +19,10 @@ public abstract class ExchangeProviderBase : IDisposable
 
 	protected ExchangeProviderBase() { }
 
-	protected ExchangeProviderBase(IServiceProvider serviceProvider, ADExchange exchange)
+	protected ExchangeProviderBase(AstroidDb db, ExchangeInfoStore infoStore)
 	{
-		ServiceProvider = serviceProvider;
-		Db = ServiceProvider.GetRequiredService<AstroidDb>();
-		ExchangeStore = ServiceProvider.GetRequiredService<ExchangeInfoStore>();
-		Exchange = exchange;
+		Db = db;
+		ExchangeStore = infoStore;
 		CorrelationId = GenerateCorrelationId();
 	}
 
@@ -70,8 +67,9 @@ public abstract class ExchangeProviderBase : IDisposable
 		return (decimal)standardDeviation;
 	}
 
-	public virtual void Context()
+	public virtual void Context(ADExchange exchange)
 	{
+		Exchange = exchange;
 		var propertyValues = JsonConvert.DeserializeObject<List<ProviderPropertyValue>>(Exchange.PropertiesJson);
 		BindProperties(propertyValues);
 	}
@@ -214,7 +212,7 @@ public abstract class ExchangeProviderBase : IDisposable
 
 	public async Task ReducePosition(ADPosition position, AMOrderResult result, ADOrder? order = null)
 	{
-		if (!result.Success)
+		if (order != null && !result.Success)
 		{
 			order?.Reject();
 			return;

@@ -60,6 +60,17 @@
 							<img :src="icons[props.row.exchangeProviderName]" height="20" />
 							{{ props.row.exchangeLabel }}
 						</td>
+						<td>
+							<b-badge
+								pill
+								:variant="
+									props.row.status == 4 || props.row.status == 5
+										? 'danger'
+										: 'light'
+								"
+								>{{ $consts.POSITION_STATUS[props.row.status].title }}</b-badge
+							>
+						</td>
 						<td><v-datetime v-model="props.row.createdDate" pretty /></td>
 						<td>
 							<v-dropdown class="pull-right">
@@ -73,7 +84,7 @@
 						</td>
 					</tr>
 					<tr v-if="props.row.status !== 2">
-						<td class="p-0" colspan="8">
+						<td class="p-0" colspan="9">
 							<b-collapse
 								class="w-100"
 								style="height: 50px"
@@ -117,6 +128,7 @@ export default {
 				leverage: "Leverage",
 				botLabel: "Bot",
 				exchangeLabel: "Market",
+				status: "Status",
 				createdDate: "Created Date",
 				actions: " ",
 			},

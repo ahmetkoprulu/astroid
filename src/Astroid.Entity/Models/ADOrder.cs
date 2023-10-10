@@ -50,8 +50,11 @@ public class ADOrder : IEntity
 		UpdatedDate = DateTime.UtcNow;
 	}
 
-	public void Fill(decimal quantity)
+	public void Fill(decimal quantity, decimal? triggerPrice = null)
 	{
+		if (triggerPrice.HasValue)
+			TriggerPrice = triggerPrice.Value;
+
 		Status = OrderStatus.Filled;
 		UpdatedDate = DateTime.UtcNow;
 		FilledQuantity = quantity;

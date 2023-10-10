@@ -1,6 +1,7 @@
 using System.Reflection;
 using Astroid.Core;
 using Astroid.Entity;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Astroid.Providers;
 
@@ -14,7 +15,8 @@ public class ExchangerFactory
 		switch (exchange.Provider.Name)
 		{
 			case "binance-usd-futures":
-				provider = new BinanceUsdFuturesProvider(serviceProvider, exchange);
+				provider = serviceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
+				provider.Context(exchange);
 				break;
 			default:
 				return null;

@@ -20,6 +20,31 @@ public static class ContextExtentionMethods
 		set.Add(entity);
 	}
 
+	public static async Task<ADPosition> AddRequestedPosition(this DbSet<ADPosition> set, ADBot bot, string symbol, int leverage, PositionType type)
+	{
+		var position = new ADPosition
+		{
+			Id = Guid.NewGuid(),
+			UserId = bot.UserId,
+			BotId = bot.Id,
+			ExchangeId = bot.ExchangeId,
+			Symbol = symbol,
+			EntryPrice = 0,
+			AvgEntryPrice = 0,
+			Quantity = 0,
+			CurrentQuantity = 0,
+			Leverage = leverage,
+			Type = type,
+			Status = PositionStatus.Requested,
+			UpdatedDate = DateTime.MinValue,
+			CreatedDate = DateTime.UtcNow
+		};
+
+		await set.AddAsync(position);
+
+		return position;
+	}
+
 	public static async Task AddCloseOrder(this DbSet<ADOrder> set, ADPosition position, decimal price)
 	{
 		var order = new ADOrder
@@ -39,6 +64,30 @@ public static class ContextExtentionMethods
 			Status = OrderStatus.Open,
 			UpdatedDate = DateTime.MinValue,
 			CreatedDate = DateTime.UtcNow
+		};
+
+		await set.AddAsync(order);
+	}
+
+	public static async Task AddOpenOrder(this DbSet<ADOrder> set, ADBot bot, ADPosition position, string symbol)
+	{
+		var order = new ADOrder
+		{
+			Id = Guid.NewGuid(),
+			UserId = bot.UserId,
+			BotId = bot.Id,
+			ExchangeId = bot.ExchangeId,
+			PositionId = position.Id,
+			Symbol = symbol,
+			TriggerPrice = 0,
+			TriggerType = OrderTriggerType.Buy,
+			ConditionType = OrderConditionType.Immediate,
+			Quantity = bot.PositionSize ?? 0,
+			QuantityType = bot.PositionSizeType,
+			ClosePosition = false,
+			Status = OrderStatus.Open,
+			UpdatedDate = DateTime.MinValue,
+			CreatedDate = DateTime.UtcNow,
 		};
 
 		await set.AddAsync(order);
