@@ -18,7 +18,7 @@ public class ExchangeInfoStore
 			Name = key,
 		};
 
-		var symbols = await Cache.GetStartsWith<AMSymbolInfo>($"Symbol:{key}");
+		var symbols = await Cache.GetStartsWith<AMSymbolInfo>($"Symbol:{key}:");
 		info.Symbols = symbols.ToList();
 
 		return info;
