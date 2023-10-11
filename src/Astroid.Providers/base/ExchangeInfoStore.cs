@@ -42,6 +42,8 @@ public class ExchangeInfoStore
 
 	public async Task WriteSymbolInfo(string exchange, AMSymbolInfo info) => await Cache.Set($"Symbol:{exchange}:{info.Name}", info);
 
+	public string GetSymbolKey(string exchange, string symbol) => $"Symbol:{exchange}:{symbol}";
+
 	public async Task<List<AMExchangeInfo>> GetAll()
 	{
 		var exchanges = new List<AMExchangeInfo>();

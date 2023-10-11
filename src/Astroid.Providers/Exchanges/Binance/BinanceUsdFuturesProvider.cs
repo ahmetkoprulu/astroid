@@ -123,7 +123,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		result.CorrelationId = position.Id.ToString();
 		var symbolInfo = await GetSymbolInfo(request.Ticker);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.MarkPrice, symbolInfo, position.CurrentQuantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsPyramidingEnabled) await CreatePyramidingOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 
@@ -302,7 +302,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		order.Fill(orderResult.Quantity);
 		position.Expand(orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
 		var symbolInfo = await GetSymbolInfo(order.Symbol);
-		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.MarkPrice, symbolInfo, position.CurrentQuantity, result);
+		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 
 		await Db.SaveChangesAsync();
