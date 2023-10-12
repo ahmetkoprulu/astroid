@@ -95,9 +95,9 @@ export const POSITION_STATUS = {
 }
 
 export const PRICE_REFERENCE_TYPES = {
-	1: { id: 1, title: "Entry", icon: "" },
-	2: { id: 2, title: "Average", icon: "" },
-	3: { id: 3, title: "Last", icon: "" },
+	1: { id: 1, title: "Entry", icon: "fa-solid fa-gauge-low" },
+	2: { id: 2, title: "Average", icon: "fa-solid fa-gauge" },
+	3: { id: 3, title: "Last", icon: "fa-solid fa-gauge-high" },
 }
 
 export default {

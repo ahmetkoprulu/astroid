@@ -413,6 +413,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: Target(s) share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
 			return;
 		}
+		var price = bot.TakeProfitSettings.CalculationBase == CalculationBase.EntryPrice
+			? position.EntryPrice
+			: bot.TakeProfitSettings.CalculationBase == CalculationBase.AveragePrice
+				? position.AvgEntryPrice
+				: entryPrice;
 
 		for (var i = 0; i < targets.Count; i++)
 		{
