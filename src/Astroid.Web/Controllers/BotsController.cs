@@ -84,9 +84,7 @@ public class BotsController : SecureController
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
 			TakeProfitSettings = bot.TakeProfitSettings,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
-			StopLossType = bot.StopLossType,
-			StopLossPrice = bot.StopLossPrice,
-			StopLossCallbackRate = bot.StopLossCallbackRate,
+			StopLossSettings = bot.StopLossSettings,
 			Key = bot.Key,
 			IsEnabled = bot.IsEnabled,
 			LimitSettings = bot.LimitSettings
@@ -117,9 +115,7 @@ public class BotsController : SecureController
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
 				TakeProfitSettings = model.TakeProfitSettings,
 				IsStopLossEnabled = model.IsStopLossEnabled,
-				StopLossType = model.StopLossType,
-				StopLossPrice = model.StopLossPrice,
-				StopLossCallbackRate = model.StopLossCallbackRate,
+				StopLossSettings = model.StopLossSettings,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
 				UserId = CurrentUser.Id,
@@ -148,9 +144,7 @@ public class BotsController : SecureController
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
 			bot.TakeProfitSettings = model.TakeProfitSettings;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
-			bot.StopLossType = model.StopLossType;
-			bot.StopLossPrice = model.StopLossPrice;
-			bot.StopLossCallbackRate = model.StopLossCallbackRate;
+			bot.StopLossSettings = model.StopLossSettings;
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;
 			bot.ModifiedDate = DateTime.Now;
@@ -355,16 +349,20 @@ public class BotsController : SecureController
 	public async Task<IActionResult> Delete(Guid id)
 	{
 		if (id == Guid.Empty)
-			return BadRequest("Invalid exchange id");
+			return BadRequest("Invalid bot id");
 
 		var bot = await Db.Bots.Where(x => x.UserId == CurrentUser.Id).FirstOrDefaultAsync(x => x.Id == id);
 		if (bot == null)
-			return NotFound("Exchange not found");
+			return NotFound("The bot not found");
+
+		var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
+		if (isOpenPositionExists)
+			return BadRequest("The bot has open positions");
 
 		bot.IsRemoved = true;
 		await Db.SaveChangesAsync();
 
-		return Success("Exchange deleted successfully");
+		return Success("The bot deleted successfully");
 	}
 
 	[NonAction]

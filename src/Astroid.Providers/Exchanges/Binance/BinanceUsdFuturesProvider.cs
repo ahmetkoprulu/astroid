@@ -88,6 +88,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (order == null)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" }));
+			order.Reject();
+			await Db.SaveChangesAsync();
+
 			return result;
 		}
 
@@ -100,6 +103,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			if (!success)
 			{
 				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" }));
+				position!.Reject();
+				order.Reject();
+				await Db.SaveChangesAsync();
+
 				return result;
 			}
 		}
@@ -115,6 +122,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			position!.Reject();
 			order.Reject();
+			await Db.SaveChangesAsync();
+
 			return result;
 		}
 
@@ -192,6 +201,10 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			if (!success)
 			{
 				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" }));
+				position!.Reject();
+				order.Reject();
+				await Db.SaveChangesAsync();
+
 				return result;
 			}
 		}
@@ -209,6 +222,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			position!.Reject();
 			order.Reject();
+			await Db.SaveChangesAsync();
+
 			return result;
 		}
 
@@ -357,7 +372,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return;
 		}
 
-		if (bot.StopLossPrice <= 0)
+		if (bot.StopLossSettings.Price <= 0)
 		{
 			result.AddAudit(AuditType.StopLossOrderPlaced, $"Failed placing stop loss order: Stop loss price is zero.", CorrelationId, JsonConvert.SerializeObject(new { request.Ticker, Quantity = quantity, entryPrice }));
 			return;
@@ -413,18 +428,21 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Failed placing take profit order: Target(s) share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice }));
 			return;
 		}
+
 		var price = bot.TakeProfitSettings.CalculationBase == CalculationBase.EntryPrice
 			? position.EntryPrice
 			: bot.TakeProfitSettings.CalculationBase == CalculationBase.AveragePrice
 				? position.AvgEntryPrice
 				: entryPrice;
 
+		var prevOrderId = order.OrderId;
 		for (var i = 0; i < targets.Count; i++)
 		{
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
 			var stopPrice = CalculateTakeProfit(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
-			await AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, PositionSizeType.FixedInAsset, i == targets.Count - 1);
+			var newOrder = await AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, PositionSizeType.FixedInAsset, i == targets.Count - 1, prevOrderId);
+			prevOrderId = newOrder.Id;
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Placed take profit order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
@@ -464,9 +482,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			);
 		result.AddAudit(AuditType.StopLossOrderPlaced, stopOrderResponse.Success ? $"Placed stop loss order successfully." : $"Failed placing stop loss order: {stopOrderResponse?.Error?.Message}", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 
-		if (bot.StopLossCallbackRate > 0)
+		if (bot.StopLossSettings.Margin > 0)
 		{
-			var cRate = bot.StopLossCallbackRate > 0 ? bot.StopLossCallbackRate : null;
+			var cRate = bot.StopLossSettings.Margin > 0 ? bot.StopLossSettings.Margin : null;
 			var trailiginStopOrder = await Client.UsdFuturesApi.Trading
 				.PlaceOrderAsync(
 					order.Ticker,
@@ -493,7 +511,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return;
 		}
 
-		if (targets.Count == 0) targets.Add(new TakeProfitTarget { Target = bot.StopLossPrice!.Value * 3, Quantity = 100 });
+		if (targets.Count == 0) targets.Add(new TakeProfitTarget { Target = bot.StopLossSettings.Price * 3, Quantity = 100 });
 
 		var oSide = order.PositionType == PositionType.Long ? OrderSide.Sell : OrderSide.Buy;
 		var pSide = order.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
@@ -851,13 +869,13 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return smoothed_bids;
 	}
 
-	private static decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
+	public static decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
 	{
 		if (!bot.IsStopLossEnabled) return null;
 
-		if (bot.StopLossPrice == null || bot.StopLossPrice <= 0) bot.StopLossPrice = 1;
+		if (bot.StopLossSettings.Price <= 0) bot.StopLossSettings.Price = 1;
 
-		return CalculateStopLoss(bot.StopLossPrice.Value, entryPrice, precision, type);
+		return CalculateStopLoss(bot.StopLossSettings.Price, entryPrice, precision, type);
 	}
 
 	private static decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)
