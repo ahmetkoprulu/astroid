@@ -40,6 +40,12 @@ public class ADPosition : IEntity
 		UpdatedDate = DateTime.UtcNow;
 	}
 
+	public void Reject()
+	{
+		Status = PositionStatus.Rejected;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
 	public void Reduce(decimal quantity)
 	{
 		CurrentQuantity -= quantity;
@@ -48,8 +54,15 @@ public class ADPosition : IEntity
 
 	public void Expand(decimal quantity, decimal entryPrice, int leverage)
 	{
+		AvgEntryPrice = Status == PositionStatus.Requested ? entryPrice : (AvgEntryPrice + entryPrice) / 2;
+
+		if (Status == PositionStatus.Requested)
+		{
+			Status = PositionStatus.Open;
+			EntryPrice = entryPrice;
+		}
+
 		Leverage = leverage;
-		AvgEntryPrice = (AvgEntryPrice + entryPrice) / 2;
 		Quantity += quantity;
 		CurrentQuantity += quantity;
 		UpdatedDate = DateTime.UtcNow;

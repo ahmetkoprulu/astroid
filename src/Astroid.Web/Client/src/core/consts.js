@@ -74,6 +74,7 @@ export const ORDER_TRIGGER_TYPES = {
 	2: { id: 2, title: "Take Profit", icon: "fa fa-dollar-sign" },
 	3: { id: 3, title: "Pyramiding", icon: "fa fa-dollar-sign" },
 	4: { id: 4, title: "Sell", icon: "fa fa-dollar-sign" },
+	5: { id: 5, title: "Buy", icon: "fa fa-dollar-sign" },
 }
 
 export const ORDER_STATUS = {
@@ -85,14 +86,22 @@ export const ORDER_STATUS = {
 	6: { id: 6, title: "Expired", icon: "fa fa-dollar-sign" },
 }
 
+export const POSITION_STATUS = {
+	1: { id: 1, title: "Open", icon: "fa fa-dollar-sign" },
+	2: { id: 2, title: "Close", icon: "fa fa-dollar-sign" },
+	3: { id: 3, title: "Requested", icon: "fa fa-dollar-sign" },
+	4: { id: 4, title: "Rejected", icon: "fa fa-dollar-sign" },
+	5: { id: 5, title: "Cancelled", icon: "fa fa-dollar-sign" },
+}
+
 export const PRICE_REFERENCE_TYPES = {
-	1: { id: 1, title: "Entry", icon: "" },
-	2: { id: 2, title: "Average", icon: "" },
-	3: { id: 3, title: "Last", icon: "" },
+	1: { id: 1, title: "Entry", icon: "fa-solid fa-gauge-low" },
+	2: { id: 2, title: "Average", icon: "fa-solid fa-gauge" },
+	3: { id: 3, title: "Last", icon: "fa-solid fa-gauge-high" },
 }
 
 export default {
 	PROPERTY_TYPES, EXCHANGE_ICONS, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES,
 	LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS, STOP_LOSS_TYPE, ORDER_TRIGGER_TYPES, ORDER_STATUS,
-	PRICE_REFERENCE_TYPES
+	POSITION_STATUS, PRICE_REFERENCE_TYPES
 }

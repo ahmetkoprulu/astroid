@@ -21,7 +21,7 @@ builder.Environment.EnvironmentName = environmantName ?? "Development";
 
 builder.WebHost.ConfigureKestrel((context, options) =>
 {
-	var remoteConfig = context.Configuration.Get<AConfAppSettings>();
+	var remoteConfig = context.Configuration.Get<WebConfig>();
 	if (remoteConfig?.Endpoints == null || !remoteConfig.Endpoints.Any()) return;
 	foreach (var endpoint in remoteConfig.Endpoints)
 	{
@@ -54,7 +54,7 @@ builder.WebHost.ConfigureKestrel((context, options) =>
 	}
 });
 
-static X509Certificate2 LoadCertificate(AConfEndpoint config, Uri url)
+static X509Certificate2 LoadCertificate(EndpointConfig config, Uri url)
 {
 	if (config.Certificate == null) return null;
 	if (config.Certificate.StoreName != null && config.Certificate.StoreLocation != null)
@@ -133,7 +133,7 @@ if (builder.Environment.IsProduction())
 	builder.Logging.AddFile("Logs/astroid-{Date}.log", retainedFileCountLimit: 5);
 
 var app = builder.Build();
-var conf = app.Configuration.Get<AConfAppSettings>();
+var conf = app.Configuration.Get<WebConfig>();
 
 // Ensure the database is created and seeded.
 using var scope = app.Services.CreateScope();

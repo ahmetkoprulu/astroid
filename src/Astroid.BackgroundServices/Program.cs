@@ -19,7 +19,6 @@ var builder = Host.CreateDefaultBuilder(args)
 		services.AddHostedService<BinanceCache>();
 		services.AddHostedService<BinanceTestCache>();
 		services.AddHostedService<OrderWatcher>();
-		services.AddHostedService<OrderExecutor>();
 	})
 	.ConfigureLogging(logging =>
 	{
@@ -33,7 +32,7 @@ var builder = Host.CreateDefaultBuilder(args)
 ThreadPool.GetMinThreads(out var workerThreads, out var completionPortThreads);
 Console.WriteLine($"Min worker threads: {workerThreads}, Min completion port threads: {completionPortThreads}");
 
-var success = ThreadPool.SetMinThreads(10, 10);
+var success = ThreadPool.SetMinThreads(32, 32);
 if (success)
 {
 	ThreadPool.GetMinThreads(out var newWorkerThreads, out var newCompletionPortThreads);

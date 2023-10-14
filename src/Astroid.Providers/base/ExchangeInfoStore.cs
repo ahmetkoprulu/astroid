@@ -18,7 +18,7 @@ public class ExchangeInfoStore
 			Name = key,
 		};
 
-		var symbols = await Cache.GetStartsWith<AMSymbolInfo>($"Symbol:{key}");
+		var symbols = await Cache.GetStartsWith<AMSymbolInfo>($"Symbol:{key}:");
 		info.Symbols = symbols.ToList();
 
 		return info;
@@ -41,6 +41,8 @@ public class ExchangeInfoStore
 	}
 
 	public async Task WriteSymbolInfo(string exchange, AMSymbolInfo info) => await Cache.Set($"Symbol:{exchange}:{info.Name}", info);
+
+	public string GetSymbolKey(string exchange, string symbol) => $"Symbol:{exchange}:{symbol}";
 
 	public async Task<List<AMExchangeInfo>> GetAll()
 	{

@@ -20,10 +20,9 @@ public class AMBot
 	public bool IsTakePofitEnabled { get; set; }
 	public TakeProfitSettings TakeProfitSettings { get; set; } = new();
 	public bool IsStopLossEnabled { get; set; }
-	public StopLossType StopLossType { get; set; } = StopLossType.Fixed;
-	public decimal? StopLossPrice { get; set; }
-	public decimal? StopLossActivation { get; set; }
-	public decimal? StopLossCallbackRate { get; set; }
+	public StopLossSettings StopLossSettings { get; set; } = new();
 	public string Key { get; set; } = string.Empty;
 	public bool IsEnabled { get; set; }
+	public DateTime CreatedDate { get; set; }
+	public AMExchange Exchange { get; set; } = new();
 }

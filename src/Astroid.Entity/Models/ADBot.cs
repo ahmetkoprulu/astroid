@@ -28,14 +28,18 @@ public class ADBot : IEntity
 	[Column(nameof(TakeProfitSettings))]
 	public string TakeProfitSettingsJson { get; set; }
 	public bool IsStopLossEnabled { get; set; }
-	public StopLossType StopLossType { get; set; } = StopLossType.Fixed;
-	public decimal? StopLossPrice { get; set; }
-	public decimal? StopLossCallbackRate { get; set; }
+	[Column(nameof(StopLossSettings))]
+	public string StopLossSettingsJson { get; set; }
 	public string Key { get; set; }
 	public bool IsEnabled { get; set; }
+	public BotState State { get; set; }
 	public Guid UserId { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public DateTime ModifiedDate { get; set; }
+	public Guid? ManagedBy { get; set; }
+	public bool IsRemoved { get; set; }
+
+	public ADExchange Exchange { get; set; }
 
 	[NotMapped]
 	public PyramidingSettings PyramidingSettings
@@ -49,6 +53,13 @@ public class ADBot : IEntity
 	{
 		get => this.GetAs<TakeProfitSettings>(TakeProfitSettingsJson);
 		set => TakeProfitSettingsJson = this.SetAs(value);
+	}
+
+	[NotMapped]
+	public StopLossSettings StopLossSettings
+	{
+		get => this.GetAs<StopLossSettings>(StopLossSettingsJson);
+		set => StopLossSettingsJson = this.SetAs(value);
 	}
 
 	[NotMapped]
@@ -69,6 +80,23 @@ public class TakeProfitSettings
 	public CalculationBase CalculationBase { get; set; } = CalculationBase.LastPrice;
 	public PriceBase PriceBase { get; set; } = PriceBase.LastPrice;
 	public List<TakeProfitTarget> Targets { get; set; } = new();
+}
+
+public class StopLossSettings
+{
+	public StopLossType Type { get; set; } = StopLossType.Fixed;
+	public PriceBase PriceBase { get; set; } = PriceBase.LastPrice;
+	public decimal Price { get; set; }
+	public decimal? Margin { get; set; }
+}
+
+public enum BotState : short
+{
+	Unknown = 0,
+	Preparing = 1,
+	Enabled = 2,
+	Disabled = 3,
+	Stopping = 4
 }
 
 public enum CalculationBase

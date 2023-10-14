@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.Providers", "src\As
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.BackgroundServices", "src\Astroid.BackgroundServices\Astroid.BackgroundServices.csproj", "{D7CB42F6-EA01-4CE3-895B-D2DE60F482AE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Astroid.BotManager", "src\Astroid.BotManager\Astroid.BotManager.csproj", "{254196BA-8215-4856-A647-023B7A4E92BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,10 +50,15 @@ Global
 		{D7CB42F6-EA01-4CE3-895B-D2DE60F482AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D7CB42F6-EA01-4CE3-895B-D2DE60F482AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D7CB42F6-EA01-4CE3-895B-D2DE60F482AE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{254196BA-8215-4856-A647-023B7A4E92BA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{254196BA-8215-4856-A647-023B7A4E92BA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{254196BA-8215-4856-A647-023B7A4E92BA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{254196BA-8215-4856-A647-023B7A4E92BA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{94EF8E4B-84B8-4444-8488-F3213F1A5E04} = {C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}
 		{23BFC9F8-A212-45DC-BF12-BA898038355C} = {C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}
 		{D7CB42F6-EA01-4CE3-895B-D2DE60F482AE} = {C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}
+		{254196BA-8215-4856-A647-023B7A4E92BA} = {C06FC81F-AF99-4CB9-8F9F-2B0EC5BB115F}
 	EndGlobalSection
 EndGlobal

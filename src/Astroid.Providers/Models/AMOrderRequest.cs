@@ -52,23 +52,37 @@ public class AMOrderRequest
 		_ => throw new NotImplementedException(),
 	};
 
-	public string? Timestamp { get; set; }
+	public void SetPositionType(OrderTriggerType triggerType, PositionType positionType) => Type = triggerType switch
+	{
+		OrderTriggerType.StopLoss => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.TakeProfit => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.Pyramiding => positionType == PositionType.Long ? "open-long" : "open-short",
+		OrderTriggerType.Sell => positionType == PositionType.Long ? "close-long" : "close-short",
+		OrderTriggerType.Buy => positionType == PositionType.Long ? "open-long" : "open-short",
+		_ => throw new InvalidDataException("Invalid order trigger type."),
+	};
 
 	public bool ValidateOpenRequest(ADPosition? position, ADBot bot, AMProviderResult result)
 	{
-		if (position != null && position.BotId != bot.Id)
+		if (position == null)
+		{
+			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {PositionType} not found.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
+			return false;
+		}
+
+		if (position.BotId != bot.Id)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
 		}
 
-		if (position != null && !bot.IsPositionSizeExpandable)
+		if (!bot.IsPositionSizeExpandable)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
 		}
 
-		if (bot.OrderMode == OrderMode.OneWay && position != null)
+		if (bot.OrderMode == OrderMode.OneWay)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {Ticker} - {position.Type}", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
@@ -106,6 +120,23 @@ public class AMOrderRequest
 			Type = Type == "open-long" ? "close-short" : "close-long",
 			Key = Key
 		};
+	}
+
+	public static AMOrderRequest GenerateRequest(ADOrder order)
+	{
+		var request = new AMOrderRequest
+		{
+			OrderId = order.Id,
+			Ticker = order.Symbol,
+			Leverage = order.Position.Leverage,
+			Quantity = order.ClosePosition ? 0 : order.Quantity,
+			IsPyramiding = order.TriggerType == OrderTriggerType.Pyramiding,
+			Key = order.Bot.Key
+		};
+		request.SetQuantityType(order.QuantityType);
+		request.SetPositionType(order.TriggerType, order.Position.Type);
+
+		return request;
 	}
 }
 

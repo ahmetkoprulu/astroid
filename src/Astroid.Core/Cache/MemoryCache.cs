@@ -62,4 +62,5 @@ public class InMemoryCache : ICacheService
 	}
 
 	public Task<IEnumerable<T>> GetStartsWith<T>(string key) => throw new NotImplementedException();
+	public Task BatchSet(List<KeyValuePair<string, string>> pairs) => throw new NotImplementedException();
 }

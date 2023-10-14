@@ -14,6 +14,7 @@ public class AstroidDb : DbContext
 
 	public DbSet<ADAudit> Audits { get; set; }
 	public DbSet<ADBot> Bots { get; set; }
+	public DbSet<ADBotManager> BotManagers { get; set; }
 	public DbSet<ADExchange> Exchanges { get; set; }
 	public DbSet<ADExchangeProvider> ExchangeProviders { get; set; }
 	public DbSet<ADNotification> Notifications { get; set; }
@@ -25,7 +26,7 @@ public class AstroidDb : DbContext
 
 	public AstroidDb(DbContextOptions<AstroidDb> options, IConfiguration config) : base(options)
 	{
-		var settings = config.Get<AConfAppSettings>() ?? new();
+		var settings = config.Get<WebConfig>() ?? new();
 		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_DB_CONNECTION_STRING");
 		var dbProviderEnvVariable = Environment.GetEnvironmentVariable("ASTROID_DB_PROVIDER");
 

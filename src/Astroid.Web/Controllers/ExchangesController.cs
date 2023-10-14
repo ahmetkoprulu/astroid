@@ -21,7 +21,7 @@ public class ExchangesController : SecureController
 		model ??= new MPViewDataList<ADExchange>();
 
 		model = await Db.Exchanges
-			.Where(x => x.UserId == CurrentUser.Id)
+			.Where(x => x.UserId == CurrentUser.Id && !x.IsRemoved)
 			.AsNoTracking()
 			.Include(x => x.Provider)
 			.OrderByDescending(x => x.CreatedDate)
@@ -35,6 +35,7 @@ public class ExchangesController : SecureController
 			ProviderId = x.Provider.Id,
 			ProviderName = x.Provider.Name,
 			ProviderLabel = x.Provider.Title,
+			CreatedDate = x.CreatedDate
 		}));
 	}
 
@@ -133,7 +134,7 @@ public class ExchangesController : SecureController
 		if (exchange == null)
 			return NotFound("Exchange not found");
 
-		Db.Exchanges.Remove(exchange);
+		exchange.IsRemoved = true;
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange deleted successfully");

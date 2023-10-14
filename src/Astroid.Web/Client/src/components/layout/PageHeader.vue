@@ -1,5 +1,5 @@
 <template>
-	<div class="sticky page-header mb-4">
+	<div class="sticky page-header mb-3 pt-5">
 		<div class="">
 			<p class="font-bold h3 mb-0 mr-6 order-1">{{ title }}</p>
 		</div>
@@ -90,11 +90,9 @@ export default {
 
 .page-header {
 	background-color: #fff;
-	box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.1);
+	/* box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.1); */
 	padding-top: 24px;
 	padding-bottom: 24px;
-	padding-left: 1.5rem;
-	padding-right: 1.5rem;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

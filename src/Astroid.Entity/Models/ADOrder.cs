@@ -22,7 +22,7 @@ public class ADOrder : IEntity
 	public decimal FilledQuantity { get; set; }
 	public bool ClosePosition { get; set; }
 	public OrderStatus Status { get; set; }
-	public string ClientId { get; set; } = string.Empty;
+	public Guid? RelatedTo { get; set; }
 	public DateTime UpdatedDate { get; set; }
 	public DateTime CreatedDate { get; set; }
 
@@ -50,8 +50,11 @@ public class ADOrder : IEntity
 		UpdatedDate = DateTime.UtcNow;
 	}
 
-	public void Fill(decimal quantity)
+	public void Fill(decimal quantity, decimal? triggerPrice = null)
 	{
+		if (triggerPrice.HasValue)
+			TriggerPrice = triggerPrice.Value;
+
 		Status = OrderStatus.Filled;
 		UpdatedDate = DateTime.UtcNow;
 		FilledQuantity = quantity;

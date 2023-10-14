@@ -14,24 +14,32 @@
 						{{ props.row.label }}
 					</router-link>
 				</template>
+				<template #column-isEnabled="props">
+					<b-badge pill variant="success" v-if="props.row.isEnabled">
+						Active
+					</b-badge>
+					<b-badge pill variant="default" v-else>Inactive</b-badge>
+				</template>
+				<template #column-market="props">
+					<img
+						:src="$consts.EXCHANGE_ICONS[props.row.exchange.providerName]"
+						height="20"
+					/>
+					{{ props.row.exchange.name }}
+				</template>
 				<template #column-createdDate="props">
 					<v-datetime v-model="props.row.createdDate" pretty />
 				</template>
 				<template #column-actions="props">
 					<v-dropdown class="pull-right">
 						<v-dropdown-item
-							@click="
-								() =>
-									$router.push({
-										name: 'bot-save',
-										params: { id: props.row.id },
-									})
-							"
+							@click="showEnableAlert(props.row.id, props.row.isEnabled)"
 						>
-							<i class="fa-solid fa-pen-to-square" /> Edit
+							<i class="fa-fw fa-solid fa-power-off mr-2" />
+							{{ props.row.isEnabled ? "Disable Bot" : "Enable Bot" }}
 						</v-dropdown-item>
 						<v-dropdown-item @click="showChangeMarginTypeModal(props.row.id)">
-							<i class="fa-solid fa-shuffle" /> Change Margin Type
+							<i class="fa-fw fa-solid fa-shuffle mr-2" /> Change Margin Type
 						</v-dropdown-item>
 						<v-dropdown-item
 							@click="
@@ -42,12 +50,12 @@
 									})
 							"
 						>
-							<i class="fa-regular fa-file-lines" /> Audits
+							<i class="fa-fw fa-regular fa-file-lines mr-2" /> Audits
 						</v-dropdown-item>
 						<v-dropdown-divider />
 						<v-dropdown-item @click="deleteBot(props.row.id)">
 							<span class="text-danger">
-								<i class="mr-1 fa-solid fa-trash" /> Delete
+								<i class="mr-2 fa-fw fa-solid fa-trash" /> Delete
 							</span>
 						</v-dropdown-item>
 					</v-dropdown>
@@ -75,6 +83,8 @@ export default {
 			],
 			columns: {
 				label: "Label",
+				market: "Market",
+				isEnabled: "Enabled",
 				createdDate: "Created Date",
 				actions: " ",
 			},
@@ -83,6 +93,34 @@ export default {
 	methods: {
 		async requestFunction(filters, sorts, currentPage, perPage) {
 			return await Service.list(filters, sorts, currentPage, perPage);
+		},
+		async enableBot(id) {
+			try {
+				const response = await Service.enable(id);
+				if (!response.data.success) {
+					this.$errorToast(response.data.title, response.data.message);
+					return;
+				}
+
+				this.$successToast(response.data.title, response.data.message);
+				this.$refs.table.refresh();
+			} catch (error) {
+				this.$errorToast("", error.message);
+			}
+		},
+		async showEnableAlert(id, enabled) {
+			if (!enabled) {
+				await this.enableBot(id, enabled);
+				return;
+			}
+
+			this.$alert.remove(
+				`Disable the Bot?`,
+				"Orders will not be executed",
+				async () => {
+					await this.enableBot(id, enabled);
+				}
+			);
 		},
 		deleteBot(id) {
 			this.$alert.remove(

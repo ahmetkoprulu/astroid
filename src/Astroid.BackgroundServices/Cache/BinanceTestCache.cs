@@ -7,6 +7,7 @@ using Binance.Net.Objects;
 using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Options;
 using CryptoExchange.Net.Authentication;
+using Newtonsoft.Json;
 
 namespace Astroid.BackgroundServices.Cache;
 
@@ -76,32 +77,38 @@ public class BinanceTestCache : IHostedService
 		await SocketClient.UsdFuturesApi.SubscribeToAllTickerUpdatesAsync(async data =>
 		{
 			var prices = data.Data;
+			var pairsList = new List<KeyValuePair<string, string>>();
 
 			foreach (var priceInfo in prices)
 			{
 				var symbolInfo = await ExchangeStore.GetSymbolInfo(ACExchanges.BinanceUsdFuturesTest, priceInfo.Symbol);
 				if (symbolInfo == null) continue;
 
+				if (symbolInfo.LastPrice == priceInfo.LastPrice) continue;
+
+				var key = ExchangeStore.GetSymbolKey(ACExchanges.BinanceUsdFuturesTest, symbolInfo.Name);
 				symbolInfo.SetLastPrice(priceInfo.LastPrice);
-				await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFuturesTest, symbolInfo);
+				pairsList.Add(new KeyValuePair<string, string>(key, JsonConvert.SerializeObject(symbolInfo)));
 			}
+
+			await Cache.BatchSet(pairsList);
 		});
 
-		await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
-		{
-			var prices = data.Data;
+		// await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
+		// {
+		// 	var prices = data.Data;
 
-			foreach (var priceInfo in prices)
-			{
-				var symbolInfo = await ExchangeStore.GetSymbolInfo(ACExchanges.BinanceUsdFuturesTest, priceInfo.Symbol);
-				if (symbolInfo == null) continue;
+		// 	foreach (var priceInfo in prices)
+		// 	{
+		// 		var symbolInfo = await ExchangeStore.GetSymbolInfo(ACExchanges.BinanceUsdFuturesTest, priceInfo.Symbol);
+		// 		if (symbolInfo == null) continue;
 
-				if (symbolInfo.MarkPrice == priceInfo.MarkPrice) continue;
+		// 		if (symbolInfo.MarkPrice == priceInfo.MarkPrice) continue;
 
-				symbolInfo.SetMarkPrice(priceInfo.MarkPrice);
-				await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFuturesTest, symbolInfo);
-			}
-		});
+		// 		symbolInfo.SetMarkPrice(priceInfo.MarkPrice);
+		// 		await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFuturesTest, symbolInfo);
+		// 	}
+		// });
 		Logger.LogInformation("Subscribed Sockets.");
 	}
 
@@ -115,13 +122,13 @@ public class BinanceTestCache : IHostedService
 		var prices = await Client.UsdFuturesApi.ExchangeData.GetPricesAsync();
 		if (!prices.Success) throw new Exception("Failed to get prices");
 
-		var markPrices = await Client.UsdFuturesApi.ExchangeData.GetMarkPricesAsync();
-		if (!markPrices.Success) throw new Exception("Failed to get mark prices");
+		// var markPrices = await Client.UsdFuturesApi.ExchangeData.GetMarkPricesAsync();
+		// if (!markPrices.Success) throw new Exception("Failed to get mark prices");
 
 		foreach (var sym in info.Data.Symbols)
 		{
 			var price = prices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
-			var markPrice = markPrices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
+			// var markPrice = markPrices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
 
 			var symbolInfo = new AMSymbolInfo
 			{
@@ -129,10 +136,10 @@ public class BinanceTestCache : IHostedService
 				PricePrecision = sym.PricePrecision,
 				QuantityPrecision = sym.QuantityPrecision,
 				LastPrice = price?.Price ?? 0,
-				MarkPrice = markPrice?.MarkPrice ?? 0,
+				// MarkPrice = markPrice?.MarkPrice ?? 0,
 			};
 
-			if (!(symbolInfo.LastPrice > 0 && symbolInfo.MarkPrice > 0)) continue;
+			if (!(symbolInfo.LastPrice > 0)) continue;
 
 			await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFuturesTest, symbolInfo);
 		}

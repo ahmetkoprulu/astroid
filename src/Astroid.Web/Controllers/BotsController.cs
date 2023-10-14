@@ -30,7 +30,9 @@ public class BotsController : SecureController
 		model ??= new MPViewDataList<ADBot>();
 
 		model = await Db.Bots
-			.Where(x => x.UserId == CurrentUser.Id)
+			.Include(x => x.Exchange)
+				.ThenInclude(x => x.Provider)
+			.Where(x => x.UserId == CurrentUser.Id && !x.IsRemoved)
 			.AsNoTracking()
 			.OrderByDescending(x => x.CreatedDate)
 			.ViewDataListAsync<ADBot>(model);
@@ -40,6 +42,16 @@ public class BotsController : SecureController
 			Id = x.Id,
 			Label = x.Label,
 			Description = x.Description,
+			IsEnabled = x.IsEnabled,
+			CreatedDate = x.CreatedDate,
+			Exchange = new AMExchange
+			{
+				Id = x.Exchange.Id,
+				Name = x.Exchange.Label,
+				ProviderId = x.Exchange.Provider.Id,
+				ProviderName = x.Exchange.Provider.Name,
+				ProviderLabel = x.Exchange.Provider.Title,
+			}
 		}));
 	}
 
@@ -72,9 +84,7 @@ public class BotsController : SecureController
 			IsTakePofitEnabled = bot.IsTakePofitEnabled,
 			TakeProfitSettings = bot.TakeProfitSettings,
 			IsStopLossEnabled = bot.IsStopLossEnabled,
-			StopLossType = bot.StopLossType,
-			StopLossPrice = bot.StopLossPrice,
-			StopLossCallbackRate = bot.StopLossCallbackRate,
+			StopLossSettings = bot.StopLossSettings,
 			Key = bot.Key,
 			IsEnabled = bot.IsEnabled,
 			LimitSettings = bot.LimitSettings
@@ -105,9 +115,7 @@ public class BotsController : SecureController
 				IsTakePofitEnabled = model.IsTakePofitEnabled,
 				TakeProfitSettings = model.TakeProfitSettings,
 				IsStopLossEnabled = model.IsStopLossEnabled,
-				StopLossType = model.StopLossType,
-				StopLossPrice = model.StopLossPrice,
-				StopLossCallbackRate = model.StopLossCallbackRate,
+				StopLossSettings = model.StopLossSettings,
 				Key = model.Key,
 				CreatedDate = DateTime.Now,
 				UserId = CurrentUser.Id,
@@ -136,9 +144,7 @@ public class BotsController : SecureController
 			bot.IsTakePofitEnabled = model.IsTakePofitEnabled;
 			bot.TakeProfitSettings = model.TakeProfitSettings;
 			bot.IsStopLossEnabled = model.IsStopLossEnabled;
-			bot.StopLossType = model.StopLossType;
-			bot.StopLossPrice = model.StopLossPrice;
-			bot.StopLossCallbackRate = model.StopLossCallbackRate;
+			bot.StopLossSettings = model.StopLossSettings;
 			bot.Key = model.Key;
 			bot.IsEnabled = model.IsEnabled;
 			bot.ModifiedDate = DateTime.Now;
@@ -148,6 +154,46 @@ public class BotsController : SecureController
 		await Db.SaveChangesAsync();
 
 		return Success("Exchange saved successfully");
+	}
+
+	[HttpPatch("{id}/enable")]
+	public async Task<IActionResult> Enable(Guid id)
+	{
+		if (id == Guid.Empty)
+			return BadRequest("Invalid exchange id");
+
+		var bot = await Db.Bots.FirstOrDefaultAsync(x => x.Id == id);
+		if (bot == null)
+			return NotFound("Exchange not found");
+
+		if (!bot.IsEnabled)
+		{
+			bot.IsEnabled = true;
+			var managerId = await GetAvaibleBotManager();
+			if (managerId == null)
+			{
+				await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Not found any available resource");
+				return BadRequest("Not found any available resource");
+			}
+
+			bot.ManagedBy = managerId;
+			await Db.SaveChangesAsync();
+
+			return Success(null, "Exchange enabled successfully");
+		}
+
+		var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
+		if (isOpenPositionExists)
+		{
+			await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Cannot disable the bot; it has open position(s)");
+			return BadRequest("Bot has open positions");
+		}
+
+		bot.IsEnabled = false;
+		bot.ManagedBy = null;
+		await Db.SaveChangesAsync();
+
+		return Success(null, "Exchange disabled successfully");
 	}
 
 	[AllowAnonymous]
@@ -170,6 +216,17 @@ public class BotsController : SecureController
 			return BadRequest($"Invalid request model");
 		}
 
+		if (!orderRequest.IsClose)
+		{
+			var pos = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
+			pos ??= await Db.Positions.AddRequestedPosition(bot, orderRequest.Ticker, orderRequest.Leverage, orderRequest.PositionType);
+
+			await Db.Orders.AddOpenOrder(bot, pos, orderRequest.Ticker);
+			await Db.SaveChangesAsync();
+
+			return Success(null, "Order requested successfully");
+		}
+
 		var exchange = await Db.Exchanges
 			.AsNoTracking()
 			.Include(x => x.Provider)
@@ -180,61 +237,16 @@ public class BotsController : SecureController
 			return BadRequest($"Exchange {bot.ExchangeId} not found");
 		}
 
-		try
+		var position = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
+		if (position == null)
 		{
-			if (orderRequest.IsClose)
-			{
-				var position = await Db.Positions.Get(orderRequest.Ticker, orderRequest.PositionType);
-				if (position == null)
-				{
-					await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
-					return BadRequest($"Position not found");
-				}
-				var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
-				await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
-				await Db.SaveChangesAsync();
-
-				return Success(null, "Order requested successfully");
-			}
-
-			var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
-			if (exchanger == null)
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-				return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
-			}
-
-			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{orderRequest.Ticker}"))
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
-				return BadRequest("Bot is busy");
-			}
-
-			var _ = await Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}", TimeSpan.FromMinutes(1));
-			var result = await exchanger.ExecuteOrder(bot, orderRequest);
-			if (!result.Success) LogError(null, result.Message ?? string.Empty);
-
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = exchange.UserId;
-				x.ActorId = bot.Id;
-				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
-				x.CorrelationId = result.CorrelationId;
-				Db.Audits.Add(x);
-			});
-
-			await Db.SaveChangesAsync();
+			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
+			return BadRequest($"Position not found");
 		}
-		catch (Exception ex)
-		{
-			LogError(ex, ex.Message);
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
-			return Error(ex.Message);
-		}
-		finally
-		{
-			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
-		}
+
+		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
+		await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
+		await Db.SaveChangesAsync();
 
 		return Success(null, "Order requested successfully");
 	}
@@ -337,16 +349,39 @@ public class BotsController : SecureController
 	public async Task<IActionResult> Delete(Guid id)
 	{
 		if (id == Guid.Empty)
-			return BadRequest("Invalid exchange id");
+			return BadRequest("Invalid bot id");
 
 		var bot = await Db.Bots.Where(x => x.UserId == CurrentUser.Id).FirstOrDefaultAsync(x => x.Id == id);
 		if (bot == null)
-			return NotFound("Exchange not found");
+			return NotFound("The bot not found");
 
-		Db.Bots.Remove(bot);
+		var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
+		if (isOpenPositionExists)
+			return BadRequest("The bot has open positions");
+
+		bot.IsRemoved = true;
 		await Db.SaveChangesAsync();
 
-		return Success("Exchange deleted successfully");
+		return Success("The bot deleted successfully");
+	}
+
+	[NonAction]
+	public async Task<Guid?> GetAvaibleBotManager()
+	{
+		var managers = await Db.BotManagers
+			.Where(x => x.PingDate.AddMinutes(10) > DateTime.UtcNow)
+			.ToListAsync();
+
+		var manager = managers.Select(x => new
+		{
+			x.Id,
+			Count = Db.Bots.Count(x => x.ManagedBy == x.Id)
+		}).OrderBy(x => x.Count)
+		.FirstOrDefault();
+
+		if (manager == null) return null;
+
+		return manager.Id;
 	}
 
 	[NonAction]

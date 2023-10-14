@@ -1,43 +1,44 @@
 namespace Astroid.Core;
 
-public class AConfAppSettings
+public class WebConfig
 {
-	public List<AConfEndpoint> Endpoints { get; set; } = new();
-	public AConfFrontend Frontend { get; set; } = new();
-	public AConfDatabase Database { get; set; } = new();
-	public AConfCache Cache { get; set; } = new();
-	public AConfMessageQueue MessageQueue { get; set; } = new();
+	public List<EndpointConfig> Endpoints { get; set; } = new();
+	public FrontendConfig Frontend { get; set; } = new();
+	public DatabaseConfig Database { get; set; } = new();
+	public CacheConfig Cache { get; set; } = new();
+	public MessageQueueConfig MessageQueue { get; set; } = new();
 }
 
-public class AConfDatabase
+public class DatabaseConfig
 {
 	public string? ConnectionString { get; set; }
 	public DatabaseProvider DatabaseProvider { get; set; }
 }
 
-public class AConfCache
-{
-	public string? ConnectionString { get; set; }
-}
-public class AConfMessageQueue
+public class CacheConfig
 {
 	public string? ConnectionString { get; set; }
 }
 
-public class AConfEndpoint
+public class MessageQueueConfig
+{
+	public string? ConnectionString { get; set; }
+}
+
+public class EndpointConfig
 {
 	public string? Url { get; set; }
-	public ACCertificate? Certificate { get; set; }
+	public CertificateConfig? Certificate { get; set; }
 }
 
-public class AConfFrontend
+public class FrontendConfig
 {
 	public string? HostName { get; set; }
 	public int Port { get; set; }
 	public bool Secure { get; set; }
 }
 
-public class ACCertificate
+public class CertificateConfig
 {
 	public string? File { get; set; }
 	public string? Password { get; set; }

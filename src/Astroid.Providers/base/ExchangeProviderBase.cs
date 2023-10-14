@@ -12,7 +12,6 @@ namespace Astroid.Providers;
 
 public abstract class ExchangeProviderBase : IDisposable
 {
-	public IServiceProvider ServiceProvider { get; set; }
 	protected AstroidDb Db { get; set; }
 	protected ExchangeInfoStore ExchangeStore { get; set; }
 	protected ADExchange Exchange { get; set; }
@@ -20,12 +19,10 @@ public abstract class ExchangeProviderBase : IDisposable
 
 	protected ExchangeProviderBase() { }
 
-	protected ExchangeProviderBase(IServiceProvider serviceProvider, ADExchange exchange)
+	protected ExchangeProviderBase(AstroidDb db, ExchangeInfoStore infoStore)
 	{
-		ServiceProvider = serviceProvider;
-		Db = ServiceProvider.GetRequiredService<AstroidDb>();
-		ExchangeStore = ServiceProvider.GetRequiredService<ExchangeInfoStore>();
-		Exchange = exchange;
+		Db = db;
+		ExchangeStore = infoStore;
 		CorrelationId = GenerateCorrelationId();
 	}
 
@@ -70,8 +67,9 @@ public abstract class ExchangeProviderBase : IDisposable
 		return (decimal)standardDeviation;
 	}
 
-	public virtual void Context()
+	public virtual void Context(ADExchange exchange)
 	{
+		Exchange = exchange;
 		var propertyValues = JsonConvert.DeserializeObject<List<ProviderPropertyValue>>(Exchange.PropertiesJson);
 		BindProperties(propertyValues);
 	}
@@ -155,8 +153,9 @@ public abstract class ExchangeProviderBase : IDisposable
 			.Where(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.Status == OrderStatus.Open && x.TriggerType == triggerType)
 			.ToListAsync();
 
-	public async Task AddOrder(ADPosition position, OrderTriggerType triggerType, OrderConditionType conditionType, decimal price, decimal quantity, PositionSizeType qtyType, bool closePrice) =>
-		await Db.Orders.AddAsync(new ADOrder
+	public async Task<ADOrder> AddOrder(ADPosition position, OrderTriggerType triggerType, OrderConditionType conditionType, decimal price, decimal quantity, PositionSizeType qtyType, bool closePosition, Guid? relatedTo = null)
+	{
+		var order = new ADOrder
 		{
 			Id = Guid.NewGuid(),
 			UserId = position.UserId,
@@ -169,11 +168,16 @@ public abstract class ExchangeProviderBase : IDisposable
 			TriggerPrice = price,
 			Quantity = quantity,
 			QuantityType = qtyType,
-			ClosePosition = closePrice,
+			ClosePosition = closePosition,
 			Status = OrderStatus.Open,
+			RelatedTo = relatedTo,
 			UpdatedDate = DateTime.MinValue,
 			CreatedDate = DateTime.UtcNow
-		});
+		};
+
+		await Db.Orders.AddAsync(order);
+		return order;
+	}
 
 	public async Task<ADPosition> AddPosition(ADBot bot, AMOrderRequest order, AMOrderResult result)
 	{
@@ -214,7 +218,7 @@ public abstract class ExchangeProviderBase : IDisposable
 
 	public async Task ReducePosition(ADPosition position, AMOrderResult result, ADOrder? order = null)
 	{
-		if (!result.Success)
+		if (order != null && !result.Success)
 		{
 			order?.Reject();
 			return;

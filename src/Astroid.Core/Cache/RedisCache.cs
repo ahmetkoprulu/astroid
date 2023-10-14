@@ -9,11 +9,10 @@ public class RedisCache : ICacheService
 {
 	private string ConnectionString { get; set; }  // "localhost:6379,user=root,password=1234,allowAdmin=true"
 	private readonly ConnectionMultiplexer _redisConnection;
-	private readonly IDatabase _redisDatabase;
 
 	public RedisCache(IConfiguration config)
 	{
-		var settings = config.Get<AConfAppSettings>() ?? new();
+		var settings = config.Get<WebConfig>() ?? new();
 		var connStringEnvVariable = Environment.GetEnvironmentVariable("ASTROID_CACHE_CONNECTION_STRING");
 		ConnectionString = connStringEnvVariable ?? settings.Cache.ConnectionString;
 		_redisConnection = ConnectionMultiplexer.Connect(ConnectionString ?? throw new NullReferenceException("Invalid Redis Connection String"));
@@ -61,6 +60,18 @@ public class RedisCache : ICacheService
 			.Select(v => JsonConvert.DeserializeObject<T>(v!));
 
 		return values;
+	}
+
+	public async Task BatchSet(List<KeyValuePair<string, string>> pairs)
+	{
+		var database = _redisConnection.GetDatabase(0);
+		var chunks = pairs.Chunk(30);
+
+		foreach (var c in chunks)
+		{
+			var tasks = c.Select(x => database.StringSetAsync(x.Key, x.Value, flags: CommandFlags.FireAndForget));
+			await Task.WhenAll(tasks);
+		}
 	}
 
 	public async Task<object?> AcquireLock(string key, TimeSpan expiresIn = default)
