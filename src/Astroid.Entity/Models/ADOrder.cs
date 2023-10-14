@@ -22,7 +22,7 @@ public class ADOrder : IEntity
 	public decimal FilledQuantity { get; set; }
 	public bool ClosePosition { get; set; }
 	public OrderStatus Status { get; set; }
-	public string ClientId { get; set; } = string.Empty;
+	public Guid? RelatedTo { get; set; }
 	public DateTime UpdatedDate { get; set; }
 	public DateTime CreatedDate { get; set; }
 

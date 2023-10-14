@@ -63,7 +63,7 @@ public class Worker : IHostedService
 
 		var bots = await db.Bots
 			.AsNoTracking()
-			.Where(x => x.IsEnabled && x.ManagedBy == Id)
+			.Where(x => x.IsEnabled && x.ManagedBy == Id && !x.IsRemoved)
 			.ToListAsync(cancellationToken);
 
 		foreach (var bot in bots)

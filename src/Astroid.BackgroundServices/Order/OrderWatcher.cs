@@ -134,7 +134,13 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
+			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice))
+			{
+				var needToUpdate = UpdateTrailingStop(order, symbolInfo.LastPrice, symbolInfo.PricePrecision);
+				if (needToUpdate) await db.SaveChangesAsync(cancellationToken);
+
+				continue;
+			}
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
@@ -204,6 +210,7 @@ public class OrderWatcher : IHostedService
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
+			await UpdateTrailingProfit(db, order, cancellationToken);
 			await db.SaveChangesAsync(cancellationToken);
 			await AQOrder.Publish(Mq, msg, order.BotId.ToString(), cancellationToken);
 		}
@@ -223,25 +230,58 @@ public class OrderWatcher : IHostedService
 		return false;
 	}
 
+	public bool UpdateTrailingStop(ADOrder order, decimal price, int precision)
+	{
+		if (order.Bot.StopLossSettings.Type != StopLossType.Trailing) return false;
+
+		var nextPrice = BinanceUsdFuturesProvider.GetStopLoss(order.Bot, price, precision, order.Position.Type);
+		if (nextPrice == null) return false;
+
+		nextPrice = order.Position.Type == PositionType.Long ? Math.Max(nextPrice.Value, order.TriggerPrice) : Math.Min(nextPrice.Value, order.TriggerPrice);
+		if (nextPrice == order.TriggerPrice) return false;
+
+		order.TriggerPrice = nextPrice.Value;
+
+		return true;
+	}
+
+	public async Task<bool> UpdateTrailingProfit(AstroidDb db, ADOrder order, CancellationToken cancellationToken)
+	{
+		if (order.Bot.StopLossSettings.Type != StopLossType.TrailingProfit) return false;
+
+		var stopOrder = await db.Orders.FirstOrDefaultAsync(x => x.PositionId == order.PositionId && x.TriggerType == OrderTriggerType.StopLoss && x.Status == OrderStatus.Open, cancellationToken);
+		if (stopOrder == null) return false;
+
+		var price = await GetPreviousTakeProfitOrEntry(db, order, cancellationToken);
+		if (price == null) return false;
+
+		stopOrder.TriggerPrice = price.Value;
+
+		return true;
+	}
+
+	public async Task<decimal?> GetPreviousTakeProfitOrEntry(AstroidDb db, ADOrder order, CancellationToken cancellationToken)
+	{
+		if (order.RelatedTo == null || order.RelatedTo == Guid.Empty) return null;
+
+		var previousOrder = await db.Orders.FirstOrDefaultAsync(x => x.Id == order.RelatedTo, cancellationToken);
+		if (previousOrder == null) return null;
+
+		if (previousOrder.TriggerType == OrderTriggerType.TakeProfit) return previousOrder.TriggerPrice;
+
+		if (order.Bot.TakeProfitSettings.CalculationBase == CalculationBase.EntryPrice) return order.Position.EntryPrice;
+
+		if (order.Bot.TakeProfitSettings.CalculationBase == CalculationBase.AveragePrice) return order.Position.AvgEntryPrice;
+
+		// if calculation based on last price, get open or pyramiding order trigger price what so ever.
+		return previousOrder.TriggerPrice;
+	}
+
 	public async Task CancelOrder(AstroidDb db, ADOrder order, CancellationToken cancellationToken)
 	{
 		order.Status = OrderStatus.Cancelled;
 		await db.SaveChangesAsync(cancellationToken);
 	}
-
-	// public async Task WatchPyramidingOrders(CancellationToken cancellationToken)
-	// {
-	// 	var orders = await GetOpenOrders(cancellationToken, OrderTriggerType.Pyramiding);
-	// 	foreach (var order in orders)
-	// 	{
-	// 		var symbolInfo = await ExchangeStore.GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
-	// 		if (symbolInfo == null)
-	// 		{
-	// 			Logger.LogError($"Symbol info not found for {order.Symbol} on {order.Exchange.Provider.Name}.");
-	// 			continue;
-	// 		}
-	// 	}
-	// }
 
 	public async Task<List<ADOrder>> GetOpenOrders(AstroidDb db, CancellationToken cancellationToken, OrderTriggerType triggerType = OrderTriggerType.Unknown)
 	{
@@ -249,6 +289,7 @@ public class OrderWatcher : IHostedService
 			.Include(x => x.Position)
 			.Include(x => x.Exchange)
 				.ThenInclude(x => x.Provider)
+			.Include(x => x.Bot)
 			.Where(x => x.Status == OrderStatus.Open);
 
 		if (triggerType != OrderTriggerType.Unknown)

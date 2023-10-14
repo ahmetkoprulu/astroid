@@ -153,8 +153,9 @@ public abstract class ExchangeProviderBase : IDisposable
 			.Where(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.Status == OrderStatus.Open && x.TriggerType == triggerType)
 			.ToListAsync();
 
-	public async Task AddOrder(ADPosition position, OrderTriggerType triggerType, OrderConditionType conditionType, decimal price, decimal quantity, PositionSizeType qtyType, bool closePrice) =>
-		await Db.Orders.AddAsync(new ADOrder
+	public async Task<ADOrder> AddOrder(ADPosition position, OrderTriggerType triggerType, OrderConditionType conditionType, decimal price, decimal quantity, PositionSizeType qtyType, bool closePosition, Guid? relatedTo = null)
+	{
+		var order = new ADOrder
 		{
 			Id = Guid.NewGuid(),
 			UserId = position.UserId,
@@ -167,11 +168,16 @@ public abstract class ExchangeProviderBase : IDisposable
 			TriggerPrice = price,
 			Quantity = quantity,
 			QuantityType = qtyType,
-			ClosePosition = closePrice,
+			ClosePosition = closePosition,
 			Status = OrderStatus.Open,
+			RelatedTo = relatedTo,
 			UpdatedDate = DateTime.MinValue,
 			CreatedDate = DateTime.UtcNow
-		});
+		};
+
+		await Db.Orders.AddAsync(order);
+		return order;
+	}
 
 	public async Task<ADPosition> AddPosition(ADBot bot, AMOrderRequest order, AMOrderResult result)
 	{

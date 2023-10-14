@@ -213,7 +213,7 @@
 				<div v-if="model.isStopLossEnabled">
 					<b-form-group label="Type">
 						<v-radio-group
-							v-model="model.stopLossType"
+							v-model="model.stopLossSettings.type"
 							:options="stopLossOptions"
 							width="150px"
 						/>
@@ -222,16 +222,22 @@
 						label="Trigger Price"
 						description="In ratio of entry price"
 					>
-						<b-form-input type="number" v-model="model.stopLossPrice" />
+						<b-form-input
+							type="number"
+							v-model="model.stopLossSettings.price"
+						/>
 					</b-form-group>
-					<b-form-group
+					<!-- <b-form-group
 						class="w-50 mr-2"
-						label="Callback Rate"
+						label="Margin"
 						description="Percentage of price change to trigger"
-						v-if="model.stopLossType === 2"
+						v-if="model.stopLossSettings.type === 2"
 					>
-						<b-form-input type="number" v-model="model.stopLossCallbackRate" />
-					</b-form-group>
+						<b-form-input
+							type="number"
+							v-model="model.stopLossSettings.margin"
+						/>
+					</b-form-group> -->
 				</div>
 			</div>
 			<div class="col-lg-7 col-md-12">
@@ -322,10 +328,11 @@ export default {
 					targets: [],
 				},
 				isStopLossActivated: false,
-				stopLossType: 1,
-				stopLossActivation: null,
-				stopLossCallbackRate: null,
-				stopLossPrice: null,
+				stopLossSettings: {
+					type: 1,
+					price: 0,
+					margin: 0,
+				},
 				key: "",
 				isEnabled: false,
 			},
