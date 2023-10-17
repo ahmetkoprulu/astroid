@@ -74,23 +74,23 @@ public class RedisCache : ICacheService
 		}
 	}
 
-	public async Task<object?> AcquireLock(string key, TimeSpan expiresIn = default)
+	public async Task<bool> AcquireLock(string key, TimeSpan expiresIn = default)
 	{
-		var database = _redisConnection.GetDatabase(1);
+		var database = _redisConnection.GetDatabase();
 		var lockAcquired = await database.LockTakeAsync(key, "lockValue", expiresIn);
-		return lockAcquired ? new object() : null;
+		return lockAcquired;
 	}
 
 	public async Task<bool> IsLocked(string key)
 	{
-		var database = _redisConnection.GetDatabase(1);
+		var database = _redisConnection.GetDatabase();
 		var lockValue = await database.LockQueryAsync(key);
 		return lockValue.HasValue;
 	}
 
 	public async Task ReleaseLock(string key)
 	{
-		var database = _redisConnection.GetDatabase(1);
+		var database = _redisConnection.GetDatabase();
 		await database.LockReleaseAsync(key, "lockValue");
 	}
 }

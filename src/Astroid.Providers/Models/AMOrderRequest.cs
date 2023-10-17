@@ -76,11 +76,11 @@ public class AMOrderRequest
 			return false;
 		}
 
-		if (!bot.IsPositionSizeExpandable)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
-			return false;
-		}
+		// if (!bot.IsPositionSizeExpandable)
+		// {
+		// 	result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
+		// 	return false;
+		// }
 
 		if (bot.OrderMode == OrderMode.OneWay)
 		{

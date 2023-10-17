@@ -31,17 +31,17 @@ public class InMemoryCache : ICacheService
 
 	public async Task RemoveAll() => _cache.Dispose();
 
-	public async Task<object?> AcquireLock(string key, TimeSpan _ = default)
+	public async Task<bool> AcquireLock(string key, TimeSpan _ = default)
 	{
 		lock (Locks)
 		{
 			var exist = Locks.TryGetValue(key, out var @lock);
-			if (exist) return @lock;
+			if (exist) return false;
 
 			@lock = new object();
 			Locks.Add(key, @lock);
 
-			return @lock;
+			return true;
 		}
 	}
 

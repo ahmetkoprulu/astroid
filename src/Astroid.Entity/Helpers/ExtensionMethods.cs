@@ -10,7 +10,7 @@ public static class ContextExtentionMethods
 
 	public static bool IsClosing(this ADPosition position) => position.Orders.Any(x => x.Status == OrderStatus.Triggered && x.ClosePosition);
 
-	public static Task<ADPosition?> Get(this DbSet<ADPosition> set, string symbol, PositionType type) => set.FirstOrDefaultAsync(x => x.Symbol == symbol && x.Type == type && x.Status == PositionStatus.Open);
+	public static Task<ADPosition?> GetExecuted(this DbSet<ADPosition> set, string symbol, PositionType type) => set.FirstOrDefaultAsync(x => x.Symbol == symbol && x.Type == type && (x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested));
 
 	public static void Upsert<T>(this DbSet<T> set, T entity, Func<T, bool> condition) where T : class
 	{

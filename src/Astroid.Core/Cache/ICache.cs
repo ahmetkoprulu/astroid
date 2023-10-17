@@ -7,7 +7,7 @@ public interface ICacheService
 	Task Set<T>(string key, T value, TimeSpan expiresIn = default);
 	Task BatchSet(List<KeyValuePair<string, string>> pairs);
 	Task Remove(string key);
-	Task<object?> AcquireLock(string key, TimeSpan expiresIn = default);
+	Task<bool> AcquireLock(string key, TimeSpan expiresIn = default);
 	Task<bool> IsLocked(string key);
 	Task ReleaseLock(string key);
 }

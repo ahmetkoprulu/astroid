@@ -213,7 +213,6 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		position.Status = PositionStatus.Closed;
 		position.UpdatedDate = DateTime.UtcNow;
-		await Db.SaveChangesAsync();
 	}
 
 	public async Task ReducePosition(ADPosition position, AMOrderResult result, ADOrder? order = null)
