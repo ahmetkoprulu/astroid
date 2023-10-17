@@ -28,9 +28,7 @@
 
 <script>
 import Treeselect from "@riophae/vue-treeselect";
-/**
- * MonoSign Single Select Component
- */
+
 export default {
 	name: "Select",
 	components: {
@@ -134,11 +132,11 @@ export default {
 	},
 	methods: {
 		updateValue() {
-			this.$emit("input", this.customValue);
-
 			if (this.onChange) {
 				this.onChange(this.customValue);
 			}
+
+			this.$emit("input", this.customValue);
 		},
 		clear() {
 			this.$refs.select.clear();

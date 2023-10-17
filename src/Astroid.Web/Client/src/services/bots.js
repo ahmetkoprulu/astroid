@@ -3,11 +3,17 @@ import { HTTP } from "../core/http-common";
 const URL = "/api/bots";
 
 export default {
+	async execute(data) {
+		return HTTP.post(`${URL}/execute`, data);
+	},
 	async list(filters, sorts, currentPage, perPage) {
 		return HTTP.post(`${URL}/list`, { filters, sorts, currentPage, perPage });
 	},
 	async get(id) {
 		return HTTP.get(`${URL}/${id}`);
+	},
+	async getAll() {
+		return HTTP.get(`${URL}`);
 	},
 	async save(model) {
 		return HTTP.post(`${URL}/save`, model);

@@ -65,6 +65,15 @@ public class HomeController : BaseController
 		return Success(default, "User signed out successfully");
 	}
 
+	[HttpGet("exchange/{name}/symbols")]
+	public async Task<IActionResult> GetSymbols(string name)
+	{
+		var exchange = await ExchangeStore.Get(name);
+		var symbols = exchange?.Symbols.Select(x => x.Name.Replace("USDT", "")) ?? new List<string>();
+
+		return Success(symbols);
+	}
+
 	[HttpGet("status")]
 	public async Task<IActionResult> Status()
 	{

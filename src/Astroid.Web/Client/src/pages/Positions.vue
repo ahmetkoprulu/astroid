@@ -144,11 +144,9 @@ export default {
 			return await Service.list(filters, sorts, currentPage, perPage);
 		},
 		showHistory(e, orders) {
-			console.log(e);
 			this.$refs.orderHistoryModal.show(orders);
 		},
 		closePosition(e, id) {
-			console.log(id);
 			this.$alert.remove(
 				"Close The Position?",
 				"You won't be able to undo it",

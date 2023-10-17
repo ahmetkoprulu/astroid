@@ -8,7 +8,7 @@
 				<th>Quantity</th>
 				<th>Trigger Price</th>
 				<th>Close Position</th>
-				<th>Status</th>
+				<th v-if="showStatus">Status</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -39,7 +39,7 @@
 						>{{ order.closePosition ? "Yes" : "No" }}
 					</b-badge>
 				</td>
-				<td>
+				<td v-if="showStatus">
 					<b-badge
 						pill
 						:variant="
@@ -58,6 +58,10 @@ export default {
 		orders: {
 			type: Array,
 			default: () => [],
+		},
+		showStatus: {
+			type: Boolean,
+			default: true,
 		},
 	},
 };

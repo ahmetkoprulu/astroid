@@ -91,6 +91,37 @@ public class BotsController : SecureController
 		});
 	}
 
+	[HttpGet]
+	public async Task<IActionResult> Get()
+	{
+		var bots = await Db.Bots
+			.Include(x => x.Exchange)
+				.ThenInclude(x => x.Provider)
+			.Where(x => x.UserId == CurrentUser.Id && !x.IsRemoved)
+			.AsNoTracking()
+			.OrderByDescending(x => x.CreatedDate)
+			.Select(x => new AMBot
+			{
+				Id = x.Id,
+				Label = x.Label,
+				Description = x.Description,
+				IsEnabled = x.IsEnabled,
+				Key = x.Key,
+				CreatedDate = x.CreatedDate,
+				Exchange = new AMExchange
+				{
+					Id = x.Exchange.Id,
+					Name = x.Exchange.Label,
+					ProviderId = x.Exchange.Provider.Id,
+					ProviderName = x.Exchange.Provider.Name,
+					ProviderLabel = x.Exchange.Provider.Title,
+				}
+			})
+			.ToListAsync();
+
+		return Success(bots);
+	}
+
 	[HttpPost("save")]
 	public async Task<IActionResult> Save([FromBody] AMBot model)
 	{

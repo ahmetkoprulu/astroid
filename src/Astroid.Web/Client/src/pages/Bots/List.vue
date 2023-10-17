@@ -142,9 +142,6 @@ export default {
 				}
 			);
 		},
-		async remove(id) {
-			console.log(id);
-		},
 		async showChangeMarginTypeModal(id) {
 			this.$refs.changeMarginTypeModal.show(id);
 		},

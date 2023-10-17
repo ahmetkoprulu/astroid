@@ -11,5 +11,8 @@ export default {
 	},
 	async signOut() {
 		return HTTP.get(`${URL}/sign-out`);
+	},
+	async getSymbolsByExchangeName(name) {
+		return HTTP.get(`${URL}/exchange/${name}/symbols`);
 	}
 };

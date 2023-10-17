@@ -60,6 +60,116 @@ public class PositionsController : SecureController
 		}));
 	}
 
+	[HttpPost("list-open")]
+	public async Task<IActionResult> ListOpen([FromBody] MPViewDataList<ADPosition> model)
+	{
+		model ??= new MPViewDataList<ADPosition>();
+
+		model = await Db.Positions
+			.Include(x => x.Exchange)
+			.ThenInclude(x => x.Provider)
+			.Include(x => x.Bot)
+			.Where(x => x.UserId == CurrentUser.Id)
+			.Where(x => x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested)
+			.AsNoTracking()
+			.OrderByDescending(x => x.CreatedDate)
+			.ViewDataListAsync<ADPosition>(model);
+
+		return Success(model.ForJson(x =>
+		{
+			var orders = Db.Orders.Where(y => y.PositionId == x.Id && y.Status == OrderStatus.Open).OrderBy(x => x.CreatedDate).ToList();
+			return new AMPosition
+			{
+				Id = x.Id,
+				Symbol = x.Symbol,
+				AveragePrice = x.AvgEntryPrice,
+				EntryPrice = x.EntryPrice,
+				Quantity = x.Quantity,
+				CurrentQuantity = x.CurrentQuantity,
+				Leverage = x.Leverage,
+				Type = x.Type,
+				Status = x.Status,
+				CreatedDate = x.CreatedDate,
+				BotLabel = x.Bot.Label,
+				ExchangeLabel = x.Exchange.Label,
+				ExchangeProviderName = x.Exchange.Provider.Name,
+				Orders = orders
+			};
+		}));
+	}
+
+	[HttpPost("list-history")]
+	public async Task<IActionResult> ListHistory([FromBody] MPViewDataList<ADPosition> model)
+	{
+		model ??= new MPViewDataList<ADPosition>();
+
+		model = await Db.Positions
+			.Include(x => x.Exchange)
+			.ThenInclude(x => x.Provider)
+			.Include(x => x.Bot)
+			.Where(x => x.UserId == CurrentUser.Id)
+			.Where(x => x.Status == PositionStatus.Closed || x.Status == PositionStatus.Rejected)
+			.AsNoTracking()
+			.OrderByDescending(x => x.CreatedDate)
+			.ViewDataListAsync<ADPosition>(model);
+
+		return Success(model.ForJson(x =>
+		{
+			return new AMPosition
+			{
+				Id = x.Id,
+				Symbol = x.Symbol,
+				AveragePrice = x.AvgEntryPrice,
+				EntryPrice = x.EntryPrice,
+				Quantity = x.Quantity,
+				CurrentQuantity = x.CurrentQuantity,
+				Leverage = x.Leverage,
+				Type = x.Type,
+				Status = x.Status,
+				CreatedDate = x.CreatedDate,
+				BotLabel = x.Bot.Label,
+				ExchangeLabel = x.Exchange.Label,
+				ExchangeProviderName = x.Exchange.Provider.Name,
+			};
+		}));
+	}
+
+	[HttpPost("list-open-orders")]
+	public async Task<IActionResult> ListOpenOrders([FromBody] MPViewDataList<ADOrder> model)
+	{
+		model ??= new MPViewDataList<ADOrder>();
+
+		model = await Db.Orders
+			.Include(x => x.Exchange)
+			.ThenInclude(x => x.Provider)
+			.Include(x => x.Bot)
+			.Where(x => x.UserId == CurrentUser.Id)
+			.Where(x => x.Status == OrderStatus.Open)
+			.AsNoTracking()
+			.OrderByDescending(x => x.CreatedDate)
+			.ViewDataListAsync<ADOrder>(model);
+
+		return Success(model);
+	}
+
+	[HttpPost("list-trade-history")]
+	public async Task<IActionResult> ListTradeHistory([FromBody] MPViewDataList<ADOrder> model)
+	{
+		model ??= new MPViewDataList<ADOrder>();
+
+		model = await Db.Orders
+			.Include(x => x.Exchange)
+			.ThenInclude(x => x.Provider)
+			.Include(x => x.Bot)
+			.Where(x => x.UserId == CurrentUser.Id)
+			.Where(x => x.Status == OrderStatus.Filled || x.Status == OrderStatus.Rejected)
+			.AsNoTracking()
+			.OrderByDescending(x => x.CreatedDate)
+			.ViewDataListAsync<ADOrder>(model);
+
+		return Success(model);
+	}
+
 	[HttpPost("close-order/{id}")]
 	public async Task<IActionResult> CloseOrder(Guid id)
 	{

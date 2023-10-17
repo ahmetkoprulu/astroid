@@ -13,6 +13,8 @@ import Bots from "../pages/Bots/List.vue";
 import BotSave from "../pages/Bots/Save.vue";
 import BotAudits from "../pages/Bots/Audits.vue";
 
+import Terminal from "../pages/Terminal.vue";
+
 import Positions from "../pages/Positions.vue";
 
 import Profile from "../pages/Profile.vue";
@@ -93,6 +95,16 @@ export const routes = [
 				meta: {
 					title: "Bot Audits",
 					visible: false,
+				}
+			},
+			{
+				name: "terminal",
+				path: "termianl",
+				component: Terminal,
+				meta: {
+					title: "Terminal",
+					visible: true,
+					icon: "fa-solid fa-chart-line"
 				}
 			},
 			{
