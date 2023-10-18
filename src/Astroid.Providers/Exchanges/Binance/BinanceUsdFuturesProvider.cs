@@ -879,7 +879,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(entryPrice - (entryPrice * Math.Abs(activation) / 100), precision);
 	}
 
-	private static decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int precision, PositionType type)
+	public static decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int precision, PositionType type)
 	{
 		if (type == PositionType.Long) return Math.Round(entryPrice + (entryPrice * activation / 100), precision);
 

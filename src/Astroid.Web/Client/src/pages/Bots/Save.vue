@@ -218,26 +218,30 @@
 							width="150px"
 						/>
 					</b-form-group>
-					<b-form-group
-						label="Trigger Price"
-						description="In ratio of entry price"
-					>
-						<b-form-input
-							type="number"
-							v-model="model.stopLossSettings.price"
-						/>
-					</b-form-group>
-					<!-- <b-form-group
-						class="w-50 mr-2"
-						label="Margin"
-						description="Percentage of price change to trigger"
-						v-if="model.stopLossSettings.type === 2"
-					>
-						<b-form-input
-							type="number"
-							v-model="model.stopLossSettings.margin"
-						/>
-					</b-form-group> -->
+					<div class="d-flex">
+						<b-form-group
+							class="w-100"
+							:class="{ 'pr-2': model.stopLossSettings.type === 2 }"
+							label="Price"
+							description="In ratio of entry price"
+						>
+							<b-form-input
+								type="number"
+								v-model="model.stopLossSettings.price"
+							/>
+						</b-form-group>
+						<b-form-group
+							class="w-100 pl-2"
+							label="Activation"
+							description="Percentage of price change to start trailing"
+							v-if="model.stopLossSettings.type === 2"
+						>
+							<b-form-input
+								type="number"
+								v-model="model.stopLossSettings.margin"
+							/>
+						</b-form-group>
+					</div>
 				</div>
 			</div>
 			<div class="col-lg-7 col-md-12">

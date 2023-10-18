@@ -233,6 +233,11 @@ public class OrderWatcher : IHostedService
 	public bool UpdateTrailingStop(ADOrder order, decimal price, int precision)
 	{
 		if (order.Bot.StopLossSettings.Type != StopLossType.Trailing) return false;
+		if (order.Bot.StopLossSettings.Margin == null || order.Bot.StopLossSettings.Margin <= 0) return false;
+
+		var activationPrice = BinanceUsdFuturesProvider.CalculateTakeProfit(order.Bot.StopLossSettings.Margin.Value, order.Position.EntryPrice, precision, order.Position.Type);
+		var isActivated = order.Position.Type == PositionType.Long ? price > activationPrice : price < activationPrice;
+		if (!isActivated) return false;
 
 		var nextPrice = BinanceUsdFuturesProvider.GetStopLoss(order.Bot, price, precision, order.Position.Type);
 		if (nextPrice == null) return false;
