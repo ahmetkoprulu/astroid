@@ -255,6 +255,18 @@ public class BotsController : SecureController
 				return BadRequest($"Bot is busy");
 			}
 
+			var exchange = await Db.Exchanges
+				.AsNoTracking()
+				.Include(x => x.Provider)
+				.FirstAsync(x => x.Id == bot.ExchangeId);
+
+			var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker);
+			if (symbolInfo == null)
+			{
+				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Symbol not found.");
+				return BadRequest($"Symbol not found.");
+			}
+
 			var position = await Db.Positions.GetExecuted(orderRequest.Ticker, orderRequest.PositionType);
 			if (!orderRequest.IsClose)
 			{
@@ -277,18 +289,12 @@ public class BotsController : SecureController
 				return Success(null, "Order requested successfully");
 			}
 
-			var exchange = await Db.Exchanges
-				.AsNoTracking()
-				.Include(x => x.Provider)
-				.FirstAsync(x => x.Id == bot.ExchangeId);
-
 			if (position == null)
 			{
 				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Position not found");
 				return BadRequest($"Position not found");
 			}
 
-			var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
 			await Db.Orders.AddCloseOrder(position, await symbolInfo.GetLastPrice());
 			await Db.SaveChangesAsync();
 		}
