@@ -289,7 +289,7 @@ public class BotsController : SecureController
 			}
 
 			var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, orderRequest.Ticker) ?? throw new Exception($"Symbol {orderRequest.Ticker} not found");
-			await Db.Orders.AddCloseOrder(position, symbolInfo.LastPrice);
+			await Db.Orders.AddCloseOrder(position, await symbolInfo.GetLastPrice());
 			await Db.SaveChangesAsync();
 		}
 		catch (Exception ex)
@@ -319,7 +319,7 @@ public class BotsController : SecureController
 		if (exchange == null)
 			return NotFound($"Exchange {bot.ExchangeId} not found");
 
-		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange.Provider.Name, ticker.ToUpper());
+		var symbolInfo = await ExchangeStore.GetSymbolInfoLazy(exchange.Provider.Name, ticker.ToUpper());
 		if (symbolInfo == null)
 			return BadRequest($"Symbol {ticker} not found");
 

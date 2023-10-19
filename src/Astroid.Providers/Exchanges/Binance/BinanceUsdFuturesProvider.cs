@@ -889,7 +889,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	private async Task<AMSymbolInfo> GetSymbolInfo(string ticker)
 	{
 		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
-		var symbolInfo = await ExchangeStore.GetSymbolInfo(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
+		var symbolInfo = await ExchangeStore.GetSymbolInfoLazy(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
 		return symbolInfo;
 	}
 

@@ -6,6 +6,8 @@ using Binance.Net.Objects;
 using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Options;
 using CryptoExchange.Net.Authentication;
+using CryptoExchange.Net.CommonObjects;
+using Microsoft.CodeAnalysis;
 using Newtonsoft.Json;
 
 namespace Astroid.BackgroundServices.Cache;
@@ -81,15 +83,11 @@ public class BinanceCache : IHostedService
 				var symbolInfo = await ExchangeStore.GetSymbolInfo(ACExchanges.BinanceUsdFutures, priceInfo.Symbol);
 				if (symbolInfo == null) continue;
 
-				if (symbolInfo.LastPrice == priceInfo.LastPrice) continue;
-
 				var key = ExchangeStore.GetSymbolKey(ACExchanges.BinanceUsdFutures, symbolInfo.Name);
-				symbolInfo.SetLastPrice(priceInfo.LastPrice);
-				pairsList.Add(new KeyValuePair<string, string>(key, JsonConvert.SerializeObject(symbolInfo)));
-
+				pairsList.Add(new KeyValuePair<string, string>(key, priceInfo.LastPrice.ToString()));
 			}
-			await Cache.BatchSet(pairsList);
 
+			await Cache.SetHashBatch("LastPrice", pairsList);
 		});
 
 		// await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>
@@ -148,18 +146,17 @@ public class BinanceCache : IHostedService
 			var price = prices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
 			// var markPrice = markPrices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
 
-			var symbolInfo = new AMSymbolInfo
+			var symbolInfo = new Dictionary<string, object>
 			{
-				Name = sym.Name,
-				PricePrecision = sym.PricePrecision,
-				QuantityPrecision = sym.QuantityPrecision,
-				LastPrice = price?.Price ?? 0,
-				// MarkPrice = markPrice?.MarkPrice ?? 0,
+				{ "PricePrecision", sym.PricePrecision },
+				{ "BaseAsset", sym.BaseAsset },
+				// { "QuoteAsset", sym.QuoteAsset },
+				{ "QuantityPrecision", sym.QuantityPrecision },
+				{ "LastPrice", price?.Price ?? 0 },
+				{ "MarkPrice", 0 },
 			};
 
-			if (!(symbolInfo.LastPrice > 0)) continue;
-
-			await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFutures, symbolInfo);
+			await ExchangeStore.WriteSymbolInfo(ACExchanges.BinanceUsdFutures, sym.Name, symbolInfo);
 		}
 	}
 

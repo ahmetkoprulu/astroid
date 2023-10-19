@@ -59,7 +59,7 @@ public static class ContextExtentionMethods
 			TriggerType = OrderTriggerType.Sell,
 			ConditionType = OrderConditionType.Immediate,
 			Quantity = position.Quantity,
-			QuantityType = PositionSizeType.FixedInUsd,
+			QuantityType = PositionSizeType.FixedInAsset,
 			ClosePosition = true,
 			Status = OrderStatus.Open,
 			UpdatedDate = DateTime.MinValue,

@@ -69,7 +69,7 @@ public class HomeController : BaseController
 	public async Task<IActionResult> GetSymbols(string name)
 	{
 		var exchange = await ExchangeStore.Get(name);
-		var symbols = exchange?.Symbols.Select(x => x.Name.Replace("USDT", "")) ?? new List<string>();
+		var symbols = exchange?.Symbols.Select(x => x.BaseAsset ?? string.Empty) ?? new List<string>();
 
 		return Success(symbols);
 	}
@@ -104,7 +104,7 @@ public class HomeController : BaseController
 	[HttpGet("status/symbol-info/{exchange}/{ticker}")]
 	public async Task<IActionResult> GetSymbolInfoStatus(string exchange, string ticker)
 	{
-		var symbolInfo = await ExchangeStore.GetSymbolInfo(exchange, ticker);
+		var symbolInfo = await ExchangeStore.GetSymbolInfoLazy(exchange, ticker);
 		if (symbolInfo == null) return BadRequest("Invalid ticker");
 
 		return Ok(new

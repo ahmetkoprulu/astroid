@@ -71,7 +71,8 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
+			var lastPrice = await symbolInfo.GetLastPrice();
+			if (!NeedToTriggerOrder(order.Position, order, lastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
@@ -102,7 +103,8 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
+			var lastPrice = await symbolInfo.GetLastPrice();
+			if (!NeedToTriggerOrder(order.Position, order, lastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
@@ -134,9 +136,10 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice))
+			var lastPrice = await symbolInfo.GetLastPrice(); var pricePricision = await symbolInfo.GetPricePrecision();
+			if (!NeedToTriggerOrder(order.Position, order, lastPrice))
 			{
-				var needToUpdate = UpdateTrailingStop(order, symbolInfo.LastPrice, symbolInfo.PricePrecision);
+				var needToUpdate = UpdateTrailingStop(order, lastPrice, pricePricision);
 				if (needToUpdate) await db.SaveChangesAsync(cancellationToken);
 
 				continue;
@@ -171,8 +174,9 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
-			Logger.LogInformation($"Pyramiding order triggered for {order.Id} {order.Symbol} on {order.Exchange.Provider.Name}.");
+			var lastPrice = await symbolInfo.GetLastPrice();
+			if (!NeedToTriggerOrder(order.Position, order, lastPrice)) continue;
+
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;
 			order.UpdatedDate = DateTime.UtcNow;
@@ -205,7 +209,8 @@ public class OrderWatcher : IHostedService
 				continue;
 			}
 
-			if (!NeedToTriggerOrder(order.Position, order, symbolInfo.LastPrice)) continue;
+			var lastPrice = await symbolInfo.GetLastPrice();
+			if (!NeedToTriggerOrder(order.Position, order, lastPrice)) continue;
 
 			var msg = new AQOrderMessage { OrderId = order.Id };
 			order.Status = OrderStatus.Triggered;

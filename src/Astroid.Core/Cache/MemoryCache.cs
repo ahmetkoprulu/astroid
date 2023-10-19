@@ -62,5 +62,12 @@ public class InMemoryCache : ICacheService
 	}
 
 	public Task<IEnumerable<T>> GetStartsWith<T>(string key) => throw new NotImplementedException();
-	public Task BatchSet(List<KeyValuePair<string, string>> pairs) => throw new NotImplementedException();
+	public Task SetBatch(List<KeyValuePair<string, string>> pairs) => throw new NotImplementedException();
+	public Task<T?> GetHash<T>(string key, string field) => throw new NotImplementedException();
+	public Task SetHash(string key, string field, object value) => throw new NotImplementedException();
+	public Task SetAllHash(string key, KeyValuePair<string, object>[] pairs) => throw new NotImplementedException();
+	public Task SetHashBatch(string key, List<KeyValuePair<string, string>> pairs) => throw new NotImplementedException();
+	Task<T> ICacheService.GetAllHash<T>(string key) => throw new NotImplementedException();
+	public Task<bool> IsExists(string key) => throw new NotImplementedException();
+	public Task<IEnumerable<T>> GetHashStartsWith<T>(string key) where T : class, new() => throw new NotImplementedException();
 }
