@@ -195,6 +195,7 @@ public class Worker : IHostedService
 			{
 				Logger.LogError($"Order execution failed for {order.Id}.");
 				order.Reject();
+				if (position!.Status == PositionStatus.Requested) position.Reject();
 			}
 
 			await db.SaveChangesAsync(cancellationToken);

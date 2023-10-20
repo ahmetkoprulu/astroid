@@ -196,6 +196,8 @@ export default {
 				const response = await BotService.execute(m);
 				if (!response.data.success) {
 					this.$errorToast("Execute Bot", response.data.message);
+					this.requesting = false;
+
 					return;
 				}
 

@@ -148,8 +148,17 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
-		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
+		if (position.Status == PositionStatus.Requested)
+		{
+			position.Close();
+			order.Fill(0);
+			result.WithSuccess();
 
+			return true;
+		}
+
+		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
+		// For Swing Trade
 		if (order == null || order.ClosePosition)
 		{
 			var exPosition = await GetPosition(position.Symbol, position.Type);
@@ -242,8 +251,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
+		if (position.Status == PositionStatus.Requested)
+		{
+			position.Close();
+			order.Fill(0);
+			result.WithSuccess();
+
+			return true;
+		}
+
 		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
 
+		// For Swing Trade
 		if (order == null || order.ClosePosition)
 		{
 			var exPosition = await GetPosition(position.Symbol, position.Type);
@@ -744,7 +763,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var position = await Db.Positions
 			.Include(x => x.Bot)
 			.Include(x => x.Orders)
-			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open)
+			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested)
 			.FirstOrDefaultAsync(x => x.Symbol == ticker && x.Type == side);
 
 		return position;
@@ -759,10 +778,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return positions;
 	}
 
-	private async Task<ADOrder?> GetOrder(Guid? orderId)
+	private async Task<ADOrder> GetOrder(Guid? orderId)
 	{
-		if (!orderId.HasValue) return null;
-
 		var order = await Db.Orders
 			.Include(x => x.Position)
 			.FirstOrDefaultAsync(x => x.Id == orderId);
