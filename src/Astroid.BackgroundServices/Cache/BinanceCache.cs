@@ -143,6 +143,8 @@ public class BinanceCache : IHostedService
 
 		foreach (var sym in info.Data.Symbols)
 		{
+			if (sym.Name.Contains('_') || !sym.Name.EndsWith("USDT")) continue;
+
 			var price = prices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
 			// var markPrice = markPrices.Data.FirstOrDefault(p => p.Symbol == sym.Name);
 

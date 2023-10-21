@@ -71,7 +71,7 @@ public class HomeController : BaseController
 		var exchange = await ExchangeStore.Get(name);
 		var symbols = exchange?.Symbols.Select(x => x.BaseAsset ?? string.Empty) ?? new List<string>();
 
-		return Success(symbols);
+		return Success(symbols.OrderBy(x => x));
 	}
 
 	[HttpGet("status")]
