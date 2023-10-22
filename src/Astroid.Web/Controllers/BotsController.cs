@@ -249,6 +249,7 @@ public class BotsController : SecureController
 
 		try
 		{
+			orderRequest.Ticker = orderRequest.Ticker.Split('.').First();
 			if (!await Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}", TimeSpan.FromSeconds(10)))
 			{
 				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Bot is busy");
