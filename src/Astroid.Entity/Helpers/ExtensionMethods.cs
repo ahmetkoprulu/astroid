@@ -6,6 +6,31 @@ namespace Astroid.Entity.Extentions;
 
 public static class ContextExtentionMethods
 {
+	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order)
+	{
+		var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.UserId);
+		if (user == null) return;
+
+		var notification = new ADNotification
+		{
+			Id = Guid.NewGuid(),
+			UserId = order.UserId,
+			CreatedDate = DateTime.UtcNow,
+			SentDate = DateTime.MinValue,
+			ExpireDate = DateTime.UtcNow.AddMinutes(5),
+			Channel = user.ChannelPreference,
+			Status = NotificationStatus.Pending,
+			Subject = $"{(order.Status == OrderStatus.Filled ? "✅" : "❌")} {order.Symbol} - {order.TriggerType.GetDescription()} Order Executed",
+			Content = @$"
+				Trigger Price: {order.TriggerPrice}
+				Quantity: {order.Quantity}
+				Filled Quantity: {order.FilledQuantity}
+			",
+		};
+
+		await db.Notifications.AddAsync(notification);
+	}
+
 	public static Task<bool> IsPositionClosing(this AstroidDb db, Guid positionId) => db.Orders.AnyAsync(x => x.PositionId == positionId && x.Status == OrderStatus.Triggered && x.ClosePosition);
 
 	public static bool IsClosing(this ADPosition position) => position.Orders.Any(x => x.Status == OrderStatus.Triggered && x.ClosePosition);

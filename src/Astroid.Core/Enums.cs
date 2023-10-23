@@ -1,3 +1,5 @@
+using System.ComponentModel;
+
 namespace Astroid.Core;
 
 public enum PositionType : short
@@ -65,17 +67,20 @@ public enum AuditType : short
 
 public enum ChannelType : short
 {
-	Mail,
-	Sms,
+	Mail = 1,
+	Sms = 2,
+	Telegram = 3
 }
 
 public enum NotificationStatus : short
 {
-	Pending,
-	Sent,
-	Failed,
-	WaitingForService,
-	Cancelled
+	Pending = 1,
+	Processing = 2,
+	Sent = 3,
+	Failed = 4,
+	WaitingForService = 5,
+	Cancelled = 6,
+	Expired = 7
 }
 
 public enum DatabaseProvider
@@ -125,11 +130,17 @@ public enum PositionStatus
 
 public enum OrderTriggerType
 {
+	[Description("Unknown")]
 	Unknown = 0,
+	[Description("Stop Loss")]
 	StopLoss = 1,
+	[Description("Take Profit")]
 	TakeProfit = 2,
+	[Description("Pyramiding")]
 	Pyramiding = 3,
+	[Description("Sell")]
 	Sell = 4,
+	[Description("Buy")]
 	Buy = 5
 }
 

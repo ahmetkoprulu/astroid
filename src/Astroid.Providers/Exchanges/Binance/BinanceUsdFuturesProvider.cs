@@ -73,6 +73,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else throw new InvalidOperationException("Order could not be executed.");
 
+			if (bot.IsNotificationEnabled && result.Order != null) await Db.AddOrderNotification(result.Order);
+
 			await Db.SaveChangesAsync();
 		}
 		catch (Exception ex)
@@ -108,6 +110,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 		}
 
+		result.Order = order;
 		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, request);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(request.Ticker, request.Leverage);
 
@@ -148,6 +151,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return false;
 
 		result.CorrelationId = position.Id.ToString();
+		result.Order = order;
 		if (position.Status == PositionStatus.Requested)
 		{
 			position.Close();
@@ -208,6 +212,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 		}
 
+		result.Order = order;
 		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, request);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(request.Ticker, request.Leverage);
 
@@ -250,6 +255,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		if (!request.ValidateCloseRequest(position, order, bot, result))
 			return false;
 
+		result.Order = order;
 		result.CorrelationId = position.Id.ToString();
 		if (position.Status == PositionStatus.Requested)
 		{
@@ -303,6 +309,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return result;
 		}
 
+		result.Order = order;
 		result.CorrelationId = position.Id.ToString();
 		AMOrderResult orderResult;
 		var orderSide = request.PositionType == PositionType.Long ? OrderSide.Buy : OrderSide.Sell;

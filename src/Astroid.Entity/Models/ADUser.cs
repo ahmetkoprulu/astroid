@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Astroid.Core;
 
 namespace Astroid.Entity;
 
@@ -15,4 +16,6 @@ public class ADUser : IEntity
 	public DateTime CreatedDate { get; set; }
 	public bool IsRemoved { get; set; }
 	public string? Phone { get; set; }
+	public string? TelegramId { get; set; }
+	public ChannelType ChannelPreference { get; set; }
 }

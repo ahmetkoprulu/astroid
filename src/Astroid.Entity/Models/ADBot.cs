@@ -38,6 +38,7 @@ public class ADBot : IEntity
 	public DateTime ModifiedDate { get; set; }
 	public Guid? ManagedBy { get; set; }
 	public bool IsRemoved { get; set; }
+	public bool IsNotificationEnabled { get; set; }
 
 	public ADExchange Exchange { get; set; }
 

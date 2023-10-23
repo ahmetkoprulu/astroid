@@ -13,6 +13,13 @@ public class AMQueueSubscription : IDisposable
 		Subscription = subscription;
 	}
 
+
+	public AMQueueSubscription(string queueName, IDisposable subscription)
+	{
+		QueueName = queueName;
+		Subscription = subscription;
+	}
+
 	public void Dispose()
 	{
 		Subscription.Dispose();

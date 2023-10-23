@@ -1,7 +1,7 @@
 using MailKit.Net.Smtp;
 using MimeKit;
-using Microsoft.Extensions.Logging;
 using Astroid.Core.Models;
+using Microsoft.Extensions.Configuration;
 
 namespace Astroid.Core.Notification;
 
@@ -14,12 +14,13 @@ public class MailChannel : INotificationChannel
 	private readonly string UserName = string.Empty;
 	private readonly string Password = string.Empty;
 
-	public MailChannel()
+	public MailChannel(IConfiguration config)
 	{
-		Host = Environment.GetEnvironmentVariable("ASTROID_SMTP_HOST") ?? throw new Exception("ASTROID_SMTP_HOST");
-		Port = int.Parse(Environment.GetEnvironmentVariable("ASTROID_SMTP_PORT") ?? throw new Exception("ASTROID_SMTP_PORT"));
-		UserName = Environment.GetEnvironmentVariable("ASTROID_SMTP_USERNAME") ?? throw new Exception("ASTROID_SMTP_USERNAME");
-		Password = Environment.GetEnvironmentVariable("ASTROID_SMTP_PASSWORD") ?? throw new Exception("ASTROID_SMTP_PASSWORD");
+		var settings = config.Get<ServicesConfig>() ?? new();
+		Host = settings.Email.Host ?? Environment.GetEnvironmentVariable("ASTROID_SMTP_HOST") ?? throw new Exception("ASTROID_SMTP_HOST");
+		Port = settings.Email.Port ?? int.Parse(Environment.GetEnvironmentVariable("ASTROID_SMTP_PORT") ?? throw new Exception("ASTROID_SMTP_PORT"));
+		UserName = settings.Email.UserName ?? Environment.GetEnvironmentVariable("ASTROID_SMTP_USERNAME") ?? throw new Exception("ASTROID_SMTP_USERNAME");
+		Password = settings.Email.Password ?? Environment.GetEnvironmentVariable("ASTROID_SMTP_PASSWORD") ?? throw new Exception("ASTROID_SMTP_PASSWORD");
 	}
 
 	public ServiceData Send(string subject, string content, string to, params NotificationAttachment[] attachments)

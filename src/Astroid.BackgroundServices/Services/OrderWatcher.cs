@@ -29,8 +29,6 @@ public class OrderWatcher : IHostedService
 
 	public Task StartAsync(CancellationToken cancellationToken)
 	{
-		Logger.LogInformation("Setting Up Orders Message Queue.");
-		Logger.LogInformation("Starting Take Profit Watcher Service.");
 		_ = Task.Run(() => DoJob(cancellationToken), cancellationToken);
 
 		return Task.CompletedTask;
@@ -40,6 +38,7 @@ public class OrderWatcher : IHostedService
 	{
 		while (!cancellationToken.IsCancellationRequested)
 		{
+			Logger.LogInformation("Started Next Order Iteration.");
 			var buyTask = WatchBuyOrders(cancellationToken);
 			var sellTask = WatchSellOrders(cancellationToken);
 			var lossTask = WatchStopLossOrders(cancellationToken);
@@ -61,6 +60,8 @@ public class OrderWatcher : IHostedService
 			.ThenInclude(x => x.Provider)
 			.Where(x => x.TriggerType == OrderTriggerType.Buy && x.Status == OrderStatus.Open)
 			.ToList();
+
+		if (orders.Count != 0) Logger.LogInformation($"\t[BUY] Watching {orders.Count} orders.");
 
 		foreach (var order in orders)
 		{
@@ -87,6 +88,7 @@ public class OrderWatcher : IHostedService
 		var scope = Services.CreateScope();
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var orders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Sell);
+		if (orders.Count != 0) Logger.LogInformation($"\t[SELL] Watching {orders.Count} orders.");
 
 		foreach (var order in orders)
 		{
@@ -119,7 +121,7 @@ public class OrderWatcher : IHostedService
 		var scope = Services.CreateScope();
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var orders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.StopLoss);
-		// Logger.LogInformation($"Watching {orders.Count} stop loss orders.");
+		if (orders.Count != 0) Logger.LogInformation($"\t[SL] Watching {orders.Count} orders.");
 
 		foreach (var order in orders)
 		{
@@ -158,6 +160,7 @@ public class OrderWatcher : IHostedService
 		var scope = Services.CreateScope();
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var orders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.Pyramiding);
+		if (orders.Count != 0) Logger.LogInformation($"\t[PYR] Watching {orders.Count} orders.");
 
 		foreach (var order in orders)
 		{
@@ -193,6 +196,7 @@ public class OrderWatcher : IHostedService
 		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		var openOrders = await GetOpenOrders(db, cancellationToken, OrderTriggerType.TakeProfit);
 		var orders = openOrders.Where(x => x.TriggerType == OrderTriggerType.TakeProfit).ToList();
+		if (orders.Count != 0) Logger.LogInformation($"\t[TP] Watching {orders.Count} orders.");
 
 		foreach (var order in orders)
 		{
