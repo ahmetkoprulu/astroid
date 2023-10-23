@@ -23,6 +23,7 @@ public class AMBot
 	public StopLossSettings StopLossSettings { get; set; } = new();
 	public string Key { get; set; } = string.Empty;
 	public bool IsEnabled { get; set; }
+	public bool IsNotificationEnabled { get; set; }
 	public DateTime CreatedDate { get; set; }
 	public AMExchange Exchange { get; set; } = new();
 }

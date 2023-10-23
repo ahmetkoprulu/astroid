@@ -100,8 +100,14 @@ export const PRICE_REFERENCE_TYPES = {
 	3: { id: 3, title: "Last", icon: "fa-solid fa-gauge-high" },
 }
 
+export const CHANNEL_TYPES = {
+	1: { id: 0, title: "Mail", icon: "fa-solid fa-envelope fa-fw" },
+	2: { id: 1, title: "SMS", icon: "fa-solid fa-mobile-screen-button fa-fw" },
+	3: { id: 2, title: "Telegram", icon: "fa-brands fa-telegram fa-fw" },
+}
+
 export default {
 	PROPERTY_TYPES, EXCHANGE_ICONS, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES,
 	LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS, STOP_LOSS_TYPE, ORDER_TRIGGER_TYPES, ORDER_STATUS,
-	POSITION_STATUS, PRICE_REFERENCE_TYPES
+	POSITION_STATUS, PRICE_REFERENCE_TYPES, CHANNEL_TYPES
 }

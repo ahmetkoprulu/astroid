@@ -40,7 +40,7 @@ public class NotificationTracker : IHostedService
 		{
 			var scope = Services.CreateScope();
 			using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-			var pendingNotifications = db.Notifications.Where(x => x.Status == NotificationStatus.Pending && !x.IsExpired).ToList();
+			var pendingNotifications = db.Notifications.Where(x => x.Status == NotificationStatus.Pending && (x.ExpireDate == DateTime.MinValue || x.ExpireDate > DateTime.UtcNow)).ToList();
 
 			foreach (var notification in pendingNotifications)
 			{
@@ -49,7 +49,7 @@ public class NotificationTracker : IHostedService
 				await db.SaveChangesAsync(cancellationToken);
 			}
 
-			await Task.Delay(1000, cancellationToken);
+			await Task.Delay(60 * 1000, cancellationToken);
 		}
 	}
 
@@ -79,8 +79,13 @@ public class NotificationTracker : IHostedService
 			var to = await GetRecipient(db, notification, cancellationToken);
 			if (string.IsNullOrEmpty(to)) throw new Exception($"Recipient not found for notification {notification.Id}.");
 
-			notificator.SendNotifications(notification.Subject, notification.Content, to);
-			notification.Status = NotificationStatus.Sent;
+			var result = await notificator.SendNotifications(notification.Subject, notification.Content, to);
+			if (result.Success) notification.Status = NotificationStatus.Sent;
+			else
+			{
+				notification.Status = NotificationStatus.Failed;
+				notification.Error = result.Message;
+			}
 		}
 		catch (Exception ex)
 		{
@@ -100,6 +105,7 @@ public class NotificationTracker : IHostedService
 		{
 			ChannelType.Mail => user.Email,
 			ChannelType.Sms => user.Phone,
+			ChannelType.Telegram => user.TelegramId,
 			_ => throw new Exception($"Channel {notification.Channel} not supported."),
 		};
 	}

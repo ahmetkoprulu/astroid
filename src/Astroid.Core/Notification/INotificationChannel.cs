@@ -4,5 +4,5 @@ namespace Astroid.Core.Notification;
 
 public interface INotificationChannel
 {
-	ServiceData Send(string subject, string content, string to, params NotificationAttachment[] attachments);
+	Task<ServiceData> Send(string subject, string content, string to, params NotificationAttachment[] attachments);
 }

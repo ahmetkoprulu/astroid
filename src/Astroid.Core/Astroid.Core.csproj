@@ -15,5 +15,6 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3-beta1" />
     <PackageReference Include="EasyNetQ" Version="7.5.5" />
     <PackageReference Include="MailKit" Version="3.0.0" />
+    <PackageReference Include="Telegram.Bot" Version="19.0.0" />
   </ItemGroup>
 </Project>

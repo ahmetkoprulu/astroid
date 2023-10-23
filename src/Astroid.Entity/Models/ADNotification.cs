@@ -18,7 +18,7 @@ public class ADNotification
 	public NotificationStatus Status { get; set; }
 	public string Subject { get; set; }
 	public string Content { get; set; }
-	public string To { get; set; }
+	public string? To { get; set; }
 	public string? Error { get; set; }
 
 	public ADUser User { get; set; }

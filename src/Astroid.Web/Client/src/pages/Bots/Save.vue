@@ -23,6 +23,12 @@
 							max-rows="6"
 						/>
 					</b-form-group>
+					<b-form-group
+						label="Notify Executed Orders"
+						description="Sent notification in your choice of channel when an order is executed"
+					>
+						<b-form-checkbox v-model="model.isNotificationEnabled" />
+					</b-form-group>
 					<v-validated-input label="Wallet">
 						<v-select
 							v-model="model.exchangeId"

@@ -73,7 +73,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else throw new InvalidOperationException("Order could not be executed.");
 
-			if (bot.IsNotificationEnabled && result.Order != null) await Db.AddOrderNotification(result.Order);
+			if (bot.IsNotificationEnabled && result.Order != null) await Db.AddOrderNotification(result.Order, bot);
 
 			await Db.SaveChangesAsync();
 		}

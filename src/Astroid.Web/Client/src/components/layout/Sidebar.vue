@@ -47,26 +47,23 @@
 					</li>
 				</ul>
 			</div>
-
-			<!-- <div class="mx-4 mt-auto mb-5 d-flex">
-				<div class="w-100 profile-widget">
-					<div>
-						<router-link
-							class="link"
-							:to="{ name: 'profile', params: { id: $user.id } }"
-						>
-							{{ $user.name }}
-						</router-link>
-					</div>
-					<small class="text-muted">{{ $user.email | truncate(28) }}</small>
-				</div>
-				<i
-					class="fa-solid fa-right-from-bracket fa-flip-horizontal fa-fw text-center align-self-center sign-out-icon"
-					@click="signOut"
-				/>
-			</div> -->
-
 			<div class="bottom-content mb-5">
+				<li>
+					<router-link
+						class="link"
+						:to="{ name: 'profile', params: { id: $user.id } }"
+					>
+						<i class="fa-solid fa-user icon"></i>
+						<span>
+							<div>
+								{{ $user.name | truncate(19) }}
+							</div>
+							<small class="text-muted">{{
+								$user.email | truncate(22)
+							}}</small></span
+						>
+					</router-link>
+				</li>
 				<li class="">
 					<a @click="signOut">
 						<i

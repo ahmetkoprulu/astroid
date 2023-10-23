@@ -10,6 +10,10 @@
   "MessageQueue": {
     "ConnectionString": "amqp://guest:guest@localhost/"
   },
+  "Telegram": {
+    "BotToken": "6599778119:AAEu48unvN9aP11GbQraZZKCbZfMybybXgQ"
+  },
+  "Email": {},
   "Logging": {
     "LogLevel": {
       "Default": "Debug",

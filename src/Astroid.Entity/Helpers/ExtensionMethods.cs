@@ -6,7 +6,7 @@ namespace Astroid.Entity.Extentions;
 
 public static class ContextExtentionMethods
 {
-	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order)
+	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order, ADBot bot)
 	{
 		var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.UserId);
 		if (user == null) return;
@@ -21,11 +21,7 @@ public static class ContextExtentionMethods
 			Channel = user.ChannelPreference,
 			Status = NotificationStatus.Pending,
 			Subject = $"{(order.Status == OrderStatus.Filled ? "✅" : "❌")} {order.Symbol} - {order.TriggerType.GetDescription()} Order Executed",
-			Content = @$"
-				Trigger Price: {order.TriggerPrice}
-				Quantity: {order.Quantity}
-				Filled Quantity: {order.FilledQuantity}
-			",
+			Content = $"\n🤖 Bot: {bot.Label}\n📈 Trigger Price: {order.TriggerPrice}\n💸 Quantity: {order.Quantity}\n💰 Filled Quantity: {order.FilledQuantity}",
 		};
 
 		await db.Notifications.AddAsync(notification);

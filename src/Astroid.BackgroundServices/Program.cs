@@ -15,10 +15,12 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddSingleton<IMessageQueue, RabbitMessageQueue>();
 		services.AddSingleton<AQOrder>();
+		services.AddSingleton<AQNotification>();
 
 		services.AddHostedService<BinanceCache>();
 		services.AddHostedService<BinanceTestCache>();
 		services.AddHostedService<OrderWatcher>();
+		services.AddHostedService<NotificationTracker>();
 	})
 	.ConfigureLogging(logging =>
 	{

@@ -23,7 +23,7 @@ public class MailChannel : INotificationChannel
 		Password = settings.Email.Password ?? Environment.GetEnvironmentVariable("ASTROID_SMTP_PASSWORD") ?? throw new Exception("ASTROID_SMTP_PASSWORD");
 	}
 
-	public ServiceData Send(string subject, string content, string to, params NotificationAttachment[] attachments)
+	public async Task<ServiceData> Send(string subject, string content, string to, params NotificationAttachment[] attachments)
 	{
 		var message = new MimeMessage();
 		message.From.Add(new MailboxAddress(FromName, From));
@@ -58,7 +58,7 @@ public class MailChannel : INotificationChannel
 			if (!string.IsNullOrEmpty(UserName) || !string.IsNullOrEmpty(Password))
 				client.Authenticate(UserName, Password);
 
-			client.Send(message);
+			await client.SendAsync(message);
 
 			client.Disconnect(true);
 			return new ServiceData

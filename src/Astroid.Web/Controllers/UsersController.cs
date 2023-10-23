@@ -37,7 +37,9 @@ public class UsersController : SecureController
 			Id = user.Id,
 			Name = user.Name,
 			Email = user.Email,
-			Phone = user.Phone
+			Phone = user.Phone,
+			TelegramId = user.TelegramId,
+			ChannelPreference = user.ChannelPreference
 		});
 	}
 
@@ -51,6 +53,8 @@ public class UsersController : SecureController
 		user.Name = profile.Name;
 		user.Email = profile.Email;
 		user.Phone = profile.Phone;
+		user.TelegramId = profile.TelegramId;
+		user.ChannelPreference = profile.ChannelPreference;
 
 		await Db.SaveChangesAsync();
 

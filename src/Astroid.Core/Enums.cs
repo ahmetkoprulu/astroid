@@ -67,9 +67,9 @@ public enum AuditType : short
 
 public enum ChannelType : short
 {
-	Mail = 1,
-	Sms = 2,
-	Telegram = 3
+	Mail = 0,
+	Sms = 1,
+	Telegram = 2
 }
 
 public enum NotificationStatus : short
