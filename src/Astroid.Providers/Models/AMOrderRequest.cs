@@ -11,8 +11,8 @@ public class AMOrderRequest
 	public int Leverage { get; set; }
 	public string Type { get; set; } = string.Empty;
 	public int Risk { get; set; } = 1;
-	public decimal Quantity { get; set; } = 0;
-	public string QuantityType = "percentage";
+	public decimal? Quantity { get; set; }
+	public string? QuantityType;
 	public string Key { get; set; } = string.Empty;
 	public bool IsPyramiding { get; set; }
 
@@ -41,7 +41,7 @@ public class AMOrderRequest
 		"percentage" => PositionSizeType.Ratio,
 		"fixed-usd" => PositionSizeType.FixedInUsd,
 		"fixed-asset" => PositionSizeType.FixedInAsset,
-		_ => throw new NotImplementedException(),
+		_ => PositionSizeType.Unknown
 	};
 
 	public void SetQuantityType(PositionSizeType type) => QuantityType = type switch
@@ -72,7 +72,7 @@ public class AMOrderRequest
 
 		if (position.BotId != bot.Id)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
 			return false;
 		}
 

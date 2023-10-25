@@ -261,7 +261,7 @@ public class PositionsController : SecureController
 		if (symbolInfo == null)
 			return BadRequest($"Symbol info not found for {request.Ticker}");
 
-		await Db.Orders.AddCloseOrder(position, await symbolInfo.GetLastPrice());
+		await Db.Orders.AddClosePositionOrder(position);
 		await Db.SaveChangesAsync();
 
 		return Success(null, "Order requested successfully");

@@ -31,7 +31,7 @@ public static class ContextExtentionMethods
 
 	public static bool IsClosing(this ADPosition position) => position.Orders.Any(x => x.Status == OrderStatus.Triggered && x.ClosePosition);
 
-	public static Task<ADPosition?> GetExecuted(this DbSet<ADPosition> set, string symbol, PositionType type) => set.Include(x => x.Exchange).FirstOrDefaultAsync(x => x.Symbol == symbol && x.Type == type && (x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested));
+	public static Task<ADPosition?> GetExecuted(this DbSet<ADPosition> set, Guid botId, string symbol, PositionType type) => set.Include(x => x.Exchange).FirstOrDefaultAsync(x => x.BotId == botId && x.Symbol == symbol && x.Type == type && (x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested));
 
 	public static void Upsert<T>(this DbSet<T> set, T entity, Func<T, bool> condition) where T : class
 	{
@@ -66,7 +66,7 @@ public static class ContextExtentionMethods
 		return position;
 	}
 
-	public static async Task AddCloseOrder(this DbSet<ADOrder> set, ADPosition position, decimal price)
+	public static async Task AddClosePositionOrder(this DbSet<ADOrder> set, ADPosition position, decimal? quantity = null, PositionSizeType qtyType = PositionSizeType.Unknown, bool closePosition = true)
 	{
 		var order = new ADOrder
 		{
@@ -76,12 +76,12 @@ public static class ContextExtentionMethods
 			ExchangeId = position.ExchangeId,
 			PositionId = position.Id,
 			Symbol = position.Symbol,
-			TriggerPrice = price,
+			TriggerPrice = 0,
 			TriggerType = OrderTriggerType.Sell,
 			ConditionType = OrderConditionType.Immediate,
-			Quantity = position.Quantity,
-			QuantityType = PositionSizeType.FixedInAsset,
-			ClosePosition = true,
+			Quantity = quantity ?? position.Quantity,
+			QuantityType = qtyType == PositionSizeType.Unknown ? PositionSizeType.FixedInAsset : qtyType,
+			ClosePosition = closePosition,
 			Status = OrderStatus.Open,
 			UpdatedDate = DateTime.MinValue,
 			CreatedDate = DateTime.UtcNow
@@ -90,7 +90,7 @@ public static class ContextExtentionMethods
 		await set.AddAsync(order);
 	}
 
-	public static async Task AddOpenOrder(this DbSet<ADOrder> set, ADBot bot, ADPosition position, string symbol)
+	public static async Task AddOpenOrder(this DbSet<ADOrder> set, ADBot bot, ADPosition position, string symbol, decimal? size, PositionSizeType type, bool isPyramiding)
 	{
 		var order = new ADOrder
 		{
@@ -101,10 +101,10 @@ public static class ContextExtentionMethods
 			PositionId = position.Id,
 			Symbol = symbol,
 			TriggerPrice = 0,
-			TriggerType = OrderTriggerType.Buy,
+			TriggerType = isPyramiding ? OrderTriggerType.Pyramiding : OrderTriggerType.Buy,
 			ConditionType = OrderConditionType.Immediate,
-			Quantity = bot.PositionSize ?? 0,
-			QuantityType = bot.PositionSizeType,
+			Quantity = size ?? bot.PositionSize ?? 0,
+			QuantityType = type == PositionSizeType.Unknown ? bot.PositionSizeType : type,
 			ClosePosition = false,
 			Status = OrderStatus.Open,
 			UpdatedDate = DateTime.MinValue,

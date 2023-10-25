@@ -25,7 +25,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	public string Secret { get; set; } = string.Empty;
 
 	[PropertyMetadata("Test Net", Type = PropertyTypes.Boolean, Group = "General")]
-	public bool IsTestNet { get; set; }
+	public bool IsTestNet { get; set; } = false;
 
 	private BinanceRestClient Client { get; set; }
 
@@ -161,7 +161,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return true;
 		}
 
-		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
+		var quantity = await GetAssetQuantity(request.Quantity.Value, request.QtyType, request.Ticker, position.Quantity);
 		// For Swing Trade
 		if (order == null || order.ClosePosition)
 		{
@@ -814,7 +814,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<decimal> ConvertUsdtToCoin(decimal size, PositionSizeType type, AMOrderRequest order)
 	{
-		if (order.Quantity > 0) size = order.Quantity;
+		if (order.Quantity.HasValue && order.Quantity > 0) size = order.Quantity.Value;
 
 		var symbolInfo = await GetSymbolInfo(order.Ticker);
 		if (type == PositionSizeType.FixedInAsset) return Math.Round(size, symbolInfo.QuantityPrecision);
@@ -834,16 +834,16 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(usdQuantity / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 	}
 
-	private async Task<decimal> GetAssetQuantity(decimal size, PositionSizeType type, string ticker, decimal amount)
+	private async Task<decimal> GetAssetQuantity(decimal? size, PositionSizeType type, string ticker, decimal amount)
 	{
-		if (size == 0) return amount;
+		if (!size.HasValue || size <= 0) return amount;
 
-		if (type == PositionSizeType.FixedInAsset) return size;
+		if (type == PositionSizeType.FixedInAsset) return size.Value;
 
 		var symbolInfo = await GetSymbolInfo(ticker);
-		if (type == PositionSizeType.FixedInUsd) return Math.Round(size / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
+		if (type == PositionSizeType.FixedInUsd) return Math.Round(size.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 
-		return amount * size / 100;
+		return amount * size.Value / 100;
 	}
 
 	private static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)

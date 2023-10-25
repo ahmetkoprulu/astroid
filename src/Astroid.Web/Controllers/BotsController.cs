@@ -271,7 +271,7 @@ public class BotsController : SecureController
 				return BadRequest($"Symbol not found.");
 			}
 
-			var position = await Db.Positions.GetExecuted(orderRequest.Ticker, orderRequest.PositionType);
+			var position = await Db.Positions.GetExecuted(bot.Id, orderRequest.Ticker, orderRequest.PositionType);
 			if (!orderRequest.IsClose)
 			{
 				if (position != null && position.Status == PositionStatus.Open && !bot.IsPositionSizeExpandable)
@@ -286,8 +286,14 @@ public class BotsController : SecureController
 					return BadRequest($"Position is still being processed");
 				}
 
+				if (position == null && orderRequest.IsPyramiding)
+				{
+					await AddAudit(AuditType.OpenOrderPlaced, bot.UserId, bot.Id, $"Cannot place pyramiding order, position not found");
+					return BadRequest($"Cannot place pyramiding order, position not found");
+				}
+
 				position ??= await Db.Positions.AddRequestedPosition(bot, orderRequest.Ticker, orderRequest.Leverage, orderRequest.PositionType);
-				await Db.Orders.AddOpenOrder(bot, position, orderRequest.Ticker);
+				await Db.Orders.AddOpenOrder(bot, position, orderRequest.Ticker, orderRequest.Quantity, orderRequest.QtyType, orderRequest.IsPyramiding);
 				await Db.SaveChangesAsync();
 
 				return Success(null, "Order requested successfully");
@@ -299,7 +305,7 @@ public class BotsController : SecureController
 				return BadRequest($"Position not found");
 			}
 
-			await Db.Orders.AddCloseOrder(position, await symbolInfo.GetLastPrice());
+			await Db.Orders.AddClosePositionOrder(position, orderRequest.Quantity, orderRequest.QtyType, orderRequest.Quantity <= 0);
 			await Db.SaveChangesAsync();
 		}
 		catch (Exception ex)

@@ -228,7 +228,10 @@ public class OrderWatcher : IHostedService
 	public bool NeedToTriggerOrder(ADPosition position, ADOrder order, decimal symbolPrice)
 	{
 		if (order.ConditionType == OrderConditionType.Immediate)
+		{
+			order.TriggerPrice = symbolPrice;
 			return true;
+		}
 
 		if (order.ConditionType == OrderConditionType.Decreasing)
 			return position.Type == PositionType.Long ? symbolPrice < order.TriggerPrice : symbolPrice > order.TriggerPrice;

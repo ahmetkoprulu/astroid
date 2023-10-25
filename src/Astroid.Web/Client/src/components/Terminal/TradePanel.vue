@@ -56,7 +56,32 @@
 		</div>
 		<div class="col-12">
 			<b-form-group label="Leverage">
-				<b-form-spinbutton placeholder="Leverage" v-model="model.leverage" />
+				<b-form-spinbutton placeholder="Leverage" v-model="model.leverage">
+					<template slot="increment">
+						<button
+							tabindex="-1"
+							type="button"
+							aria-label="Increment"
+							aria-keyshortcuts="ArrowUp"
+							class="btn btn-sm border-0 rounded-0 py-0"
+							style="width: 50"
+						>
+							<i class="fa-solid fa-plus fa-fw"></i>
+						</button>
+					</template>
+					<template slot="decrement">
+						<button
+							tabindex="-1"
+							type="button"
+							aria-label="Increment"
+							aria-keyshortcuts="ArrowUp"
+							class="btn btn-sm border-0 rounded-0 py-0"
+							style="width: 50"
+						>
+							<i class="fa-solid fa-minus fa-fw"></i>
+						</button>
+					</template>
+				</b-form-spinbutton>
 			</b-form-group>
 		</div>
 		<div class="col-12">

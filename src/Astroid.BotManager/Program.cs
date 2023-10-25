@@ -7,8 +7,8 @@ using Astroid.Providers;
 var builder = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((hostContext, services) =>
 	{
-		services.AddDbContext<AstroidDb>(ServiceLifetime.Scoped);
-		services.AddScoped<BinanceUsdFuturesProvider>();
+		services.AddDbContext<AstroidDb>(ServiceLifetime.Transient);
+		services.AddTransient<BinanceUsdFuturesProvider>();
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();
