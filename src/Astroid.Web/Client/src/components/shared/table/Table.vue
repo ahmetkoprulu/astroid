@@ -28,9 +28,7 @@
 					"
 				/>
 			</div>
-			<table
-				:class="`table table-condensed mt-0 w-100 d-block d-md-table flex-grow-1 ${tableClass}`"
-			>
+			<table :class="`table ${tableClass}`">
 				<thead :class="`${headerClass} w-100`">
 					<tr>
 						<slot name="header" v-bind="columns">

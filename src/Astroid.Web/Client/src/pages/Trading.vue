@@ -1,12 +1,17 @@
 <template>
-	<b-overlay :show="loading" :opacity="1" variant="white">
+	<b-overlay
+		class="surface surface-text"
+		:show="loading"
+		:opacity="1"
+		variant="white"
+	>
 		<div class="trading-container d-flex" v-if="!loading">
 			<!-- <Navbar /> -->
 			<Sidebar />
 			<main class="main-container w-100">
 				<b-overlay
-					class="mx-lg-5 mx-md-3 mx-sm-0"
-					style="height: 100vh"
+					class="px-lg-5 px-md-3 px-sm-0"
+					style="height: 100vh; overflow-y: auto"
 					:show="$busy"
 					no-fade
 					:opacity="1"

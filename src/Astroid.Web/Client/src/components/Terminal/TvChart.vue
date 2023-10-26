@@ -110,7 +110,6 @@ export default {
 </script>
 <style scoped>
 .chart {
-	border: 1px solid #d1d4dc;
 	/* border-radius: 0.375rem; */
 }
 </style>

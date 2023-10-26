@@ -42,8 +42,9 @@ export default {
 <style>
 .code {
 	width: 406px;
-	background-color: #f5f5f5;
-	border: 1px solid #ccc;
+	background-color: var(--md-sys-color-secondary-container);
+	border: 1px solid var(--md-sys-color-outline);
+	color: var(--md-sys-color-on-secondary-container);
 	border-radius: 4px;
 	padding-top: 6px;
 	padding-left: 12px;

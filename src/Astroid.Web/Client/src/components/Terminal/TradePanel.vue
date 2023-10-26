@@ -63,7 +63,7 @@
 							type="button"
 							aria-label="Increment"
 							aria-keyshortcuts="ArrowUp"
-							class="btn btn-sm border-0 rounded-0 py-0"
+							class="btn btn-sm border-0 on-background-text rounded-0 py-0"
 							style="width: 50"
 						>
 							<i class="fa-solid fa-plus fa-fw"></i>
@@ -75,7 +75,7 @@
 							type="button"
 							aria-label="Increment"
 							aria-keyshortcuts="ArrowUp"
-							class="btn btn-sm border-0 rounded-0 py-0"
+							class="btn btn-sm border-0 on-background-text rounded-0 py-0"
 							style="width: 50"
 						>
 							<i class="fa-solid fa-minus fa-fw"></i>

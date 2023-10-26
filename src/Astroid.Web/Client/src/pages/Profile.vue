@@ -1,46 +1,43 @@
 <template>
 	<div>
 		<page-header title="Profile" :actions="actions" />
-		<ValidationObserver ref="form">
-			<div class="col-lg-4 col-md-6 col-sm-12">
+		<div class="card-body p-4 mb-4 col-lg-5 col-md-6 col-sm-12">
+			<p class="h4 mb-4">General</p>
+			<ValidationObserver ref="form">
 				<v-validated-input label="Name">
 					<b-form-input v-model="profile.name" />
 				</v-validated-input>
-			</div>
-			<div class="col-lg-4 col-md-6 col-sm-12">
 				<v-validated-input label="Email">
 					<b-form-input type="email" v-model="profile.email" />
 				</v-validated-input>
-			</div>
-			<div class="col-lg-4 col-md-6 col-sm-12">
-				<b-form-group label="Phone">
-					<PhoneInput v-model="profile.phone" />
-				</b-form-group>
-			</div>
-			<div class="col-lg-4 col-md-6 col-sm-12">
-				<b-form-group label="Telegram Id">
-					<b-form-input v-model="profile.telegramId" />
-				</b-form-group>
-			</div>
-			<div class="col-lg-4 col-md-6 col-sm-12">
-				<b-form-group label="Notification Preference">
-					<v-select
-						v-model="profile.channelPreference"
-						:options="channelOptions"
-						placeholder="Select a notification channel"
-					>
-						<div slot="value-label" slot-scope="{ node }">
-							<i :class="`mr-2 ${node.raw.icon}`" />
-							<span>{{ node.label }}</span>
-						</div>
-						<label slot="option-label" slot-scope="{ node }">
-							<i :class="`mr-2 ${node.raw.icon}`" />
-							<span>{{ node.label }}</span>
-						</label>
-					</v-select>
-				</b-form-group>
-			</div>
-		</ValidationObserver>
+			</ValidationObserver>
+		</div>
+		<div class="card-body p-4 mb-4 col-lg-5 col-md-6 col-sm-12">
+			<p class="h4 mb-4">Notifications</p>
+			<b-form-group label="Phone">
+				<PhoneInput v-model="profile.phone" />
+			</b-form-group>
+
+			<b-form-group label="Telegram Id">
+				<b-form-input v-model="profile.telegramId" />
+			</b-form-group>
+			<b-form-group label="Notification Preference">
+				<v-select
+					v-model="profile.channelPreference"
+					:options="channelOptions"
+					placeholder="Select a notification channel"
+				>
+					<div slot="value-label" slot-scope="{ node }">
+						<i :class="`mr-2 ${node.raw.icon}`" />
+						<span>{{ node.label }}</span>
+					</div>
+					<label slot="option-label" slot-scope="{ node }">
+						<i :class="`mr-2 ${node.raw.icon}`" />
+						<span>{{ node.label }}</span>
+					</label>
+				</v-select>
+			</b-form-group>
+		</div>
 	</div>
 </template>
 <script>

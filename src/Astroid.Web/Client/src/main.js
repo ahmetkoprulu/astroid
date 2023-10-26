@@ -188,6 +188,25 @@ Object.defineProperty(Vue.prototype, '$busy', {
 	set(value) { busy.busy = value; }
 });
 
+const theme = Vue.observable({ theme: null });
+Object.defineProperty(Vue.prototype, '$theme', {
+	get() {
+		var t = localStorage.getItem("theme");
+		if (t) return t;
+
+		return theme.theme;
+	},
+	set(value) {
+		document.documentElement.dataset.theme = value;
+		localStorage.setItem("theme", value);
+		theme.theme = value;
+	}
+});
+console.log(Vue.prototype.$theme);
+if (!Vue.prototype.$theme) Vue.prototype.$theme = "light";
+
+console.log(Vue.prototype.$theme);
+document.documentElement.dataset.theme = Vue.prototype.$theme;
 Vue.config.productionTip = false
 
 export { Vue, router }

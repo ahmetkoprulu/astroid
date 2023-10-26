@@ -3,22 +3,25 @@
 		<page-header title="Terminal" />
 
 		<div class="row">
-			<div
-				class="col-md-12 col-sm-12 col-lg-9 col-xl-10 mb-4"
-				style="height: 600px"
-			>
-				<TvChart :symbol="symbol" :key="symbol" />
+			<div class="pr-2 col-md-12 col-sm-12 col-lg-9 mb-4" style="height: 600px">
+				<div class="card-body p-4" style="height: 600px">
+					<TvChart :symbol="symbol" :key="symbol" />
+				</div>
 			</div>
-			<div class="col-sm-12 col-md-12 col-lg-3 col-xl-2 mb-4">
-				<TradePanel
-					@ticker-changed="onTickerChanged"
-					@request-send="onRequestSent"
-				/>
+			<div class="px-3 col-sm-12 col-md-12 col-lg-3 mb-4">
+				<div class="card-body h-100">
+					<TradePanel
+						@ticker-changed="onTickerChanged"
+						@request-send="onRequestSent"
+					/>
+				</div>
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-12 col-sm-12">
-				<PositionsTabs ref="positionTabs" />
+			<div class="px-3 p-0 col-md-12 col-sm-12">
+				<div class="card-body">
+					<PositionsTabs ref="positionTabs" />
+				</div>
 			</div>
 		</div>
 	</div>

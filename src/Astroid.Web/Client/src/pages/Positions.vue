@@ -2,7 +2,7 @@
 	<div>
 		<page-header title="Positions" />
 		<!-- card shadow-sm -->
-		<div class="">
+		<div class="card-body p-4">
 			<v-table
 				:columns="columns"
 				:requestFunction="requestFunction"
@@ -10,11 +10,7 @@
 				ref="table"
 			>
 				<template #row-base="props">
-					<tr
-						:class="{ 'bg-light': props.row.status == 2 }"
-						block
-						v-b-toggle="props.row.id"
-					>
+					<tr block v-b-toggle="props.row.id">
 						<td>
 							<div class="d-flex w-100">
 								<span

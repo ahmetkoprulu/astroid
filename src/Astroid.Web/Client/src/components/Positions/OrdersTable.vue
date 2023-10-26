@@ -1,7 +1,5 @@
 <template>
-	<table
-		class="table table-condensed mt-0 w-100 d-block d-md-table flex-grow-1"
-	>
+	<table class="table mt-0 w-100 d-block d-md-table flex-grow-1">
 		<thead>
 			<tr>
 				<th>Type</th>

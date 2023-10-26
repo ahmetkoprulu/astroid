@@ -2,7 +2,7 @@
 	<div>
 		<page-header title="Bots" :actions="actions" />
 		<!-- card shadow-sm -->
-		<div class="">
+		<div class="card-body p-4">
 			<v-table
 				ref="table"
 				:columns="columns"

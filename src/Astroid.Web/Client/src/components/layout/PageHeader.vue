@@ -1,7 +1,7 @@
 <template>
-	<div class="sticky page-header mb-3 pt-5">
+	<div class="surface on-surface-text sticky page-header mb-3 pt-5">
 		<div class="">
-			<p class="font-bold h3 mb-0 mr-6 order-1">{{ title }}</p>
+			<p class="font-bold h2 mb-0 mr-6 order-1">{{ title }}</p>
 		</div>
 		<!-- Right Corner -->
 		<div class="">
@@ -85,11 +85,9 @@ export default {
 	position: sticky;
 	top: 0;
 	z-index: 100;
-	background-color: #fff;
 }
 
 .page-header {
-	background-color: #fff;
 	/* box-shadow: 0 4px 2px -2px rgba(0, 0, 0, 0.1); */
 	padding-top: 24px;
 	padding-bottom: 24px;
