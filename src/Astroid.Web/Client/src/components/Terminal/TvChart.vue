@@ -29,7 +29,7 @@ export default {
 				autosize: true,
 				interval: "D",
 				timezone: "Etc/UTC",
-				theme: "light",
+				theme: "dark",
 				style: "1",
 				locale: "en",
 				enable_publishing: false,
@@ -96,6 +96,14 @@ export default {
 			if (typeof TradingView === "undefined") {
 				return;
 			}
+			this.opt.theme = this.$theme;
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-background"
+			);
+			let gridColor = docStyle.getPropertyValue("--md-sys-color-surface-1");
+			this.opt.backgroundColor = backkgroundColor;
+			this.opt.gridColor = gridColor;
 
 			new window.TradingView.widget(
 				Object.assign({ container_id: this.container_id }, this.opt)

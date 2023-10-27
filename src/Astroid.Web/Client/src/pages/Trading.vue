@@ -1,10 +1,5 @@
 <template>
-	<b-overlay
-		class="surface surface-text"
-		:show="loading"
-		:opacity="1"
-		variant="white"
-	>
+	<b-overlay class="background" :show="loading" :opacity="1" variant="white">
 		<div class="trading-container d-flex" v-if="!loading">
 			<!-- <Navbar /> -->
 			<Sidebar />

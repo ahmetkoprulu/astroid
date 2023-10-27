@@ -66,7 +66,7 @@ export const LIMIT_ORDER_BOOK_COMPUTATION_METHODS = {
 export const STOP_LOSS_TYPE = {
 	1: { id: 1, title: "Fixed", icon: "fa fa-arrows-down-to-line" },
 	2: { id: 2, title: "Trailing", icon: "fa fa-stairs" },
-	3: { id: 3, title: "Trailing Profit", icon: "fa fa-bars" }
+	3: { id: 3, title: "Trl. Profit", icon: "fa fa-bars" }
 }
 
 export const ORDER_TRIGGER_TYPES = {

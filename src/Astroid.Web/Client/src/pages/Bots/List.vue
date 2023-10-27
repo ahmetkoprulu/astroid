@@ -31,7 +31,7 @@
 					<v-datetime v-model="props.row.createdDate" pretty />
 				</template>
 				<template #column-actions="props">
-					<v-dropdown class="pull-right">
+					<v-dropdown class="pull-right" variant="link">
 						<v-dropdown-item
 							@click="showEnableAlert(props.row.id, props.row.isEnabled)"
 						>

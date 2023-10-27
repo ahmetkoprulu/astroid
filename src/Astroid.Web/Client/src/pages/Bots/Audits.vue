@@ -2,7 +2,7 @@
 	<div>
 		<page-header title="Audits" />
 		<!-- card shadow-sm -->
-		<div class="">
+		<div class="card-body p-4">
 			<v-table
 				ref="table"
 				:columns="columns"
@@ -22,7 +22,7 @@
 					<v-datetime v-model="props.row.createdDate" pretty />
 				</template>
 				<template #column-actions="props">
-					<v-dropdown class="pull-right">
+					<v-dropdown class="pull-right" variant="link">
 						<v-dropdown-item @click="showDetails(props.row)">
 							<i class="mr-1 fa-solid fa-circle-info" /> Show Details
 						</v-dropdown-item>
@@ -45,7 +45,7 @@ export default {
 				type: "Type",
 				description: "Description",
 				createdDate: "Created Date",
-				correlationId: "Correlation",
+				// correlationId: "Correlation",
 				actions: " ",
 			},
 			botId: null,

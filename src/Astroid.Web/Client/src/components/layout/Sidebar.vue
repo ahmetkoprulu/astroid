@@ -90,9 +90,17 @@
 						<span class="text nav-text">Logout</span>
 					</a>
 				</li>
-				<li class="mode on-surface-text">
-					<i class="fa-solid fa-moon icon"></i>
-					<span class="text nav-text">Dark</span>
+				<li class="mode on-surface-text" @click="toggleTheme">
+					<i
+						class="fa-solid fa-fw icon"
+						:class="{
+							'fa-sun': theme == 'dark',
+							'fa-moon': theme != 'dark',
+						}"
+					></i>
+					<span class="text nav-text">{{
+						theme != "dark" ? "Dark" : "Light"
+					}}</span>
 				</li>
 			</div>
 		</div>
@@ -104,6 +112,7 @@ export default {
 	data() {
 		return {
 			isClose: false,
+			theme: "light",
 		};
 	},
 	computed: {
@@ -126,6 +135,10 @@ export default {
 			});
 		},
 	},
+	mounted() {
+		this.theme = this.$theme;
+		console.log(this.theme);
+	},
 	methods: {
 		resolveRoute(route) {
 			const resolvedRoute = this.$router.resolve({
@@ -143,44 +156,26 @@ export default {
 
 			this.$router.push(route);
 		},
+		toggleTheme() {
+			this.$theme = this.$theme == "dark" ? "light" : "dark";
+			this.theme = this.$theme;
+		},
 	},
 };
 </script>
 <style>
-:root {
-	/* ===== Colors ===== */
-	--sidebar-color: var(--md-sys-color-sidebar);
-	--primary-color: var(--md-sys-color-primary);
-	--primary-color-light: #f6f5ff;
-	--toggle-color: #d1d5db;
-	--text-color: var(--md-sys-color-on-background);
-	/* ====== Transition ====== */
-	--tran-03: all 0.2s ease;
-	--tran-03: all 0.3s ease;
-	--tran-04: all 0.3s ease;
-	--tran-05: all 0.3s ease;
-}
-
-::selection {
-	background-color: var(--primary-color);
-	color: #fff;
-}
-
-/* ===== Sidebar ===== */
 .sidebar {
 	position: fixed;
 	height: 100%;
 	width: 250px;
 	padding: 10px 14px;
 	background: var(--sidebar-color);
-	transition: var(--tran-05);
 }
 
 .sidebar.close {
 	width: 88px;
 }
 
-/* ===== Reusable code - Here ===== */
 .sidebar li {
 	height: 40px;
 	list-style: none;
@@ -210,11 +205,6 @@ export default {
 	font-size: 16px;
 }
 
-.sidebar .text,
-.sidebar .icon {
-	transition: var(--tran-03);
-}
-
 .sidebar .text {
 	font-size: 14px;
 	font-weight: 500;
@@ -224,7 +214,6 @@ export default {
 .sidebar.close .text {
 	opacity: 0;
 }
-/* =========================== */
 
 .sidebar header {
 	position: relative;
@@ -239,10 +228,11 @@ export default {
 .sidebar header .logo-text {
 	display: flex;
 	flex-direction: column;
+	font-size: 24px;
 }
 header .image-text .name {
 	margin-top: 2px;
-	font-size: 18px;
+	font-size: 22px;
 	font-weight: 600;
 }
 
@@ -270,15 +260,15 @@ header .image-text .profession {
 	transform: translateY(-50%) rotate(180deg);
 	height: 25px;
 	width: 25px;
-	background-color: #d4d6dc !important;
-	color: var(--sidebar-color);
+	background-color: var(--md-sys-color-surface-variant) !important;
+	color: var(--md-sys-color-on-surface-variant) !important;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	font-size: 12px;
 	cursor: pointer;
-	transition: var(--tran-05);
+	/* transition: var(--tran-05); */
 }
 
 .sidebar.close .toggle {
@@ -299,13 +289,12 @@ header .image-text .profession {
 	width: 100%;
 	border-radius: 6px;
 	text-decoration: none;
-	transition: var(--tran-03);
-	color: var(--text-color) !important;
+	color: var(--md-sys-color-on-background) !important;
 }
 
 .sidebar li a:hover {
-	background-color: var(--md-sys-color-secondary);
-	color: var(--md-sys-color-on-secondary) !important;
+	background-color: var(--md-sys-color-secondary-container);
+	color: var(--md-sys-color-on-secondary-container);
 }
 
 .sidebar .menu-bar {
@@ -320,9 +309,8 @@ header .image-text .profession {
 }
 .sidebar .menu-bar .mode {
 	border-radius: 6px;
-	/* background-color: var(--primary-color-light); */
 	position: relative;
-	transition: var(--tran-05);
+	transition: all 0.3s ease;
 }
 
 .menu-bar .mode .sun-moon {
@@ -347,27 +335,6 @@ header .image-text .profession {
 	justify-content: center;
 	border-radius: 6px;
 	cursor: pointer;
-}
-.toggle-switch .switch {
-	position: relative;
-	height: 22px;
-	width: 40px;
-	border-radius: 25px;
-	background-color: var(--toggle-color);
-	transition: var(--tran-05);
-}
-
-.switch::before {
-	content: "";
-	position: absolute;
-	height: 15px;
-	width: 15px;
-	border-radius: 50%;
-	top: 50%;
-	left: 5px;
-	transform: translateY(-50%);
-	background-color: var(--sidebar-color);
-	transition: var(--tran-04);
 }
 
 body.dark .switch::before {

@@ -107,7 +107,6 @@
 							<v-radio-group
 								v-model="model.limitSettings.valorizationType"
 								:options="limitDeviationOptions"
-								width="140px"
 							/>
 						</b-form-group>
 						<div v-if="model.limitSettings.valorizationType !== 1">
@@ -185,7 +184,6 @@
 						<v-radio-group
 							v-model="model.orderMode"
 							:options="orderTypeOptions"
-							width="130px"
 						/>
 					</b-form-group>
 				</div>
@@ -232,7 +230,6 @@
 							<v-radio-group
 								v-model="model.stopLossSettings.type"
 								:options="stopLossOptions"
-								width="150px"
 							/>
 						</b-form-group>
 						<div class="d-flex">
@@ -262,9 +259,9 @@
 					</div>
 				</div>
 			</div>
-			<div class="col-lg-7 col-md-12">
+			<div class="col-lg-7 col-md-12 pl-2">
 				<div class="card-body p-4">
-					<p class="h4 mb-4">Accessabilty</p>
+					<p class="h4 mb-4">Access</p>
 					<WebhookInfo :bot-key="model.key" />
 				</div>
 			</div>

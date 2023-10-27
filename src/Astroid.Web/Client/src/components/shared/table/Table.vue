@@ -172,7 +172,7 @@
 									:text="itemPerPageText"
 									class="m-md-2"
 									size="sm"
-									variant="light"
+									variant="link"
 								>
 									<template v-for="perPage in filteredPerPageValues">
 										<b-dropdown-item

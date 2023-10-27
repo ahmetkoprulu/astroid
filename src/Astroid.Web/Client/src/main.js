@@ -197,16 +197,20 @@ Object.defineProperty(Vue.prototype, '$theme', {
 		return theme.theme;
 	},
 	set(value) {
-		document.documentElement.dataset.theme = value;
+		if (value === "dark") {
+			document.body.classList.remove("light");
+			document.body.classList.add("dark");
+		} else {
+			document.body.classList.remove("dark");
+			document.body.classList.add("light");
+		}
 		localStorage.setItem("theme", value);
 		theme.theme = value;
 	}
 });
-console.log(Vue.prototype.$theme);
-if (!Vue.prototype.$theme) Vue.prototype.$theme = "light";
 
-console.log(Vue.prototype.$theme);
-document.documentElement.dataset.theme = Vue.prototype.$theme;
+if (!Vue.prototype.$theme) Vue.prototype.$theme = "light";
+Vue.prototype.$helpers.toggleTheme(Vue.prototype.$theme);
 Vue.config.productionTip = false
 
 export { Vue, router }

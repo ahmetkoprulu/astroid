@@ -7,6 +7,10 @@
 	box-sizing: border-box;
 }
 
+html {
+	background-color: var(--md-sys-color-background) !important;
+}
+
 body {
 	font-size: 0.875rem !important;
 	font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI" !important;
@@ -84,15 +88,6 @@ a:hover {
 	margin-right: auto;
 }
 
-:root {
-	--primary: var(--md-sys-color-primary) !important;
-	--secondary: var(--md-sys-color-secondary) !important;
-	--light: var(--md-ref-palette-secondary98) !important;
-	--dark: var(--md-ref-palette-secondary20) !important;
-	--danger: var(--md-sys-color-error) !important;
-	--success: var(--md-sys-color-success) !important;
-}
-
 .app {
 	background: #fff;
 	min-height: 100vh;
@@ -112,29 +107,30 @@ main > .main {
 }
 
 .b-toast .toast {
-	border: 1px solid #d1d5db;
-	color: #374151;
+	border: 1px solid var(--md-sys-color-surface-9) !important;
+	background-color: var(--md-sys-color-background) !important;
+	color: var(--md-sys-color-on-background) !important;
 }
 
 .b-toast .toast .toast-body {
-	background: #fff;
-	padding-top: 0px;
+	background-color: var(--md-sys-color-background) !important;
+	padding-top: 6px;
 	padding-bottom: 6px;
 }
 
 .b-toast-primary .toast .toast-header {
-	background: #fff;
+	background-color: var(--md-sys-color-background) !important;
 	border-bottom: none;
 }
 
 .b-toast-danger .toast .toast-header {
-	background: #fff;
+	background-color: var(--md-sys-color-background) !important;
 	border-bottom: none;
 }
 
 .b-toast-success .toast .toast-header {
-	background-color: #fff;
-	border-bottom-color: #fff;
+	background-color: var(--md-sys-color-background) !important;
+	border-bottom-color: var(--md-sys-color-surface-9) !important;
 }
 
 .table tr th {
@@ -153,6 +149,10 @@ main > .main {
 	padding-left: 15px;
 }
 
+.bg-success {
+	background-color: var(--success) !important;
+}
+
 .bg-grey-transparent-4 {
 	background-color: #6f6f6f61 !important;
 }
@@ -161,12 +161,16 @@ main > .main {
 	background-color: #6f6f6f !important;
 }
 
+.bg-white {
+	background-color: var(--md-sys-color-background) !important;
+}
+
 .btn {
 	font-weight: 500;
 }
 
 .btn-default {
-	color: #212529;
+	color: var(--md-sys-color-on-background);
 	background-color: #f9f9f9;
 	border-color: #f9f9f9;
 }
@@ -175,11 +179,6 @@ main > .main {
 	color: #212529;
 	background-color: #e0e0e0;
 	border-color: #e0e0e0;
-}
-
-.nav.nav-tabs {
-	color: #007aff !important;
-	border-bottom: 4px solid #e4e7e8a3 !important;
 }
 
 :focus {
@@ -245,64 +244,6 @@ main > .main {
 .widget-icon.widget-icon-xxl.user i {
 	font-size: 84px;
 	line-height: 112px;
-}
-
-/* Page Notification Base */
-
-.page-notification-container {
-	z-index: 9999 !important;
-}
-
-/* Page Notification Success */
-
-.page-notification.page-notification-success .notification-btn a:hover,
-.page-notification.page-notification-success .notification-btn a:focus,
-.page-notification.page-notification-success .notification-btn a:active {
-	color: #007aff;
-}
-
-.page-notification.page-notification-success {
-	background: #4cd964;
-	color: #fff;
-}
-
-.page-notification.page-notification-success .notification-title,
-.page-notification.page-notification-success .notification-title a,
-.page-notification.page-notification-success .notification-desc,
-.page-notification.page-notification-success .notification-desc a,
-.page-notification.page-notification-success .notification-btn a {
-	color: #fff;
-}
-
-.page-notification.page-notification-success .notification-media i {
-	background: rgba(255, 255, 255, 0.25);
-	color: #fff;
-}
-
-/* Page Notification Danger */
-
-.page-notification.page-notification-danger .notification-btn a:hover,
-.page-notification.page-notification-danger .notification-btn a:focus,
-.page-notification.page-notification-danger .notification-btn a:active {
-	color: #007aff;
-}
-
-.page-notification.page-notification-danger {
-	background: #ff3b30;
-	color: #fff;
-}
-
-.page-notification.page-notification-danger .notification-title,
-.page-notification.page-notification-danger .notification-title a,
-.page-notification.page-notification-danger .notification-desc,
-.page-notification.page-notification-danger .notification-desc a,
-.page-notification.page-notification-danger .notification-btn a {
-	color: #fff;
-}
-
-.page-notification.page-notification-danger .notification-media i {
-	background: rgba(255, 255, 255, 0.25);
-	color: #fff;
 }
 
 .btn-group > .btn:first-child:not(:last-child):not(.dropdown-toggle) {
@@ -432,8 +373,8 @@ main > .main {
 }
 
 .menuActiveBackground {
-	color: #fff;
-	background: #000000;
+	color: var(--md-sys-color-on-background);
+	background: var(--md-sys-color-background);
 	background: -moz-linear-gradient(-45deg, #000000 0%, #000000 100%);
 	background: -webkit-linear-gradient(-45deg, #000000 0%, #000000 100%);
 	background: linear-gradient(135deg, #000000 0%, #000000 100%);
@@ -665,7 +606,7 @@ tr:hover .d-row-hover {
 
 .has-error .help-block {
 	margin-top: 0.5rem;
-	color: #f00;
+	color: var(--md-sys-color-error);
 }
 
 button {
@@ -825,10 +766,20 @@ button {
 	padding: 0.5rem;
 }
 
+.modal-content {
+	background-color: var(--md-sys-color-background) !important;
+}
+
 .modal-header {
 	border-bottom: transparent;
-	background-color: #f9fafb;
+	background-color: var(--md-sys-color-surface-1) !important;
+	color: var(--md-sys-color-on-background) !important;
 	text-align: center;
+}
+
+.modal-header .close {
+	color: var(--md-sys-color-on-background) !important;
+	opacity: 1;
 }
 
 .modal-title {
@@ -837,7 +788,8 @@ button {
 }
 
 .modal-footer {
-	border-top: 2px solid #f7f7f7;
+	background-color: var(--md-sys-color-background) !important;
+	border-top: 2px solid var(--md-sys-color-surface-1);
 }
 
 .modal-title {
@@ -929,13 +881,39 @@ button {
 .btn-success {
 	background: var(--success) !important;
 	border-color: var(--success) !important;
-	color: var(--md-sys-color-on-success) !important;
+	color: var(--md-sys-color-on-tertiary) !important;
+}
+
+.btn-light:active {
+	color: var(--md-sys-color-on-secondary) !important;
+	background-color: var(--md-sys-color-secondary) !important;
+}
+
+.btn-light:not(:disabled):not(.disabled):active,
+.btn-light:not(:disabled):not(.disabled).active,
+.show > .btn-light.dropdown-toggle {
+	color: var(--md-sys-color-on-secondary) !important;
+	background-color: var(--md-sys-color-secondary) !important;
+	border-color: #d3d9df;
+}
+
+.btn-light:focus,
+.btn-light.focus {
+	color: #212529;
+	color: var(--md-sys-color-on-secondary) !important;
+	background-color: var(--md-sys-color-secondary) !important;
+	box-shadow: 0 0 0 0.2rem rgba(216, 217, 219, 0.5);
+}
+
+.btn-light:hover {
+	color: var(--md-sys-color-on-secondary) !important;
+	background-color: var(--md-sys-color-secondary) !important;
 }
 
 .btn-light {
 	background-color: var(--light);
-	border-color: var(--light) !important;
-	color: var(--md-sys-color-on-secondary) !important;
+	border-color: var(--md-sys-color-outline) !important;
+	color: var(--md-sys-color-on-surface) !important;
 }
 
 .btn-dark {
@@ -952,6 +930,11 @@ button {
 .btn-outline-secondary {
 	color: var(--secondary) !important;
 	border-color: var(--secondary) !important;
+}
+
+.btn-outline-secondary:hover {
+	color: var(--md-sys-color-on-secondary-container) !important;
+	background-color: var(--md-sys-color-secondary-container) !important;
 }
 
 .btn-outline-danger {
@@ -1050,7 +1033,7 @@ button {
 	border-top-right-radius: 12px !important;
 	border-bottom-right-radius: 12px !important;
 	border-bottom-left-radius: 12px !important;
-	background-color: rgb(var(--md-sys-color-primary / 0.12)) !important;
+	background-color: var(--md-sys-color-surface-1) !important;
 	color: var(--md-sys-color-on-background) !important;
 }
 
@@ -1075,26 +1058,41 @@ button {
 
 .form-control,
 .mx-input {
-	background-color: transparent !important;
+	background-color: var(--md-sys-color-background) !important;
 	border: 1px solid var(--md-sys-color-outline) !important;
-	color: #fff !important;
+	color: var(--md-sys-color-on-background) !important;
 }
 
 .vue-treeselect__control {
-	background-color: transparent !important;
+	background-color: var(--md-sys-color-background) !important;
 	border: 1px solid var(--md-sys-color-outline) !important;
-	color: #fff !important;
+	color: var(--md-sys-color-on-background) !important;
 	height: 38px !important;
 }
 
 .vue-treeselect__single-value {
-	color: #fff !important;
+	color: var(--md-sys-color-on-background) !important;
 }
 
 .vue-treeselect__placeholder {
 	color: var(--md-sys-color-on-surface-variant) !important;
 }
 
+.vue-treeselect__menu {
+	background-color: var(--md-sys-color-background) !important;
+	border: 1px solid var(--md-sys-color-outline) !important;
+	color: var(--md-sys-color-on-background) !important;
+}
+
+.vue-treeselect--single .vue-treeselect__option--selected {
+	background-color: var(--md-sys-color-primary) !important;
+	color: var(--md-sys-color-on-primary) !important;
+}
+
+.vue-treeselect__option--highlight {
+	background: var(--md-sys-color-surface-variant) !important;
+	color: var(--md-sys-color-on-surface-variant) !important;
+}
 .border-left {
 	border-left: 1px solid var(--md-sys-color-outline) !important;
 }
@@ -1150,6 +1148,11 @@ button {
 
 .modal-xs .modal-body {
 	padding: 2rem;
+}
+
+.modal-body {
+	background-color: var(--md-sys-color-background) !important;
+	color: var(--md-sys-color-on-surface) !important;
 }
 
 .btn-link {
@@ -1260,8 +1263,8 @@ button {
 }
 
 .dropdown-menu {
-	background: #ffffff;
-	/* Greys/Cool Grey/300 */
+	background: var(--md-sys-color-background);
+	border-color: var(--md-sys-color-outline);
 
 	border: 1px solid #d1d5db;
 	box-sizing: border-box;
@@ -1270,6 +1273,21 @@ button {
 	box-shadow: 0px 4px 6px -2px rgba(0, 0, 0, 0.06),
 		0px 10px 15px -3px rgba(0, 0, 0, 0.1);
 	border-radius: 4px;
+}
+
+.dropdown-item {
+	color: var(--md-sys-color-on-background) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+	background: var(--md-sys-color-surface-variant) !important;
+	color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.dropdown-item.active {
+	background: var(--md-sys-color-primary) !important;
+	color: var(--md-sys-color-on-primary) !important;
 }
 /* 
 .dropdown-menu li:first-child {
@@ -1336,13 +1354,13 @@ button {
 }
 
 .badge.badge-primary {
-	background: #d4e6fd !important;
-	color: #1959df !important;
+	background: var(--md-sys-color-primary-container) !important;
+	color: var(--md-sys-color-on-primary-container) !important;
 }
 
 .badge.badge-success {
-	background: #d7fbe3 !important;
-	color: #157435 !important;
+	background: var(--md-sys-color-tertiary-container) !important;
+	color: var(--md-sys-color-on-tertiary-container) !important;
 }
 
 .badge.badge-warning {
@@ -1356,13 +1374,18 @@ button {
 }
 
 .badge.badge-default {
-	background: #f3f4f6 !important;
-	color: #424b58 !important;
+	background: var(--md-sys-color-surface-variant) !important;
+	color: var(--md-sys-color-on-surface-variant) !important;
+}
+
+.badge.badge-light {
+	background: var(--md-sys-color-surface) !important;
+	color: var(--md-sys-color-on-surface) !important;
 }
 
 .badge.badge-danger {
-	background: #fee2e2;
-	color: #b91c1c;
+	background: var(--md-sys-color-error-container) !important;
+	color: var(--md-sys-color-on-error-container) !important;
 }
 
 .page-link {
@@ -1377,6 +1400,19 @@ button {
 	color: var(--md-sys-color-on-primary) !important;
 }
 
+.b-overlay {
+	background-color: var(--md-sys-color-background) !important;
+}
+
+.b-overlay > .bg-dark {
+	background-color: var(--md-sys-color-surface-1) !important;
+}
+
+.swal2-popup {
+	background-color: var(--md-sys-color-background) !important;
+	color: var(--md-sys-color-on-background) !important;
+	border: 1px solid var(--md-sys-color-surface-9) !important;
+}
 code {
 	word-break: break-word;
 	padding: 2px 4px;

@@ -1,5 +1,5 @@
 <template>
-	<b-overlay class="row" :show="busy" no-fade :opacity="1" variant="white">
+	<b-overlay class="row" :show="busy" no-fade :opacity="1" variant="dark">
 		<div class="col-12">
 			<b-form-group label="Bot">
 				<v-select
@@ -109,7 +109,7 @@
 				</b-input-group>
 			</b-form-group>
 		</div>
-		<div class="col-6 pr-1">
+		<div class="col-6 mt-4 pr-1">
 			<b-button
 				variant="success"
 				class="w-100 mt-2"
@@ -119,7 +119,7 @@
 				Long
 			</b-button>
 		</div>
-		<div class="col-6 pl-1">
+		<div class="col-6 mt-4 pl-1">
 			<b-button
 				variant="danger"
 				class="w-100 mt-2"

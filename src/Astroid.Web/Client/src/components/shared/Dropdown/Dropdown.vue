@@ -7,7 +7,9 @@
 		boundary="window"
 	>
 		<template v-slot:button-content>
-			<i :class="`${icon}`" /><span class="ml-1" v-if="label">{{ label }}</span>
+			<i :class="`${icon}`" v-if="icon" /><span class="ml-1" v-if="label">{{
+				label
+			}}</span>
 		</template>
 		<slot></slot>
 	</b-dropdown>

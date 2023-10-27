@@ -84,7 +84,7 @@ export default {
 .sticky {
 	position: sticky;
 	top: 0;
-	z-index: 100;
+	z-index: 9;
 }
 
 .page-header {

@@ -12,7 +12,8 @@ export default {
 			onConfirm,
 			confirmButtonText = "Confirm",
 			confirmButtonColor = "#000",
-			cancelButtonText = "No, cancel!"
+			cancelButtonText = "No, cancel!",
+			customClass = {}
 		) {
 			this.$swal({
 				title: title,
@@ -23,7 +24,8 @@ export default {
 				reverseButtons: true,
 				confirmButtonColor: confirmButtonColor,
 				confirmButtonText: confirmButtonText,
-				cancelButtonText: cancelButtonText
+				cancelButtonText: cancelButtonText,
+				customClass: customClass,
 			}).then(result => {
 				if (result.value === true) {
 					onConfirm();
@@ -38,7 +40,13 @@ export default {
 				"warning",
 				onConfirm,
 				confirmButtonText,
-				"#d33"
+				"#d33",
+				"No, cancel!",
+				{
+					confirmButton: "btn btn-lg btn-danger",
+					cancelButton: "btn btn-lg btn-secondary",
+					actions: "mt-5"
+				}
 			);
 		};
 	}

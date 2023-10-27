@@ -6,10 +6,10 @@
 			add one.
 		</div>
 		<div class="row pt-0 pb-2" v-else>
-			<div class="col-md-5">{{ quantityLabel }}</div>
-			<div class="col-md-5">{{ targetLabel }}</div>
+			<div class="col-5">{{ quantityLabel }}</div>
+			<div class="col-5">{{ targetLabel }}</div>
 			<span
-				class="col-md-1 remove-button"
+				class="col-1 remove-button"
 				@click="
 					value.push({
 						activation: null,
@@ -23,13 +23,13 @@
 			</span>
 		</div>
 		<div class="row d-flex mb-2" v-for="(val, i) of value" :key="i">
-			<div class="col-md-5">
+			<div class="col-5">
 				<b-form-input type="number" v-model="val.quantity" />
 			</div>
-			<div class="col-md-5">
+			<div class="col-5">
 				<b-form-input type="number" v-model="val.target" />
 			</div>
-			<span class="col-md-1 pt-2 remove-button" @click="remove(val)">
+			<span class="col-1 pt-2 remove-button" @click="remove(val)">
 				<a href="javascript:;" class="text-primary">
 					<i class="fa-solid fa-minus fa-fw" />
 				</a>
