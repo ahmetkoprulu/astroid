@@ -1,9 +1,10 @@
 <template>
 	<b-overlay class="background" :show="loading" :opacity="1" variant="white">
 		<div class="trading-container d-flex" v-if="!loading">
-			<!-- <Navbar /> -->
+			<Navbar />
 			<Sidebar />
-			<main class="main-container w-100">
+			<Bottombar />
+			<main class="main-container w-100 px-3 px-md-0">
 				<b-overlay
 					class="px-lg-5 px-md-3 px-sm-0"
 					style="height: 100vh; overflow-y: auto"
@@ -24,8 +25,9 @@
 <script>
 import UserService from "../services/users";
 
-// import Navbar from "../components/layout/Navbar.vue";
+import Navbar from "../components/layout/Navbar.vue";
 import Sidebar from "../components/layout/Sidebar.vue";
+import Bottombar from "@/components/layout/Bottombar.vue";
 
 export default {
 	data() {
@@ -34,8 +36,9 @@ export default {
 		};
 	},
 	components: {
-		// Navbar,
+		Navbar,
 		Sidebar,
+		Bottombar,
 	},
 	async mounted() {
 		var response = await UserService.getProfile();

@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<page-header title="Save Bot" :actions="actions" />
-		<div class="row">
+		<div class="page-body row">
 			<div class="col-lg-5 col-md-12">
 				<div class="card-body p-4 mb-4">
 					<p class="h4 mb-4">General</p>
@@ -107,6 +107,7 @@
 							<v-radio-group
 								v-model="model.limitSettings.valorizationType"
 								:options="limitDeviationOptions"
+								width="120px"
 							/>
 						</b-form-group>
 						<div v-if="model.limitSettings.valorizationType !== 1">

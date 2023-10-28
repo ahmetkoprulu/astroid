@@ -87,7 +87,11 @@
 		<div class="col-12">
 			<b-form-group label="Position Size">
 				<b-input-group>
-					<b-form-input type="number" class="w-75" v-model="model.quantity" />
+					<b-form-input
+						type="number"
+						class="col-md-12"
+						v-model="model.quantity"
+					/>
 					<b-input-group-append>
 						<b-dropdown variant="primary" size="sm" boundary="window">
 							<template #button-content>

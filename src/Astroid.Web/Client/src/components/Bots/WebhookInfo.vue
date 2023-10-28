@@ -4,7 +4,7 @@
 			{{ `https://trade.ahmetkoprulu.com/api/bots/execute` }}
 		</b-form-group>
 		<b-form-group label="Open Orders">
-			<pre class="code">
+			<pre class="code col-12 col-md-12 col-lg-8">
 
 { 
   "ticker": "BTCUSDT", 
@@ -17,7 +17,7 @@
       </pre>
 		</b-form-group>
 		<b-form-group label="Close Orders">
-			<pre class="code">
+			<pre class="code col-12 col-md-12 col-lg-8">
 
 { 
   "ticker": "BTCUSDT", 
@@ -41,7 +41,6 @@ export default {
 
 <style>
 .code {
-	width: 406px;
 	background-color: var(--md-sys-color-secondary-container);
 	border: 1px solid var(--md-sys-color-outline);
 	color: var(--md-sys-color-on-secondary-container);

@@ -97,7 +97,7 @@
 							'fa-sun': theme == 'dark',
 							'fa-moon': theme != 'dark',
 						}"
-					></i>
+					/>
 					<span class="text nav-text">{{
 						theme != "dark" ? "Dark" : "Light"
 					}}</span>
@@ -137,7 +137,6 @@ export default {
 	},
 	mounted() {
 		this.theme = this.$theme;
-		console.log(this.theme);
 	},
 	methods: {
 		resolveRoute(route) {
@@ -335,9 +334,5 @@ header .image-text .profession {
 	justify-content: center;
 	border-radius: 6px;
 	cursor: pointer;
-}
-
-body.dark .switch::before {
-	left: 20px;
 }
 </style>

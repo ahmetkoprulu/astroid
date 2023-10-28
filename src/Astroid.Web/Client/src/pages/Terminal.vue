@@ -2,9 +2,12 @@
 	<div>
 		<page-header title="Terminal" />
 
-		<div class="row">
-			<div class="pr-2 col-md-12 col-sm-12 col-lg-9 mb-4" style="height: 600px">
-				<div class="card-body p-4" style="height: 600px">
+		<div class="page-body row">
+			<div
+				class="pr-md-2 col-md-12 col-sm-12 col-lg-9 mb-4"
+				style="height: 600px"
+			>
+				<div style="height: 600px">
 					<TvChart :symbol="symbol" :key="symbol" />
 				</div>
 			</div>

@@ -2,7 +2,7 @@
 	<div>
 		<page-header title="Wallets" :actions="actions" />
 		<!-- card shadow-sm -->
-		<div class="card-body p-4">
+		<div class="page-body card-body p-4">
 			<v-table
 				:columns="columns"
 				:requestFunction="requestFunction"
