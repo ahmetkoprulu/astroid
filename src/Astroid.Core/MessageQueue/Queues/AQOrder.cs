@@ -6,7 +6,8 @@ public class AQOrder : IDisposable
 {
 	public Guid Id { get; set; }
 	public IMessageQueue Mq { get; set; }
-	public const string QueueLabel = "{0}.Orders";
+	// public const string QueueLabel = "{0}.Orders";
+	public const string QueueLabel = "Orders";
 	public const string ExchangeLabel = "Orders";
 	public Exchange Exchange { get; set; }
 	public Queue Queue { get; set; }
@@ -14,10 +15,9 @@ public class AQOrder : IDisposable
 
 	public AQOrder(IMessageQueue mq) => Mq = mq;
 
-	public async Task Setup(Guid id, CancellationToken cancellationToken = default)
+	public async Task Setup(CancellationToken cancellationToken = default)
 	{
-		Id = id;
-		var queueName = string.Format(QueueLabel, id);
+		var queueName = string.Format(QueueLabel);
 		Exchange = await Mq.CreateExchange(ExchangeLabel, "direct", true, cancellationToken);
 		Queue = await Mq.CreateQueue(Exchange, queueName, false, cancellationToken);
 	}
@@ -41,11 +41,11 @@ public class AQOrder : IDisposable
 		}
 	}
 
-	public async Task<AMQueueSubscription> Subscribe(Guid id, Func<AQOrderMessage, CancellationToken, Task> action, CancellationToken cancellationToken = default)
+	public async Task<AMQueueSubscription> Subscribe(Func<AQOrderMessage, CancellationToken, Task> action, CancellationToken cancellationToken = default)
 	{
 		var subscription = await Mq.Subscribe(Exchange, Queue, action, cancellationToken);
 		Subscription = subscription;
-		return new AMQueueSubscription(id, Queue.Name, subscription);
+		return new AMQueueSubscription(Guid.NewGuid(), Queue.Name, subscription);
 	}
 
 	public void Dispose()
@@ -53,9 +53,4 @@ public class AQOrder : IDisposable
 		Subscription?.Dispose();
 		GC.SuppressFinalize(this);
 	}
-}
-
-public class AQOrderMessage
-{
-	public Guid OrderId { get; set; }
 }

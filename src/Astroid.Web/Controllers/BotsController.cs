@@ -200,31 +200,7 @@ public class BotsController : SecureController
 		if (bot == null)
 			return NotFound("Exchange not found");
 
-		if (!bot.IsEnabled)
-		{
-			bot.IsEnabled = true;
-			var managerId = await GetAvaibleBotManager();
-			if (managerId == null)
-			{
-				await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Not found any available resource");
-				return BadRequest("Not found any available resource");
-			}
-
-			bot.ManagedBy = managerId;
-			await Db.SaveChangesAsync();
-
-			return Success(null, "Exchange enabled successfully");
-		}
-
-		var isOpenPositionExists = await Db.Positions.AnyAsync(x => x.BotId == bot.Id && x.Status == PositionStatus.Open);
-		if (isOpenPositionExists)
-		{
-			await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, $"Cannot disable the bot; it has open position(s)");
-			return BadRequest("Bot has open positions");
-		}
-
-		bot.IsEnabled = false;
-		bot.ManagedBy = null;
+		bot.IsEnabled = !bot.IsEnabled;
 		await Db.SaveChangesAsync();
 
 		return Success(null, "Exchange disabled successfully");

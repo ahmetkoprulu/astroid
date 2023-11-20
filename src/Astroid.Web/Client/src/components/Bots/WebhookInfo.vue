@@ -41,7 +41,7 @@ export default {
 
 <style>
 .code {
-	background-color: var(--md-sys-color-secondary-container);
+	background-color: var(--md-sys-color-secondary-container-2);
 	border: 1px solid var(--md-sys-color-outline);
 	color: var(--md-sys-color-on-secondary-container);
 	border-radius: 4px;

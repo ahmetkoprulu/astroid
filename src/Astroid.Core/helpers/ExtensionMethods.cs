@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using Astroid.Core;
 using Newtonsoft.Json;
 
@@ -14,4 +15,6 @@ public static class ContextExtentionMethods
 
 		return value.ToString();
 	}
+
+	public static int GetPrecisionNumber(this decimal value) => value.ToString().Split('.').Last().Length;
 }

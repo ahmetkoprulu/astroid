@@ -8,74 +8,28 @@ namespace Astroid.BotManager;
 public class BotRegistrationManager : IDisposable
 {
 	private IServiceProvider ServiceProvider { get; set; }
-	private IMessageQueue MessageQueue { get; set; }
-	private AQBotRegistration BotRegistration { get; set; }
-	private ConcurrentDictionary<Guid, AQOrder> Registrations { get; set; } = new();
+	private AQOrder OrderQueue { get; set; }
+	private ConcurrentDictionary<Guid, IDisposable> Consumers { get; set; } = new();
 
-	public BotRegistrationManager(IServiceProvider serviceProvider, IMessageQueue messageQueue)
+	public BotRegistrationManager(IServiceProvider serviceProvider, AQOrder orderQueue)
 	{
 		ServiceProvider = serviceProvider;
-		MessageQueue = messageQueue;
-		BotRegistration = new AQBotRegistration(MessageQueue);
+		OrderQueue = orderQueue;
 	}
 
-	public async Task Setup(CancellationToken cancellationToken = default)
+	public async Task Setup(CancellationToken cancellationToken = default) => await OrderQueue.Setup(cancellationToken);
+
+	public async Task Subscribe(Func<AQOrderMessage, CancellationToken, Task> action, CancellationToken cancellationToken = default)
 	{
-		await BotRegistration.SetupExchanges(cancellationToken);
-		await BotRegistration.SetupQueue(cancellationToken);
+		var consumer = await OrderQueue.Subscribe(action, cancellationToken);
+		Consumers.TryAdd(consumer.Id, consumer);
 	}
 
-	public Task SubscribeToRegistrations(Func<AQOrderMessage, CancellationToken, Task> callback, CancellationToken cancellationToken = default)
-		=> BotRegistration.SubscribeToRegistrations((msg, ct) => Register(msg, callback, ct), cancellationToken);
-
-	public Task SubscribeToUnregistrations(CancellationToken cancellationToken = default)
-		=> BotRegistration.SubscribeToUnregistrations(UnRegister, cancellationToken);
-
-	public async Task Register(AQBotRegistrationMessage msg, Func<AQOrderMessage, CancellationToken, Task> callback, CancellationToken cancellationToken)
-	{
-		var scope = ServiceProvider.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-
-		var bot = await db.Bots.FirstOrDefaultAsync(x => x.Id == msg.BotId, cancellationToken);
-		if (bot == null) return;
-
-		bot.IsEnabled = true;
-
-		var botOrders = new AQOrder(MessageQueue);
-		await botOrders.Setup(bot.Id, cancellationToken);
-		await botOrders.Subscribe(bot.Id, callback, cancellationToken);
-
-		Registrations.TryAdd(bot.Id, botOrders);
-	}
-
-	public async Task UnRegister(AQBotRegistrationMessage msg, CancellationToken cancellationToken)
-	{
-		var isExist = Registrations.TryGetValue(msg.BotId, out var reg);
-		if (!isExist) return;
-
-		var scope = ServiceProvider.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-
-		var bot = await db.Bots.FirstOrDefaultAsync(x => x.Id == msg.BotId, cancellationToken);
-		if (bot == null) return;
-
-		reg?.Dispose();
-		Registrations.TryRemove(bot.Id, out var _);
-	}
-
-	public AQOrder? TryGetOrderQueue(Guid botId)
-	{
-		var isExist = Registrations.TryGetValue(botId, out var reg);
-		if (!isExist) return null;
-
-		return reg;
-	}
-
-	public IEnumerable<AQOrder> GetRegistrations() => Registrations.Values;
+	public IEnumerable<IDisposable> GetRegistrations() => Consumers.Values;
 
 	public void Dispose()
 	{
-		foreach (var reg in Registrations)
+		foreach (var reg in Consumers)
 		{
 			reg.Value?.Dispose();
 		}

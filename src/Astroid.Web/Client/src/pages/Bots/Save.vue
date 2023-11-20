@@ -7,16 +7,16 @@
 					<p class="h4 mb-4">General</p>
 					<ValidationObserver ref="form">
 						<div class="d-flex justify-content-between">
-							<v-validated-input label="Label" class="w-100">
+							<v-validated-input label="Label" class="pr-3 w-100">
 								<b-form-input type="text" v-model="model.label" />
 							</v-validated-input>
-							<!-- <b-form-group label="Enabled">
-							<b-form-checkbox
-								v-model="model.isEnabled"
-								switch
-								style="margin-top: 7px"
-							/>
-						</b-form-group> -->
+							<b-form-group label="Enable">
+								<b-form-checkbox
+									v-model="model.isEnabled"
+									switch
+									style="margin-left: 6px; margin-top: 7px"
+								/>
+							</b-form-group>
 						</div>
 						<b-form-group label="Description">
 							<b-form-textarea
@@ -138,7 +138,7 @@
 									<i class="fa-solid fa-flask fa-fw" /> Test
 								</a>
 							</b-form-group>
-							<b-form-group
+							<!-- <b-form-group
 								label="Force Until Position Filled"
 								description="Place multiple orders until the position size match"
 							>
@@ -146,7 +146,7 @@
 									v-model="model.limitSettings.forceUntilFilled"
 									switch
 								/>
-							</b-form-group>
+							</b-form-group> -->
 							<b-form-group
 								label="Skip"
 								v-if="!model.limitSettings.forceUntilFilled"

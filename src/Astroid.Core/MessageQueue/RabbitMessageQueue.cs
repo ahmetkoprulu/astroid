@@ -83,4 +83,6 @@ public class RabbitMessageQueue : IMessageQueue
 
 		return Task.FromResult(new SubscriptionResult(exchange, queue, consumerCancellation) as IDisposable);
 	}
+
+	public Task<AMMessageQueueResult> PublishBatch<T>(Exchange exchange, Queue queue, IEnumerable<T> messages, CancellationToken cancellationToken = default) => throw new NotImplementedException();
 }

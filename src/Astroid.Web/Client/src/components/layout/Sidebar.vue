@@ -66,6 +66,18 @@
 				</ul>
 			</div>
 			<div class="bottom-content mb-5">
+				<li class="mode on-surface-text" @click="toggleTheme">
+					<i
+						class="fa-solid fa-fw icon"
+						:class="{
+							'fa-sun': theme == 'dark',
+							'fa-moon': theme != 'dark',
+						}"
+					/>
+					<span class="text nav-text">{{
+						theme != "dark" ? "Dark" : "Light"
+					}}</span>
+				</li>
 				<li>
 					<router-link
 						class="link"
@@ -89,18 +101,6 @@
 						/>
 						<span class="text nav-text">Logout</span>
 					</a>
-				</li>
-				<li class="mode on-surface-text" @click="toggleTheme">
-					<i
-						class="fa-solid fa-fw icon"
-						:class="{
-							'fa-sun': theme == 'dark',
-							'fa-moon': theme != 'dark',
-						}"
-					/>
-					<span class="text nav-text">{{
-						theme != "dark" ? "Dark" : "Light"
-					}}</span>
 				</li>
 			</div>
 		</div>

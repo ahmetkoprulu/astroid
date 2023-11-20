@@ -33,67 +33,13 @@ public class Worker : IHostedService
 	{
 		Logger.LogInformation("Starting Bot Manager Service.");
 		await BotManager.Setup(cancellationToken);
-		await BotManager.SubscribeToRegistrations(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
-		await BotManager.SubscribeToUnregistrations(cancellationToken);
+		await BotManager.Subscribe(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
+		await BotManager.Subscribe(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
 		Logger.LogInformation("Subscribed registration queues.");
 
 		_ = Task.Run(() => Ping(cancellationToken), cancellationToken);
-		_ = Task.Run(() => RestoreBotConnections(cancellationToken), cancellationToken);
 	}
 
-	public Task RestoreBotConnections(CancellationToken cancellationToken)
-	{
-		while (!cancellationToken.IsCancellationRequested)
-		{
-			var addTask = AddBots(cancellationToken);
-			var removeTask = RemoveBots(cancellationToken);
-
-			Task.WaitAll(new Task[] { addTask, removeTask }, cancellationToken);
-
-			Task.Delay(1000 * 30, cancellationToken);
-		}
-
-		return Task.CompletedTask;
-	}
-
-	public async Task AddBots(CancellationToken cancellationToken = default)
-	{
-		var scope = ServiceProvider.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-
-		var bots = await db.Bots
-			.AsNoTracking()
-			.Where(x => x.IsEnabled && x.ManagedBy == Id && !x.IsRemoved)
-			.ToListAsync(cancellationToken);
-
-		foreach (var bot in bots)
-		{
-			if (BotManager.TryGetOrderQueue(bot.Id) != null) continue;
-
-			await BotManager.Register(new AQBotRegistrationMessage { BotId = bot.Id }, async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
-			Logger.LogInformation($"Bot {bot.Id} registered.");
-		}
-	}
-
-	public async Task RemoveBots(CancellationToken cancellationToken = default)
-	{
-		var scope = ServiceProvider.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-
-		var registrations = BotManager.GetRegistrations();
-
-		foreach (var reg in registrations)
-		{
-			var bot = await db.Bots
-				.AsNoTracking()
-				.FirstOrDefaultAsync(x => x.Id == reg.Id, cancellationToken);
-
-			if (bot != null && bot.ManagedBy == Id) continue;
-
-			await BotManager.UnRegister(new AQBotRegistrationMessage { BotId = reg.Id }, cancellationToken);
-			Logger.LogInformation($"Bot {reg.Id} unregistered.");
-		}
-	}
 
 	public async Task Ping(CancellationToken cancellationToken)
 	{

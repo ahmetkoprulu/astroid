@@ -40,7 +40,7 @@ export default {
 			default: "light",
 			required: false,
 			validator: function (value) {
-				return ["light", "default"].indexOf(value) !== -1;
+				return ["light", "default", "link"].indexOf(value) !== -1;
 			},
 		},
 		disabled: {

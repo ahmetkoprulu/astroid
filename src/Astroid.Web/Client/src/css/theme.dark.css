@@ -13,6 +13,9 @@
 	--md-sys-color-secondary-container: var(
 		--md-sys-color-secondary-container-dark
 	);
+	--md-sys-color-secondary-container-rgb: var(
+		--md-sys-color-secondary-container-rgb-dark
+	);
 	--md-sys-color-on-secondary-container: var(
 		--md-sys-color-on-secondary-container-dark
 	);
@@ -65,4 +68,32 @@
 	--md-sys-color-surface-7: rgb(var(--md-sys-color-primary-rgb) / 0.18);
 	--md-sys-color-surface-8: rgb(var(--md-sys-color-primary-rgb) / 0.2);
 	--md-sys-color-surface-9: rgb(var(--md-sys-color-primary-rgb) / 0.22);
+
+	--md-sys-color-secondary-container-1: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.05
+	);
+	--md-sys-color-secondary-container-2: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.08
+	);
+	--md-sys-color-secondary-container-3: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.11
+	);
+	--md-sys-color-secondary-container-4: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.12
+	);
+	--md-sys-color-secondary-container-5: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.14
+	);
+	--md-sys-color-secondary-container-6: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.16
+	);
+	--md-sys-color-secondary-container-7: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.18
+	);
+	--md-sys-color-secondary-container-8: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.2
+	);
+	--md-sys-color-secondary-container-9: rgb(
+		var(--md-sys-color-secondary-container-rgb) / 0.22
+	);
 }

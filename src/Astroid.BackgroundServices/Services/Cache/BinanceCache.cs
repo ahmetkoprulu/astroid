@@ -1,5 +1,7 @@
 using Astroid.Core;
 using Astroid.Core.Cache;
+using Astroid.Core.MessageQueue;
+using Astroid.Entity;
 using Astroid.Providers;
 using Binance.Net.Clients;
 using Binance.Net.Objects;
@@ -19,12 +21,18 @@ public class BinanceCache : IHostedService
 	private ILogger<BinanceCache> Logger { get; set; }
 	private BinanceSocketClient SocketClient { get; set; }
 	private BinanceRestClient Client { get; set; }
+	private IMessageQueue Mq { get; set; }
+	private ADExchangeProvider Exchange { get; set; }
 
-	public BinanceCache(ExchangeInfoStore exchangeStore, ICacheService cache, ILogger<BinanceCache> logger)
+	public BinanceCache(ExchangeInfoStore exchangeStore, AstroidDb db, IMessageQueue mq, ICacheService cache, ILogger<BinanceCache> logger)
 	{
 		ExchangeStore = exchangeStore;
 		Cache = cache;
 		Logger = logger;
+		Mq = mq;
+
+		Exchange = db.ExchangeProviders.First(x => x.Name == ACExchanges.BinanceUsdFutures);
+
 		var key = Environment.GetEnvironmentVariable("ASTROID_BINANCE_KEY");
 		var secret = Environment.GetEnvironmentVariable("ASTROID_BINANCE_SECRET");
 
@@ -88,6 +96,10 @@ public class BinanceCache : IHostedService
 			}
 
 			await Cache.SetHashBatch("LastPrice", pairsList);
+			var pairs = pairsList.ToDictionary(x => x.Key.Split(':').Last(), x => decimal.Parse(x.Value));
+#pragma warning disable 4014
+			AQPriceChanges.Publish(Mq, new AQPriceChangeMessage { ExchangeId = Exchange.Id, ExchangeName = ACExchanges.BinanceUsdFutures, Prices = pairs }, "PriceChange");
+#pragma warning restore 4014
 		});
 
 		// await SocketClient.UsdFuturesApi.SubscribeToAllMarkPriceUpdatesAsync(1000, async data =>

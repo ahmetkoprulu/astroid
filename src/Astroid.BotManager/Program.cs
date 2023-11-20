@@ -15,6 +15,7 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddSingleton<IMessageQueue, RabbitMessageQueue>();
 		services.AddSingleton<BotRegistrationManager>();
+		services.AddSingleton<AQOrder>();
 
 		services.AddHostedService<Worker>();
 	})
