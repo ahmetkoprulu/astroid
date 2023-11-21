@@ -1,3 +1,4 @@
+using System.Text;
 using Astroid.Core;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -6,10 +7,17 @@ namespace Astroid.Entity.Extentions;
 
 public static class ContextExtentionMethods
 {
-	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order, ADBot bot)
+	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order, ADBot bot, string? description = null)
 	{
 		var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.UserId);
 		if (user == null) return;
+
+		var content = new StringBuilder();
+		content.AppendLine($"🤖 Bot: {bot.Label}");
+		content.AppendLine($"📈 Trigger Price: {order.TriggerPrice}");
+		content.AppendLine($"💸 Quantity: {order.Quantity}");
+		content.AppendLine($"💰 Filled Quantity: {order.FilledQuantity}");
+		if (order.Status == OrderStatus.Rejected) content.AppendLine($"🚫 Reason: {description}");
 
 		var notification = new ADNotification
 		{
@@ -19,9 +27,9 @@ public static class ContextExtentionMethods
 			SentDate = DateTime.MinValue,
 			ExpireDate = DateTime.UtcNow.AddMinutes(5),
 			Channel = user.ChannelPreference,
-			Status = NotificationStatus.Pending,
+			Status = NotificationStatus.Processing,
 			Subject = $"{(order.Status == OrderStatus.Filled ? "✅" : "❌")} {order.Symbol} - {order.TriggerType.GetDescription()} Order Executed",
-			Content = $"\n🤖 Bot: {bot.Label}\n📈 Trigger Price: {order.TriggerPrice}\n💸 Quantity: {order.Quantity}\n💰 Filled Quantity: {order.FilledQuantity}",
+			Content = content.ToString(),
 		};
 
 		await db.Notifications.AddAsync(notification);
