@@ -31,6 +31,7 @@
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#basics">Basics</a></li>
+        <li><a href="#architecture">Architecture</a></li>
         <li><a href="#development">Development</a></li>
       </ul>
     </li>
@@ -50,18 +51,20 @@ Astroid is a trading bot that automates the process of executing trades in finan
 ### Features
 
 - **Three Trading Modes:** Enables to safely trade one way, two way or swing.
-- **Position Handling** You can expand your position and modify your take profit by carrying forward.
+- **Position Managing** Trailing stop loss, trailing take profit, pyramiding (DCA, ICA), moving take profits and more.
 - **OBO Limit Orders:** Iterates order book to find the best price even in the volatile market
 - **Entry Point Computation:** Also, direct entry point in the order book could be calculated by calculating standard deviation or directly executing c# code over specified order book samples.
 - **Force Filling:** For large positions, place partial multiple orders to make sure entry is successfull
 - **Dynamic SL, TP, Leverage:** Risk parameters can be manipulated in any signal.
 - **Signal Source:** Works with any signal source that utilize webhooks.
+- **Terminal:** Includes a terminal to monitor assets and executes orders manually.
+- **Copy Trading:** You can copy trades from other users by subscribing to their bots.
 
 <!-- GETTING STARTED -->
 
-## Getting Started
+<!-- ## Getting Started
 
-Astroid is a monorepo project composed by .Net Core 7 and Vue 2. You can easily run development server by using `npm run dev` or `yarn dev` for yarn. Most of the common tasks have its script.
+Astroid is a monorepo project composed by .Net Core 7 and Vue 2. You can easily run development server by using `npm run dev` or `yarn dev` for yarn. Most of the common tasks have its script. -->
 
 ### Basics
 
@@ -90,9 +93,21 @@ Bots contains all the configuration to execute orders in the behalf of the assig
 
 **Key** field is required and unique to the bot. It tells which bot should execute the incoming order. The remaining fields may vary according to the strategy or pair that the signal produced for.
 
+### Architecture
+
+Key Components of astroid are shown in the following diagram. The whole system designed to be scalable and containerized to be deployed in any cloud provider or on-premise. it is composed by two main components, `Web` and `Services`.
+
+"Web" is the main entry point of the application. It is responsible for handling incoming requests / signals and managing the bots.
+
+"Services" is the component that process the orders. It is responsible for tracking asset prices, triggering and executing orders, and sending notifications(mail, sms or telegram) to users.
+
+<div align="center">
+  <img src="./astroid-architecture.jpg" width="500">
+</div>
+
 ### Development
 
-Run `npm run dev` command to start development server
+Configs may be provided via environment variable or config files. _Check config.json_. Run `npm run dev` command to start web server. It will start the web server and the services. You can access the web server from `http://localhost:5000`. Run `npm run dev-services` to start background services (cache feeds, order tracker, notification). `npm run dev-bot-manager` to start bot manager service (responsible for executing orders on the exchanges). _All queues supposed to be created automatically by the dependant services but may need to be restart the services if not._
 
 ## Contribution
 
@@ -108,7 +123,7 @@ Contributions are welcome! If you'd like to contribute to Astroid, please follow
 
 ## License
 
-Distributed under the MIT License. See `LICENSE.txt` for more information.
+Distributed under the Attribution-NonCommercial 4.0 International (CC BY-NC 4.0) License. See `LICENSE.txt` for more information.
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
