@@ -79,7 +79,7 @@
 							</v-dropdown>
 						</td>
 					</tr>
-					<tr v-if="props.row.status !== 2">
+					<tr v-if="props.row.status == 1">
 						<td class="p-0" colspan="9">
 							<b-collapse
 								class="w-100"
