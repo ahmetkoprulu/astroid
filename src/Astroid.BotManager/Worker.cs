@@ -14,11 +14,12 @@ public class Worker : IHostedService
 	public Guid Id { get; } = Guid.Empty;
 	private IServiceProvider ServiceProvider { get; set; }
 	private ICacheService Cache { get; set; }
+	private IMessageQueue Mq { get; set; }
 	private ILogger<Worker> Logger { get; set; }
 	// private AstroidDb Db { get; set; }
 	private BotRegistrationManager BotManager { get; set; }
 
-	public Worker(IConfiguration config, IServiceProvider serviceProvider, BotRegistrationManager botManager, ICacheService cache, ILogger<Worker> logger)
+	public Worker(IConfiguration config, IServiceProvider serviceProvider, BotRegistrationManager botManager, ICacheService cache, IMessageQueue mq, ILogger<Worker> logger)
 	{
 		Id = GetManagerId(config);
 		if (Id == Guid.Empty) throw new Exception("Invalid Bot Manager Id.");
@@ -26,6 +27,7 @@ public class Worker : IHostedService
 		ServiceProvider = serviceProvider;
 		BotManager = botManager;
 		Cache = cache;
+		Mq = mq;
 		Logger = logger;
 	}
 
@@ -144,7 +146,12 @@ public class Worker : IHostedService
 				if (position!.Status == PositionStatus.Requested) position.Reject();
 			}
 
+			var notification = await db.AddOrderNotification(result.Order, bot, result.Message);
 			await db.SaveChangesAsync(cancellationToken);
+
+#pragma warning disable 4014
+			if (notification != null) AQNotification.Publish(Mq, new AQONotificationMessage { OrderId = notification.Id }, string.Empty, cancellationToken);
+#pragma warning restore 4014
 		}
 		catch (Exception ex)
 		{

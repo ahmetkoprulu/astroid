@@ -7,10 +7,12 @@ namespace Astroid.Entity.Extentions;
 
 public static class ContextExtentionMethods
 {
-	public static async Task AddOrderNotification(this AstroidDb db, ADOrder order, ADBot bot, string? description = null)
+	public static async Task<ADNotification?> AddOrderNotification(this AstroidDb db, ADOrder? order, ADBot bot, string? description = null)
 	{
+		if (!bot.IsNotificationEnabled || order == null) return null;
+
 		var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(x => x.Id == order.UserId);
-		if (user == null) return;
+		if (user == null) return null;
 
 		var content = new StringBuilder();
 		content.AppendLine($"🤖 Bot: {bot.Label}");
@@ -33,6 +35,8 @@ public static class ContextExtentionMethods
 		};
 
 		await db.Notifications.AddAsync(notification);
+
+		return notification;
 	}
 
 	public static Task<bool> IsPositionClosing(this AstroidDb db, Guid positionId) => db.Orders.AnyAsync(x => x.PositionId == positionId && x.Status == OrderStatus.Triggered && x.ClosePosition);
