@@ -95,13 +95,13 @@ public class AMOrderRequest
 	{
 		if (OrderId.HasValue && order == null)
 		{
-			result.WithMessage("The order not found").AddAudit(AuditType.CloseOrderPlaced, $"The order not found", data: JsonConvert.SerializeObject(new { OrderId, Ticker, OrderType, PositionType }));
+			result.WithMessage("The order not found").AddAudit(AuditType.CloseOrderPlaced, $"The order not found", data: JsonConvert.SerializeObject(new { OrderId, Ticker, OrderType, PositionType })).WithMessage("The order not found");
 			return false;
 		}
 
 		if (position.BotId != bot.Id)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType })).WithMessage("The position not managed by this bot.");
 			return false;
 		}
 

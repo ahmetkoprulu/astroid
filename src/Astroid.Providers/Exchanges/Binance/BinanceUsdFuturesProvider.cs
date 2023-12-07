@@ -89,7 +89,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var order = await Db.Orders.FirstOrDefaultAsync(x => x.Id == request.OrderId);
 		if (order == null)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" })).WithMessage("Order not found.");
 			return result;
 		}
 
@@ -101,7 +101,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var success = await CloseShort(bot, request.GetSwingRequest()!, result);
 			if (!success)
 			{
-				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" }));
+				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" })).WithMessage("Failed to swing while closing Short.");
 				position!.Reject();
 				order.Reject();
 				return result;
@@ -190,7 +190,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		var order = await Db.Orders.FirstOrDefaultAsync(x => x.Id == request.OrderId);
 		if (order == null)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" }));
+			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" })).WithMessage("Order not found.");
 			return result;
 		}
 
