@@ -27,19 +27,25 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	[PropertyMetadata("Test Net", Type = PropertyTypes.Boolean, Group = "General")]
 	public bool IsTestNet { get; set; } = false;
 
+	private ExecutionRepository Repo { get; set; }
+
 	private BinanceRestClient Client { get; set; }
 
-	public BinanceUsdFuturesProvider(AstroidDb db, ExchangeInfoStore infoStore) : base(db, infoStore) { }
+	private ADExchange Exchange { get; set; }
 
-	public override void Context(ADExchange exchange)
+
+	public BinanceUsdFuturesProvider(ExchangeInfoStore infoStore, ExchangeCalculator calculator, ExecutionRepository repo, BinanceRestClient client, ADExchange exchange) : base(infoStore, calculator)
 	{
-		base.Context(exchange);
+		Exchange = exchange;
+		Repo = repo;
+		Client = client;
+	}
 
-		Client = new BinanceRestClient(o =>
-		{
-			o.ApiCredentials = new ApiCredentials(Key, Secret);
-			if (IsTestNet) o.Environment = BinanceEnvironment.Testnet;
-		});
+	public override void Context(string properties)
+	{
+		base.Context(properties);
+
+		Client.UsdFuturesApi.SetApiCredentials(new ApiCredentials(Key, Secret));
 	}
 
 	public override async Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order)
@@ -73,7 +79,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			}
 			else throw new InvalidOperationException("Order could not be executed.");
 
-			await Db.SaveChangesAsync();
+			await Repo.SaveChangesAsync();
 		}
 		catch (Exception ex)
 		{
@@ -86,29 +92,23 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> OpenLong(ADBot bot, AMOrderRequest request, AMProviderResult result)
 	{
-		var order = await Db.Orders.FirstOrDefaultAsync(x => x.Id == request.OrderId);
-		if (order == null)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" })).WithMessage("Order not found.");
-			return result;
-		}
+		var order = await Repo.GetOrder(request.OrderId);
+		var position = order.Position;
+		result.Order = order;
 
-		var position = await Db.Positions.FirstOrDefaultAsync(x => x.Id == order.PositionId);
 		if (!request.ValidateOpenRequest(position, bot, result)) return result;
 
-		if (bot.OrderMode == OrderMode.Swing && position!.Status == PositionStatus.Requested)
+		if (bot.OrderMode == OrderMode.Swing && position.Status == PositionStatus.Requested)
 		{
 			var success = await CloseShort(bot, request.GetSwingRequest()!, result);
 			if (!success)
 			{
 				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Long" })).WithMessage("Failed to swing while closing Short.");
-				position!.Reject();
-				order.Reject();
+				Repo.RejectPositionWithOrder(position, order);
 				return result;
 			}
 		}
 
-		result.Order = order;
 		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, request);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(request.Ticker, request.Leverage);
 
@@ -118,16 +118,14 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderResult.Success)
 		{
-			position!.Reject();
-			order.Reject();
+			Repo.RejectPositionWithOrder(position, order);
 			return result;
 		}
 
-		order.Fill(orderResult.Quantity, orderResult.EntryPrice);
-		position!.Expand(orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
+		Repo.ExpandPosition(position, order, orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
 
 		result.CorrelationId = position.Id.ToString();
-		var symbolInfo = await GetSymbolInfo(request.Ticker);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, request.Ticker);
 		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsPyramidingEnabled) await CreatePyramidingOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
@@ -137,38 +135,30 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<bool> CloseLong(ADBot bot, AMOrderRequest request, AMProviderResult result)
 	{
-		var position = await GetCurrentPosition(request.Ticker, request.PositionType);
-		if (position == null)
-		{
-			result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open long position found", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Sell", PositionType = "Long" }));
-			return true;
-		}
-
-		var order = await GetOrder(request.OrderId);
-		if (!request.ValidateCloseRequest(position, order, bot, result))
-			return false;
-
-		result.CorrelationId = position.Id.ToString();
+		var order = await Repo.GetOrder(request.OrderId);
+		var position = order.Position;
 		result.Order = order;
+		result.CorrelationId = position.Id.ToString();
+
+		if (!request.ValidateCloseRequest(position, bot, result)) return false;
+
 		if (position.Status == PositionStatus.Requested)
 		{
-			position.Close();
-			order.Fill(0);
+			Repo.CloseRequestedPosition(position, order);
 			result.WithSuccess();
-
 			return true;
 		}
 
-		var quantity = await GetAssetQuantity(request.Quantity.Value, request.QtyType, request.Ticker, position.Quantity);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, request.Ticker);
+		var quantity = Calculator.CalculateAssetQuantity(request.Quantity, request.QtyType, symbolInfo.LastPrice, symbolInfo.QuantityPrecision, position.Quantity);
+
 		// For Swing Trade
 		if (order == null || order.ClosePosition)
 		{
 			var exPosition = await GetPosition(position.Symbol, position.Type);
 			if (exPosition == null)
 			{
-				await CancelOpenOrders(position);
-				position.Close();
-
+				await Repo.CancelOpenOrders(position, closePosition: true);
 				return true;
 			}
 
@@ -176,8 +166,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Sell, PositionSide.Long, result, true);
-
-		await ReducePosition(position, orderResult, order);
+		await Repo.ReducePosition(position, orderResult.Success, orderResult.Quantity, order);
 
 		if (!orderResult.Success) return false;
 
@@ -187,30 +176,23 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> OpenShort(ADBot bot, AMOrderRequest request, AMProviderResult result)
 	{
-		var order = await Db.Orders.FirstOrDefaultAsync(x => x.Id == request.OrderId);
-		if (order == null)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Order not found.", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" })).WithMessage("Order not found.");
-			return result;
-		}
+		var order = await Repo.GetOrder(request.OrderId);
+		var position = order.Position;
+		result.Order = order;
 
-		var position = await Db.Positions.FirstOrDefaultAsync(x => x.Id == order.PositionId);
 		if (!request.ValidateOpenRequest(position, bot, result)) return result;
 
-		if (bot.OrderMode == OrderMode.Swing && position!.Status == PositionStatus.Requested)
+		if (bot.OrderMode == OrderMode.Swing && position.Status == PositionStatus.Requested)
 		{
 			var success = await CloseLong(bot, request.GetSwingRequest()!, result);
 			if (!success)
 			{
 				result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to swing while closing {request.Ticker} - Short", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" }));
-				position!.Reject();
-				order.Reject();
-
+				Repo.RejectPositionWithOrder(position, order);
 				return result;
 			}
 		}
 
-		result.Order = order;
 		var quantity = await ConvertUsdtToCoin(bot.PositionSize!.Value, bot.PositionSizeType, request);
 		await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(request.Ticker, request.Leverage);
 
@@ -222,17 +204,14 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		if (!orderResult.Success)
 		{
-			position!.Reject();
-			order.Reject();
-
+			Repo.RejectPositionWithOrder(position, order);
 			return result;
 		}
 
-		order.Fill(orderResult.Quantity, orderResult.EntryPrice);
-		position!.Expand(orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
-
+		Repo.ExpandPosition(position, order, orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
 		result.CorrelationId = position.Id.ToString();
-		var symbolInfo = await GetSymbolInfo(request.Ticker);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, request.Ticker);
+
 		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsPyramidingEnabled) await CreatePyramidingOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
@@ -242,29 +221,22 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<bool> CloseShort(ADBot bot, AMOrderRequest request, AMProviderResult result)
 	{
-		var position = await GetCurrentPosition(request.Ticker, request.PositionType);
-		if (position == null)
-		{
-			result.WithMessage("No open long position found").AddAudit(AuditType.CloseOrderPlaced, $"No open short position found", CorrelationId, data: JsonConvert.SerializeObject(new { request.Ticker, OrderType = "Buy", PositionType = "Short" }));
-			return true;
-		}
-
-		var order = await GetOrder(request.OrderId);
-		if (!request.ValidateCloseRequest(position, order, bot, result))
-			return false;
-
+		var order = await Repo.GetOrder(request.OrderId);
+		var position = order.Position;
 		result.Order = order;
 		result.CorrelationId = position.Id.ToString();
+
+		if (!request.ValidateCloseRequest(position, bot, result)) return false;
+
 		if (position.Status == PositionStatus.Requested)
 		{
-			position.Close();
-			order.Fill(0);
+			Repo.CloseRequestedPosition(position, order);
 			result.WithSuccess();
-
 			return true;
 		}
 
-		var quantity = await GetAssetQuantity(request.Quantity, request.QtyType, request.Ticker, position.Quantity);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, request.Ticker);
+		var quantity = Calculator.CalculateAssetQuantity(request.Quantity, request.QtyType, symbolInfo.LastPrice, symbolInfo.QuantityPrecision, position.Quantity);
 
 		// For Swing Trade
 		if (order == null || order.ClosePosition)
@@ -272,7 +244,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			var exPosition = await GetPosition(position.Symbol, position.Type);
 			if (exPosition == null)
 			{
-				await CancelOpenOrders(position);
+				await Repo.CancelOpenOrders(position, closePosition: true);
 				position.Close();
 
 				return true;
@@ -283,7 +255,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 		var orderResult = await PlaceMarketOrder(request.Ticker, quantity, OrderSide.Buy, PositionSide.Short, result, true);
 
-		await ReducePosition(position, orderResult, order);
+		await Repo.ReducePosition(position, orderResult.Success, orderResult.Quantity, order);
 
 		if (!orderResult.Success) return false;
 
@@ -293,22 +265,13 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMProviderResult> OpenPyramiding(ADBot bot, AMOrderRequest request, AMProviderResult result)
 	{
-		var position = await GetCurrentPosition(request.Ticker, request.PositionType);
-		if (position == null || position.BotId != bot.Id)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {request.Ticker} - {position!.Type} already exists and managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { request.Ticker, request.OrderType, request.PositionType }));
-			return result;
-		}
-
-		var order = await GetOrder(request.OrderId);
-		if (order == null || order.Status != Core.OrderStatus.Triggered)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The order for {request.Ticker} - {request.PositionType} is not triggered.", data: JsonConvert.SerializeObject(new { request.Ticker, request.OrderType, request.PositionType }));
-			return result;
-		}
-
+		var order = await Repo.GetOrder(request.OrderId);
+		var position = order.Position;
 		result.Order = order;
 		result.CorrelationId = position.Id.ToString();
+
+		if (position.BotId != bot.Id) return result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {request.Ticker} - {position.Type} already exists and managed by another bot.", data: JsonConvert.SerializeObject(new { request.Ticker, request.OrderType, request.PositionType }));
+
 		AMOrderResult orderResult;
 		var orderSide = request.PositionType == PositionType.Long ? OrderSide.Buy : OrderSide.Sell;
 		var positionSide = request.PositionType == PositionType.Long ? PositionSide.Long : PositionSide.Short;
@@ -323,9 +286,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 			return result;
 		}
 
-		order.Fill(orderResult.Quantity);
-		position.Expand(orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
-		var symbolInfo = await GetSymbolInfo(order.Symbol);
+		Repo.ExpandPosition(position, order, orderResult.Quantity, orderResult.EntryPrice, request.Leverage);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, order.Symbol);
+
 		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, position, request, symbolInfo.LastPrice, symbolInfo, position.CurrentQuantity, result);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, position, request, orderResult.EntryPrice, symbolInfo, position.CurrentQuantity, result);
 
@@ -352,27 +315,18 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			var response = closeOrder.Data.ElementAt(i);
 			if (response.Success)
-			{
-				await ClosePosition(new AMOrderRequest
-				{
-					Ticker = order.Ticker,
-					Type = response.Data.PositionSide == PositionSide.Long ? "close-long" : "close-short"
-				});
-			}
+				await Repo.ClosePosition(Exchange.Id, response.Data.PositionSide == PositionSide.Long ? PositionType.Long : PositionType.Short, order.Ticker);
 
 			result.AddAudit(AuditType.CloseOrderPlaced, response.Success ? $"Placed close order successfully." : $"Failed placing close order: {response?.Error?.Message}.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, response?.Data?.Quantity, response?.Data?.AveragePrice, OrderType = response?.Data?.Side.ToString(), PositionType = response?.Data?.PositionSide.ToString() }));
 		}
 
-		result.WithSuccess();
-
-		return result;
+		return result.WithSuccess();
 	}
 
 	private async Task CreateStopLossOrder(ADBot bot, ADPosition position, AMOrderRequest request, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
 	{
 		if (position == null) return;
-
-		var order = await Db.Orders.FirstOrDefaultAsync(x => x.ExchangeId == Exchange.Id && x.PositionId == position.Id && x.TriggerType == OrderTriggerType.StopLoss && x.Status == Core.OrderStatus.Open);
+		var order = Repo.GetOpenStopLossOrder(position.Id);
 		if (order != null)
 		{
 			// order.Quantity = position.Quantity;
@@ -386,7 +340,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		}
 
 		var stopPrice = GetStopLoss(bot, entryPrice, symbol.PricePrecision, request.PositionType);
-		await AddOrder(position, OrderTriggerType.StopLoss, OrderConditionType.Decreasing, stopPrice!.Value, 100, PositionSizeType.Ratio, true);
+		await Repo.AddOrder(position, OrderTriggerType.StopLoss, OrderConditionType.Decreasing, stopPrice!.Value, 100, PositionSizeType.Ratio, true);
 	}
 
 	private async Task CreatePyramidingOrders(ADBot bot, ADPosition position, AMOrderRequest order, decimal entryPrice, AMSymbolInfo symbol, decimal quantity, AMProviderResult result)
@@ -411,9 +365,9 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
-			var stopPrice = CalculatePyramid(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
+			var stopPrice = Calculator.CalculatePyramid(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
 			var condition = target.Target < 0 ? OrderConditionType.Decreasing : OrderConditionType.Increasing;
-			await AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, target.Quantity, bot.PositionSizeType, false);
+			await Repo.AddOrder(position, OrderTriggerType.Pyramiding, condition, stopPrice, target.Quantity, bot.PositionSizeType, false);
 			result.AddAudit(AuditType.OpenOrderPlaced, $"Placed pyramiding order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
 	}
@@ -447,8 +401,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		{
 			var target = targets[i];
 			var qty = Math.Round(quantity * target.Quantity / 100, symbol.QuantityPrecision);
-			var stopPrice = CalculateTakeProfit(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
-			var newOrder = await AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, PositionSizeType.FixedInAsset, i == targets.Count - 1, prevOrderId);
+			var stopPrice = Calculator.CalculateTakeProfit(target.Target, entryPrice, symbol.PricePrecision, order.PositionType);
+			var newOrder = await Repo.AddOrder(position, OrderTriggerType.TakeProfit, OrderConditionType.Increasing, stopPrice, qty, PositionSizeType.FixedInAsset, i == targets.Count - 1, prevOrderId);
 			prevOrderId = newOrder.Id;
 			result.AddAudit(AuditType.TakeProfitOrderPlaced, $"Placed take profit order at target {i + 1} successfully.", CorrelationId, JsonConvert.SerializeObject(new { order.Ticker, Quantity = quantity, entryPrice, Activation = stopPrice }));
 		}
@@ -456,7 +410,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task CancelOrders(ADPosition position, AMOrderRequest request, OrderTriggerType type, AMProviderResult result)
 	{
-		var orders = await GetOpenOrders(position, type);
+		var orders = await Repo.GetOpenOrders(Exchange.Id, position.Id, type);
 		if (orders.Count == 0) return;
 
 		foreach (var o in orders)
@@ -530,7 +484,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				PositionSide = pSide,
 				Type = FuturesOrderType.TakeProfitMarket,
 				Quantity = Math.Round(quantity * x.Quantity / 100, symbol.QuantityPrecision),
-				StopPrice = CalculateTakeProfit(x.Target, entryPrice, symbol.PricePrecision, order.PositionType),
+				StopPrice = Calculator.CalculateTakeProfit(x.Target, entryPrice, symbol.PricePrecision, order.PositionType),
 				TimeInForce = TimeInForce.GoodTillExpiredOrCanceled,
 				WorkingType = WorkingType.Contract
 			})
@@ -555,7 +509,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				FuturesOrderType.TakeProfitMarket,
 				null,
 				positionSide: pSide,
-				stopPrice: CalculateTakeProfit(closeTp.Target, entryPrice, symbol.PricePrecision, order.PositionType),
+				stopPrice: Calculator.CalculateTakeProfit(closeTp.Target, entryPrice, symbol.PricePrecision, order.PositionType),
 				timeInForce: TimeInForce.GoodTillExpiredOrCanceled,
 				workingType: WorkingType.Contract,
 				closePosition: true
@@ -675,7 +629,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<AMOrderResult> PlaceDeviatedOrder(string ticker, decimal quantity, OrderSide oSide, PositionSide pSide, LimitSettings settings, AMProviderResult result)
 	{
-		var symbolInfo = await GetSymbolInfo(ticker);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, ticker);
 		var deviatedDifference = symbolInfo.LastPrice * settings.Deviation / 100;
 
 		var price = pSide == PositionSide.Long ? Math.Round(symbolInfo.LastPrice + deviatedDifference, symbolInfo.PricePrecision - 1) : Math.Round(symbolInfo.LastPrice - deviatedDifference, symbolInfo.PricePrecision - 1);
@@ -745,7 +699,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 
 	private async Task<(bool, AMOrderBook)> TryGetOrderBook(string ticker, AMProviderResult result)
 	{
-		var ob = await GetOrderBook(ticker);
+		var ob = await GetOrderBook(Exchange.Provider.Name, ticker);
 		if (await ob.ReadLastUpdateTime() > 0)
 		{
 			return (true, ob);
@@ -761,35 +715,6 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		await ob.LoadSnapshot(orderBookResponse.Data.Asks, orderBookResponse.Data.Bids, 1);
 
 		return (true, ob);
-	}
-
-	private async Task<ADPosition?> GetCurrentPosition(string ticker, PositionType side)
-	{
-		var position = await Db.Positions
-			.Include(x => x.Bot)
-			.Include(x => x.Orders)
-			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open || x.Status == PositionStatus.Requested)
-			.FirstOrDefaultAsync(x => x.Symbol == ticker && x.Type == side);
-
-		return position;
-	}
-
-	private async Task<IEnumerable<ADPosition>> GetCurrentPositions()
-	{
-		var positions = await Db.Positions
-			.Where(x => x.ExchangeId == Exchange.Id && x.Status == PositionStatus.Open)
-			.ToListAsync();
-
-		return positions;
-	}
-
-	private async Task<ADOrder> GetOrder(Guid? orderId)
-	{
-		var order = await Db.Orders
-			.Include(x => x.Position)
-			.FirstOrDefaultAsync(x => x.Id == orderId);
-
-		return order;
 	}
 
 	private async Task<BinancePositionDetailsUsdt?> GetPosition(string ticker, PositionType type)
@@ -814,10 +739,8 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 	{
 		if (order.Quantity.HasValue && order.Quantity > 0) size = order.Quantity.Value;
 
-		var symbolInfo = await GetSymbolInfo(order.Ticker);
+		var symbolInfo = await GetSymbolInfo(Exchange.Provider.Name, order.Ticker);
 		if (type == PositionSizeType.FixedInAsset) return Math.Round(size, symbolInfo.QuantityPrecision);
-
-		symbolInfo = await GetSymbolInfo(order.Ticker);
 
 		if (type == PositionSizeType.FixedInUsd) return Math.Round(size / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 
@@ -832,94 +755,11 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return Math.Round(usdQuantity / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
 	}
 
-	private async Task<decimal> GetAssetQuantity(decimal? size, PositionSizeType type, string ticker, decimal amount)
+	public decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
 	{
-		if (!size.HasValue || size <= 0) return amount;
-
-		if (type == PositionSizeType.FixedInAsset) return size.Value;
-
-		var symbolInfo = await GetSymbolInfo(ticker);
-		if (type == PositionSizeType.FixedInUsd) return Math.Round(size.Value / symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
-
-		return amount * size.Value / 100;
-	}
-
-	private static List<BinanceOrderBookEntry> IncreaseTickSize(IEnumerable<BinanceOrderBookEntry> bids, int precision)
-	{
-		Dictionary<decimal, BinanceOrderBookEntry> aggregated_bids = new();
-		var tickSize = 1.0m / (decimal)Math.Pow(10, precision - 1);
-
-		foreach (var bid in bids)
-		{
-			var rounded_price = bid.Price - (bid.Price % tickSize);
-
-			if (aggregated_bids.TryGetValue(rounded_price, out var value))
-			{
-				value.Quantity += bid.Quantity;
-			}
-			else
-			{
-				aggregated_bids[rounded_price] = new BinanceOrderBookEntry
-				{
-					Price = rounded_price,
-					Quantity = bid.Quantity
-				};
-			}
-		}
-
-		var smoothed_bids = new List<BinanceOrderBookEntry>(aggregated_bids.Values);
-
-		return smoothed_bids;
-	}
-
-	public static decimal? GetStopLoss(ADBot bot, decimal entryPrice, int precision, PositionType type)
-	{
-		if (!bot.IsStopLossEnabled) return null;
-
 		if (bot.StopLossSettings.Price <= 0) bot.StopLossSettings.Price = 1;
 
-		return CalculateStopLoss(bot.StopLossSettings.Price, entryPrice, precision, type);
-	}
-
-	private static decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)
-	{
-		if (type == PositionType.Long) return Math.Round(entryPrice - (entryPrice * activation / 100), precision);
-
-		return Math.Round(entryPrice + (entryPrice * activation / 100), precision);
-	}
-
-	private static decimal CalculatePyramid(decimal activation, decimal entryPrice, int precision, PositionType type)
-	{
-		var isDecreasing = activation < 0;
-		if (type == PositionType.Long)
-		{
-			if (isDecreasing) return Math.Round(entryPrice - (entryPrice * Math.Abs(activation) / 100), precision);
-			return Math.Round(entryPrice + (entryPrice * Math.Abs(activation) / 100), precision);
-		}
-
-		if (isDecreasing) return Math.Round(entryPrice + (entryPrice * Math.Abs(activation) / 100), precision);
-		return Math.Round(entryPrice - (entryPrice * Math.Abs(activation) / 100), precision);
-	}
-
-	public static decimal CalculateTakeProfit(decimal activation, decimal entryPrice, int precision, PositionType type)
-	{
-		if (type == PositionType.Long) return Math.Round(entryPrice + (entryPrice * activation / 100), precision);
-
-		return Math.Round(entryPrice - (entryPrice * activation / 100), precision);
-	}
-
-	private async Task<AMSymbolInfo> GetSymbolInfo(string ticker)
-	{
-		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
-		var symbolInfo = await ExchangeStore.GetSymbolInfoLazy(providerName, ticker) ?? throw new Exception($"Could not find symbol info for {ticker}");
-		return symbolInfo;
-	}
-
-	private async Task<AMOrderBook> GetOrderBook(string ticker)
-	{
-		var providerName = IsTestNet ? $"{Exchange.Provider.Name}-test" : Exchange.Provider.Name;
-		var symbolInfo = await ExchangeStore.GetOrderBook(providerName, ticker);
-		return symbolInfo;
+		return Calculator.CalculateStopLoss(bot.StopLossSettings.Price, entryPrice, precision, type);
 	}
 
 	public override async Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType marginType)

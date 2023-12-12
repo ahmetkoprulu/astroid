@@ -3,12 +3,14 @@ using Astroid.Core.Cache;
 using Astroid.Core.MessageQueue;
 using Astroid.Entity;
 using Astroid.Providers;
+using Binance.Net.Clients;
 
 var builder = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((hostContext, services) =>
 	{
 		services.AddDbContext<AstroidDb>(ServiceLifetime.Transient);
 		services.AddTransient<BinanceUsdFuturesProvider>();
+		services.AddScoped<BinanceRestClient>();
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();

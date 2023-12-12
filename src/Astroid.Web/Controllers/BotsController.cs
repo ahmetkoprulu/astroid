@@ -321,13 +321,13 @@ public class BotsController : SecureController
 
 		try
 		{
-			var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Long, bot.LimitSettings);
-			var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Short, bot.LimitSettings);
+			// var longResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Long, bot.LimitSettings);
+			// var shortResult = await ExchangeProviderBase.GetEntryPoint(orderBook, PositionType.Short, bot.LimitSettings);
 
 			return Success(new
 			{
-				Long = Math.Round(longResult, symbolInfo.PricePrecision),
-				Short = Math.Round(shortResult, symbolInfo.PricePrecision)
+				// Long = Math.Round(longResult, symbolInfo.PricePrecision),
+				// Short = Math.Round(shortResult, symbolInfo.PricePrecision)
 			});
 		}
 		catch (Exception ex)

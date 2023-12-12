@@ -121,18 +121,16 @@ public class OrderWatcher : IHostedService
 		if (order.Bot.StopLossSettings.Type != StopLossType.Trailing) return false;
 
 		var precision = price.GetPrecisionNumber();
-		var activationPrice = BinanceUsdFuturesProvider.CalculateTakeProfit(order.Bot.StopLossSettings.Margin ?? 0, order.Position.EntryPrice, precision, order.Position.Type);
+		var activationPrice = ExchangeProviderBase.CalculateTakeProfit(order.Bot.StopLossSettings.Margin ?? 0, order.Position.EntryPrice, precision, order.Position.Type);
 		var isActivated = order.Position.Type == PositionType.Long ? price > activationPrice : price < activationPrice;
 		if (!isActivated) return false;
 
-		var nextPrice = BinanceUsdFuturesProvider.GetStopLoss(order.Bot, price, precision, order.Position.Type);
-		if (nextPrice == null) return false;
-
-		nextPrice = order.Position.Type == PositionType.Long ? Math.Max(nextPrice.Value, order.TriggerPrice) : Math.Min(nextPrice.Value, order.TriggerPrice);
+		var nextPrice = ExchangeProviderBase.CalculateStopLoss(order.Bot.StopLossSettings.Price, price, precision, order.Position.Type);
+		nextPrice = order.Position.Type == PositionType.Long ? Math.Max(nextPrice, order.TriggerPrice) : Math.Min(nextPrice, order.TriggerPrice);
 		if (nextPrice == order.TriggerPrice) return false;
 
 		db.Entry(order).Property(x => x.TriggerPrice).IsModified = true;
-		order.TriggerPrice = nextPrice.Value;
+		order.TriggerPrice = nextPrice;
 
 		db.Entry(order).Property(x => x.UpdatedDate).IsModified = true;
 		order.UpdatedDate = DateTime.UtcNow;

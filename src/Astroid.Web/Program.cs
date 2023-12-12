@@ -13,6 +13,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Microsoft.AspNetCore.Mvc;
 using Astroid.Providers;
+using Binance.Net.Clients;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +88,7 @@ else
 builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddSingleton<ICacheService, RedisCache>();
 builder.Services.AddSingleton<ExchangeInfoStore>();
+builder.Services.AddScoped<BinanceRestClient>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {

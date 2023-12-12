@@ -20,7 +20,7 @@ public class ExchangeCalculatorTests
 	{
 		var calculator = new ExchangeCalculator();
 
-		var actual = calculator.ComputeStandardDeviation(values);
+		var actual = calculator.CalculateStandardDeviation(values);
 
 		Math.Round(actual, 3).Should().Be(Math.Round(expected, 3)); // Round to 3 decimal places
 	}

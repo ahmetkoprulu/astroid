@@ -62,14 +62,8 @@ public class AMOrderRequest
 		_ => throw new InvalidDataException("Invalid order trigger type."),
 	};
 
-	public bool ValidateOpenRequest(ADPosition? position, ADBot bot, AMProviderResult result)
+	public bool ValidateOpenRequest(ADPosition position, ADBot bot, AMProviderResult result)
 	{
-		if (position == null)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {PositionType} not found.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
-			return false;
-		}
-
 		if (position.BotId != bot.Id)
 		{
 			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
@@ -91,17 +85,11 @@ public class AMOrderRequest
 		return true;
 	}
 
-	public bool ValidateCloseRequest(ADPosition position, ADOrder? order, ADBot bot, AMProviderResult result)
+	public bool ValidateCloseRequest(ADPosition position, ADBot bot, AMProviderResult result)
 	{
-		if (OrderId.HasValue && order == null)
-		{
-			result.WithMessage("The order not found").AddAudit(AuditType.CloseOrderPlaced, $"The order not found", data: JsonConvert.SerializeObject(new { OrderId, Ticker, OrderType, PositionType })).WithMessage("The order not found");
-			return false;
-		}
-
 		if (position.BotId != bot.Id)
 		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} managed by {position.Bot.Label}.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType })).WithMessage("The position not managed by this bot.");
+			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} managed by another bot.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType })).WithMessage("The position not managed by this bot.");
 			return false;
 		}
 
