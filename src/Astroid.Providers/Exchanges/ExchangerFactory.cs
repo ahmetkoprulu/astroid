@@ -16,7 +16,7 @@ public class ExchangerFactory
 		{
 			case "binance-usd-futures":
 				provider = serviceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
-				provider.Context(exchange);
+				provider.Context(exchange.PropertiesJson);
 				break;
 			default:
 				return null;

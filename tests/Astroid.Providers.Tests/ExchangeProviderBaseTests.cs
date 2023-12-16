@@ -23,13 +23,19 @@ public class ExchangeProviderBaseTests
 
 	private class TestProvider : ExchangeProviderBase
 	{
-		public TestProvider(AstroidDb db, ExchangeInfoStore store, ExchangeCalculator calculator) : base(db, store, calculator)
+		public TestProvider(ExecutionRepository repo, ExchangeInfoStore store, ExchangeCalculator calculator, MetadataMapper mapper) : base(repo, store, calculator, mapper)
 		{
 
 		}
 
-		public override Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType type) => throw new NotImplementedException();
-
-		public override Task<AMProviderResult> ExecuteOrder(ADBot bot, AMOrderRequest order) => throw new NotImplementedException();
+		public override Task ChangeLeverage(string ticker, int leverage) => throw new NotImplementedException();
+		public override Task ChangeMarginType(string ticker, MarginType marginType, AMProviderResult result) => throw new NotImplementedException();
+		public override Task<decimal> GetBalance(string asset) => throw new NotImplementedException();
+		public override Task<AMOrderBook> GetOrderBook(AMOrderBook orderBook, string ticker) => throw new NotImplementedException();
+		public override Task<IEnumerable<AMExchangePosition>> GetPositions() => throw new NotImplementedException();
+		public override Task<AMOrderResult> PlaceDeviatedOrder(string ticker, decimal quantity, decimal price, OrderType oType, PositionType pType) => throw new NotImplementedException();
+		public override Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderType oType, PositionType pType, bool reduceOnly = false) => throw new NotImplementedException();
+		public override Task<AMOrderResult> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings) => throw new NotImplementedException();
+		public override Task<AMOrderResult> PlaceOrderTillPositionFilled(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings) => throw new NotImplementedException();
 	}
 }

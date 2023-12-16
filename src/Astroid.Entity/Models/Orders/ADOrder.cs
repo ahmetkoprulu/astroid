@@ -14,8 +14,10 @@ public class ADOrder : IEntity
 	public Guid ExchangeId { get; set; }
 	public Guid PositionId { get; set; }
 	public string Symbol { get; set; } = string.Empty;
+	public int Leverage { get; set; }
 	public OrderTriggerType TriggerType { get; set; }
 	public decimal TriggerPrice { get; set; }
+	public decimal FilledPrice { get; set; }
 	public OrderConditionType ConditionType { get; set; }
 	public decimal Quantity { get; set; }
 	public PositionSizeType QuantityType { get; set; }
@@ -46,14 +48,17 @@ public class ADOrder : IEntity
 
 	public void Reject()
 	{
+		if (Position?.Status == PositionStatus.Requested && TriggerType == OrderTriggerType.Buy)
+			Position.Reject();
+
 		Status = OrderStatus.Rejected;
 		UpdatedDate = DateTime.UtcNow;
 	}
 
-	public void Fill(decimal quantity, decimal? triggerPrice = null)
+	public void Fill(decimal quantity, decimal? price = null)
 	{
-		if (triggerPrice.HasValue)
-			TriggerPrice = triggerPrice.Value;
+		if (price.HasValue)
+			FilledPrice = price.Value;
 
 		Status = OrderStatus.Filled;
 		UpdatedDate = DateTime.UtcNow;

@@ -17,14 +17,16 @@ public class OrderWatcher : IHostedService
 	private IServiceProvider Services { get; set; }
 	// private AstroidDb Db { get; set; }
 	private IMessageQueue Mq { get; set; }
+	private ExchangeCalculator ExchangeCalculator { get; set; }
 
-	public OrderWatcher(ExchangeInfoStore exchangeStore, IMessageQueue mq, AQPriceChanges priceChangesQueue, ILogger<OrderWatcher> logger, IServiceProvider services)
+	public OrderWatcher(ExchangeInfoStore exchangeStore, IMessageQueue mq, AQPriceChanges priceChangesQueue, ILogger<OrderWatcher> logger, IServiceProvider services, ExchangeCalculator calculator)
 	{
 		ExchangeStore = exchangeStore;
 		Mq = mq;
 		PriceChangesQueue = priceChangesQueue;
 		Logger = logger;
 		Services = services;
+		ExchangeCalculator = calculator;
 	}
 
 	public async Task StartAsync(CancellationToken cancellationToken)
@@ -38,8 +40,8 @@ public class OrderWatcher : IHostedService
 
 	public async Task PriceChanged(AQPriceChangeMessage msg, CancellationToken cancellationToken)
 	{
-		var scope = Services.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		using var scope = Services.CreateScope();
+		using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
 		// TODO: Add Exchange Provider Id to the message in order to avoid plus join.
 		var openOrders = await GetOpenOrders(db, msg, cancellationToken);
 		openOrders
@@ -121,11 +123,11 @@ public class OrderWatcher : IHostedService
 		if (order.Bot.StopLossSettings.Type != StopLossType.Trailing) return false;
 
 		var precision = price.GetPrecisionNumber();
-		var activationPrice = ExchangeProviderBase.CalculateTakeProfit(order.Bot.StopLossSettings.Margin ?? 0, order.Position.EntryPrice, precision, order.Position.Type);
+		var activationPrice = ExchangeCalculator.CalculateTakeProfit(order.Bot.StopLossSettings.Margin ?? 0, order.Position.EntryPrice, precision, order.Position.Type);
 		var isActivated = order.Position.Type == PositionType.Long ? price > activationPrice : price < activationPrice;
 		if (!isActivated) return false;
 
-		var nextPrice = ExchangeProviderBase.CalculateStopLoss(order.Bot.StopLossSettings.Price, price, precision, order.Position.Type);
+		var nextPrice = ExchangeCalculator.CalculateStopLoss(order.Bot.StopLossSettings.Price, price, precision, order.Position.Type);
 		nextPrice = order.Position.Type == PositionType.Long ? Math.Max(nextPrice, order.TriggerPrice) : Math.Min(nextPrice, order.TriggerPrice);
 		if (nextPrice == order.TriggerPrice) return false;
 

@@ -36,12 +36,66 @@ public class Worker : IHostedService
 		Logger.LogInformation("Starting Bot Manager Service.");
 		await BotManager.Setup(cancellationToken);
 		await BotManager.Subscribe(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
-		await BotManager.Subscribe(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
+		// await BotManager.Subscribe(async (msg, ct) => await ExecuteOrder(ServiceProvider, msg, ct), cancellationToken);
 		Logger.LogInformation("Subscribed registration queues.");
 
 		_ = Task.Run(() => Ping(cancellationToken), cancellationToken);
 	}
 
+	public async Task ExecuteOrder(IServiceProvider sp, AQOrderMessage message, CancellationToken cancellationToken = default)
+	{
+		using var scope = sp.CreateScope();
+		using var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
+		Logger.LogInformation($"Executing order {message.OrderId}.");
+
+		var order = await GetOrder(db, message.OrderId, cancellationToken);
+		if (order == null)
+		{
+			Logger.LogError($"Order not found for {message.OrderId}.");
+			return;
+		}
+
+		try
+		{
+			var bot = await GetBot(db, order.BotId, cancellationToken);
+			var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
+			(var success, var msg) = await ValidateTriggeredOrder(order, bot, exchanger, db);
+			if (!success)
+			{
+				order.Reject();
+				await AddAudit(db, order, AuditType.OrderRequest, msg, order.Position.Id.ToString());
+				await db.SaveChangesAsync(cancellationToken);
+				Logger.LogError(msg);
+
+				return;
+			}
+
+			var result = await exchanger!.ExecuteOrder(bot!, order);
+			result.SaveAudits(db);
+			var notification = await db.AddOrderNotification(result.Order, bot!, result.Message);
+			await db.SaveChangesAsync(cancellationToken);
+
+			if (notification != null) await AQNotification.Publish(Mq, new AQONotificationMessage { OrderId = notification.Id }, string.Empty, cancellationToken);
+		}
+		catch (Exception ex)
+		{
+			order.Reject();
+			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, order.PositionId.ToString());
+			await db.SaveChangesAsync(cancellationToken);
+			Logger.LogError($"[{message.OrderId}] Error {ex.Message}.");
+		}
+	}
+
+	public async Task<ADOrder?> GetOrder(AstroidDb db, Guid orderId, CancellationToken cancellationToken = default) =>
+		await db.Orders
+			.Include(x => x.Position)
+			.Include(x => x.Bot)
+			.Include(x => x.Exchange)
+				.ThenInclude(x => x.Provider)
+			.FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
+
+	public async Task<ADBot?> GetBot(AstroidDb db, Guid botId, CancellationToken cancellationToken = default) =>
+		await db.Bots.AsNoTracking().FirstOrDefaultAsync(x => x.Id == botId, cancellationToken);
 
 	public async Task Ping(CancellationToken cancellationToken)
 	{
@@ -67,108 +121,6 @@ public class Worker : IHostedService
 		await db.SaveChangesAsync(cancellationToken);
 	}
 
-	public async Task ExecuteOrder(IServiceProvider sp, AQOrderMessage message, CancellationToken cancellationToken = default)
-	{
-		var scope = sp.CreateScope();
-		var db = scope.ServiceProvider.GetRequiredService<AstroidDb>();
-		Logger.LogInformation($"Executing order {message.OrderId}.");
-
-		var order = await GetOrder(db, message.OrderId, cancellationToken);
-		if (order == null)
-		{
-			Logger.LogError($"Order not found for {message.OrderId}.");
-			return;
-		}
-
-		var position = await db.Positions.FirstOrDefaultAsync(x => x.Id == order.PositionId, cancellationToken);
-		if (order.Status == OrderStatus.Cancelled)
-		{
-			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled.", position?.Id.ToString());
-			await db.SaveChangesAsync(cancellationToken);
-			Logger.LogError($"Order is cancelled {message.OrderId}.");
-
-			return;
-		}
-
-		var isClosing = !order.ClosePosition && position != null && await db.IsPositionClosing(position.Id);
-		if (isClosing)
-		{
-			order.Reject();
-			await AddAudit(db, order, AuditType.OrderRequest, "Order is cancelled because position is about to be closed.", position?.Id.ToString());
-			await db.SaveChangesAsync(cancellationToken);
-			Logger.LogError($"Order is cancelled because position is about to be closed {message.OrderId}.");
-
-			return;
-		}
-
-		var request = AMOrderRequest.GenerateRequest(order);
-		try
-		{
-			var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
-			if (exchanger == null)
-			{
-				order.Reject();
-				await AddAudit(db, order, AuditType.OrderRequest, $"Exchanger type {order.Exchange.Label} not found", position?.Id.ToString());
-				await db.SaveChangesAsync(cancellationToken);
-
-				return;
-			}
-
-			var bot = await db.Bots
-				.Where(x => x.UserId == order.UserId)
-				.AsNoTracking()
-				.FirstOrDefaultAsync(x => x.Id == order.BotId, cancellationToken);
-
-			if (bot == null)
-			{
-				order.Reject();
-				await AddAudit(db, order, AuditType.OrderRequest, $"Bot {order.BotId} not found", position?.Id.ToString());
-				await db.SaveChangesAsync(cancellationToken);
-
-				return;
-			}
-
-			var result = await exchanger.ExecuteOrder(bot, request);
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = order.UserId;
-				x.ActorId = order.BotId;
-				x.TargetId = order.Id;
-				x.CorrelationId = result.CorrelationId;
-				db.Audits.Add(x);
-			});
-
-			if (!result.Success)
-			{
-				Logger.LogError($"Order execution failed for {order.Id}.");
-				order.Reject();
-				if (position!.Status == PositionStatus.Requested) position.Reject();
-			}
-
-			var notification = await db.AddOrderNotification(result.Order, bot, result.Message);
-			await db.SaveChangesAsync(cancellationToken);
-
-#pragma warning disable 4014
-			if (notification != null) AQNotification.Publish(Mq, new AQONotificationMessage { OrderId = notification.Id }, string.Empty, cancellationToken);
-#pragma warning restore 4014
-		}
-		catch (Exception ex)
-		{
-			await AddAudit(db, order, AuditType.UnhandledException, ex.Message, position?.Id.ToString());
-			order.Reject();
-			await db.SaveChangesAsync(cancellationToken);
-			Logger.LogError($"[{message.OrderId}] Error {ex.Message}.");
-		}
-	}
-
-	public async Task<ADOrder?> GetOrder(AstroidDb db, Guid orderId, CancellationToken cancellationToken = default) =>
-		await db.Orders
-			.Include(x => x.Bot)
-			.Include(x => x.Exchange)
-				.ThenInclude(x => x.Provider)
-			.FirstOrDefaultAsync(x => x.Id == orderId, cancellationToken);
-
 	public async Task AddAudit(AstroidDb db, ADOrder order, AuditType type, string description, string? corellationId = null) => await db.AddAudit(order.UserId, order.BotId, type, description, order.Id, corellationId);
 
 	public Guid GetManagerId(IConfiguration config)
@@ -176,6 +128,20 @@ public class Worker : IHostedService
 		var settings = config.Get<BotManagerConfig>() ?? new();
 		var id = Environment.GetEnvironmentVariable("ASTROID_BOT_MANAGER_ID");
 		return Guid.TryParse(id, out var guid) ? guid : settings.Id;
+	}
+
+	public async Task<(bool, string)> ValidateTriggeredOrder(ADOrder order, ADBot? bot, ExchangeProviderBase? provider, AstroidDb db)
+	{
+		if (order.Status == OrderStatus.Cancelled) return (false, $"Order {order.Id} is cancelled.");
+
+		var isClosing = !order.ClosePosition && await db.IsPositionClosing(order.PositionId);
+		if (isClosing) return (false, $"Order is cancelled because position is about to be closed {order.Id}.");
+
+		if (bot == null) return (false, $"Bot {order.BotId} not found.");
+
+		if (provider == null) return (false, $"Provider {bot.Exchange.Label} not found.");
+
+		return (true, "Success");
 	}
 
 	public Task StopAsync(CancellationToken cancellationToken)

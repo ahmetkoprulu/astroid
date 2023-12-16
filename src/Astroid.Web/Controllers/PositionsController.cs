@@ -196,32 +196,12 @@ public class PositionsController : SecureController
 		var exchanger = ExchangerFactory.Create(ServiceProvider, exchange);
 		if (exchanger == null)
 		{
-			await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Exchanger type {exchange.Provider.Title} not found");
 			return BadRequest($"Exchanger type {exchange.Provider.Title} not found");
 		}
 
 		try
 		{
-			if (await Cache.IsLocked($"lock:bot:{bot.Id}:{request.Ticker}"))
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Order request rejected since the bot is already processing an order.");
-				return BadRequest("Bot is busy");
-			}
-
-			var _ = await Cache.AcquireLock($"lock:bot:{bot.Id}:{request.Ticker}", TimeSpan.FromMinutes(1));
-			var result = await exchanger.ExecuteOrder(bot, request);
-			if (!result.Success) LogError(null, result.Message ?? string.Empty);
-
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = exchange.UserId;
-				x.ActorId = bot.Id;
-				x.TargetId = result.CorrelationId == null ? Guid.Parse(result.CorrelationId!) : null;
-				x.CorrelationId = result.CorrelationId;
-				Db.Audits.Add(x);
-			});
-
-			await Db.SaveChangesAsync();
+			// TODO: trigger order by changing its trigger condition to immediate
 		}
 		catch (Exception ex)
 		{
@@ -277,7 +257,7 @@ public class PositionsController : SecureController
 			ActorId = botId,
 			Type = type,
 			Description = description,
-			CorrelationId = ExchangeProviderBase.GenerateCorrelationId(),
+			CorrelationId = "",
 			CreatedDate = DateTime.UtcNow,
 		};
 

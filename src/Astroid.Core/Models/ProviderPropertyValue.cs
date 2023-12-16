@@ -4,6 +4,7 @@ public class ProviderPropertyValue
 {
 	public string DisplayName { get; set; }
 	public string? Description { get; set; }
+	public bool IsNullable { get; set; }
 	public object Value { get; set; }
 	public object? DefaultValue { get; set; }
 	public string? Property { get; set; }

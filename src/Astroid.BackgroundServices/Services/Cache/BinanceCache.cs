@@ -177,7 +177,11 @@ public class BinanceCache : IHostedService
 	public async Task GetDepthSnapshot(AMOrderBook orderBook)
 	{
 		var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(orderBook.Symbol, 100);
-		await orderBook.LoadSnapshot(snapshot.Data.Asks, snapshot.Data.Bids, snapshot.Data.LastUpdateId);
+		await orderBook.LoadSnapshot(
+			snapshot.Data.Asks.Select(x => new AMOrderBookEntry { Price = x.Price, Quantity = x.Quantity }),
+			snapshot.Data.Bids.Select(x => new AMOrderBookEntry { Price = x.Price, Quantity = x.Quantity }),
+			snapshot.Data.LastUpdateId
+		);
 	}
 
 	public async Task<BinanceFuturesOrderBook> GetDepth(string ticker)

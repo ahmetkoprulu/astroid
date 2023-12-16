@@ -1,4 +1,5 @@
 using Astroid.BotManager;
+using Astroid.Core;
 using Astroid.Core.Cache;
 using Astroid.Core.MessageQueue;
 using Astroid.Entity;
@@ -14,6 +15,10 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();
+		services.AddSingleton<ExecutionRepository>();
+		services.AddSingleton<MetadataMapper>();
+		services.AddSingleton<ExchangeCalculator>();
+		services.AddSingleton<CodeExecutor>();
 
 		services.AddSingleton<IMessageQueue, RabbitMessageQueue>();
 		services.AddSingleton<BotRegistrationManager>();

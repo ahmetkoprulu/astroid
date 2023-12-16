@@ -18,7 +18,7 @@ public class ExchangeCalculatorTests
 	[MemberData(nameof(GetStandartDeviasionTestData))]
 	public void ComputeStandardDeviation_ReturnsCorrectValue(decimal expected, params decimal[] values)
 	{
-		var calculator = new ExchangeCalculator();
+		var calculator = new ExchangeCalculator(new CodeExecutor());
 
 		var actual = calculator.CalculateStandardDeviation(values);
 

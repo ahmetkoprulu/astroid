@@ -118,15 +118,15 @@ public class ExecutionRepository : IRepository, IDisposable
 		position.Reduce(quantity);
 	}
 
-	public void ExpandPosition(ADPosition position, ADOrder order, decimal quantity, decimal entryPrice, int leverage)
+	public void ExpandPosition(ADOrder order, decimal quantity, decimal entryPrice, int leverage)
 	{
-		position.Expand(quantity, entryPrice, leverage);
-		order.Fill(quantity);
+		order.Position.Expand(quantity, entryPrice, leverage);
+		order.Fill(quantity, entryPrice);
 	}
 
-	public void RejectPositionWithOrder(ADPosition position, ADOrder order)
+	public void RejectOrderWithPosition(ADOrder order)
 	{
-		position.Close();
+		order.Position.Reject();
 		order.Reject();
 	}
 

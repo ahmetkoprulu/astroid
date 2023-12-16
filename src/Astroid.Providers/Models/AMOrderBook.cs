@@ -1,5 +1,6 @@
 
 using System.Collections.Concurrent;
+using Astroid.Core;
 using Astroid.Core.Cache;
 using Binance.Net.Interfaces;
 using Binance.Net.Objects.Models;
@@ -14,6 +15,9 @@ public class AMOrderBook
 	public DateTime LastUpdateDate { get; private set; } = DateTime.MinValue;
 	private readonly List<IBinanceEventOrderBook> _buffer = new();
 	private const decimal IgnoreVolumeValue = 0;
+	private long _lastUpdateId;
+	private IDictionary<decimal, decimal> _asks;
+	private IDictionary<decimal, decimal> _bids;
 
 	public AMOrderBook(string exchange, string symbol, ICacheService cache)
 	{
@@ -31,6 +35,12 @@ public class AMOrderBook
 		LastUpdateDate = DateTime.UtcNow;
 	}
 
+	public async Task<IEnumerable<AMOrderBookEntry>> GetEntries(PositionType pType, int size, int skip = 0)
+	{
+		var entries = pType == PositionType.Long ? await GetAsks(size, skip) : await GetBids(size, skip);
+		return entries == null ? new List<AMOrderBookEntry>() : entries.Select(x => new AMOrderBookEntry { Price = x.Key, Quantity = x.Value });
+	}
+
 	public async Task<IEnumerable<KeyValuePair<decimal, decimal>>> GetAsks(int size, int skip = 0)
 	{
 		var asks = await ReadAsks();
@@ -42,6 +52,13 @@ public class AMOrderBook
 		var bids = await ReadBids();
 		return bids.ToArray().OrderByDescending(x => x.Key).Skip(skip).Take(size);
 	}
+
+	public async Task<IEnumerable<decimal>> GetPrices(PositionType pType, int depth = 0)
+	{
+		if (pType == PositionType.Long) return await GetAskPrices(depth);
+		return await GetBidPrices(depth);
+	}
+
 
 	public async Task<IEnumerable<decimal>> GetAskPrices(int depth = 0)
 	{
@@ -117,6 +134,19 @@ public class AMOrderBook
 		} while (bids.Count > 0);
 
 		return (0, 0);
+	}
+
+	public async Task<int> GetClosestPriceIndex(decimal price, PositionType pType)
+	{
+		var prices = await GetPrices(pType);
+		var keys = prices.ToArray();
+		for (var i = 0; i < keys.Length; i++)
+		{
+			if (pType == PositionType.Long && keys[i] > price) return i;
+			else if (pType == PositionType.Short && keys[i] < price) return i;
+		}
+
+		return -1;
 	}
 
 	public async Task<int> GetGreatestAskPriceLessThan(decimal price)
@@ -211,15 +241,29 @@ public class AMOrderBook
 		return orders;
 	}
 
-	public async Task LoadSnapshot(IEnumerable<BinanceOrderBookEntry> asks, IEnumerable<BinanceOrderBookEntry> bids, long lastUpdateId)
+	public async Task<AMOrderBook> LoadSnapshot(IEnumerable<AMOrderBookEntry> asks, IEnumerable<AMOrderBookEntry> bids, long lastUpdateId)
 	{
 		await SetLastUpdateTime(lastUpdateId);
 		await WriteAsks(asks.ToDictionary(x => x.Price, x => x.Quantity));
 		await WriteBids(bids.ToDictionary(x => x.Price, x => x.Quantity));
+
+		return this;
+	}
+
+	public AMOrderBook LoadSnapshotLocaly(IEnumerable<AMOrderBookEntry> asks, IEnumerable<AMOrderBookEntry> bids, long lastUpdateId)
+	{
+		_lastUpdateId = lastUpdateId;
+		_asks = asks.ToDictionary(x => x.Price, x => x.Quantity);
+		_bids = bids.ToDictionary(x => x.Price, x => x.Quantity);
+		LastUpdateDate = DateTime.UtcNow;
+
+		return this;
 	}
 
 	public async Task<IDictionary<decimal, decimal>> ReadAsks()
 	{
+		if (_asks != null) return _asks;
+
 		var asks = await Cache.Get<IDictionary<decimal, decimal>>($"OrderBook:{Exchange}:{Symbol}:Asks");
 		if (asks == null) return new ConcurrentDictionary<decimal, decimal>();
 
@@ -228,13 +272,19 @@ public class AMOrderBook
 
 	public async Task<IDictionary<decimal, decimal>> ReadBids()
 	{
+		if (_bids != null) return _bids;
+
 		var bids = await Cache.Get<IDictionary<decimal, decimal>>($"OrderBook:{Exchange}:{Symbol}:Bids");
 		if (bids == null) return new ConcurrentDictionary<decimal, decimal>();
 
 		return bids;
 	}
 
-	public async Task<long> ReadLastUpdateTime() => await Cache.Get<long>($"OrderBook:{Exchange}:{Symbol}:LastUpdateTime", 0);
+	public async Task<long> ReadLastUpdateTime()
+	{
+		if (_lastUpdateId > 0) return _lastUpdateId;
+		return await Cache.Get<long>($"OrderBook:{Exchange}:{Symbol}:LastUpdateTime", 0);
+	}
 
 	public async Task WriteLastUpdateTime(long lastUpdateTime) => await Cache.Set($"OrderBook:{Exchange}:{Symbol}:LastUpdateTime", lastUpdateTime, TimeSpan.FromSeconds(30));
 

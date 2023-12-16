@@ -62,40 +62,6 @@ public class AMOrderRequest
 		_ => throw new InvalidDataException("Invalid order trigger type."),
 	};
 
-	public bool ValidateOpenRequest(ADPosition position, ADBot bot, AMProviderResult result)
-	{
-		if (position.BotId != bot.Id)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} already exists and managed by.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
-			return false;
-		}
-
-		// if (!bot.IsPositionSizeExpandable)
-		// {
-		// 	result.AddAudit(AuditType.OpenOrderPlaced, $"Position size is not expandable", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
-		// 	return false;
-		// }
-
-		if (bot.OrderMode == OrderMode.OneWay)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"Position already exists for {Ticker} - {position.Type}", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType }));
-			return false;
-		}
-
-		return true;
-	}
-
-	public bool ValidateCloseRequest(ADPosition position, ADBot bot, AMProviderResult result)
-	{
-		if (position.BotId != bot.Id)
-		{
-			result.AddAudit(AuditType.OpenOrderPlaced, $"The position for {Ticker} - {position.Type} managed by another bot.", data: JsonConvert.SerializeObject(new { Ticker, OrderType, PositionType })).WithMessage("The position not managed by this bot.");
-			return false;
-		}
-
-		return true;
-	}
-
 	public bool IsClose => Type.StartsWith("close");
 
 	public AMOrderRequest? GetSwingRequest()

@@ -229,12 +229,6 @@ public class BotsController : SecureController
 		try
 		{
 			orderRequest.Ticker = orderRequest.Ticker.Split('.').First();
-			if (!await Cache.AcquireLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}", TimeSpan.FromSeconds(10)))
-			{
-				await AddAudit(AuditType.OrderRequest, bot.UserId, bot.Id, $"Bot is busy");
-				return BadRequest($"Bot is busy");
-			}
-
 			var exchange = await Db.Exchanges
 				.AsNoTracking()
 				.Include(x => x.Provider)
@@ -288,10 +282,6 @@ public class BotsController : SecureController
 		{
 			await AddAudit(AuditType.UnhandledException, bot.UserId, bot.Id, ex.Message);
 			return BadRequest(ex.Message);
-		}
-		finally
-		{
-			await Cache.ReleaseLock($"lock:bot:{bot.Id}:{orderRequest.Ticker}");
 		}
 
 		return Success(null, "Order requested successfully");
@@ -367,18 +357,18 @@ public class BotsController : SecureController
 
 		try
 		{
-			var tickerList = tickers.Split(',').ToList();
-			var result = await exchanger.ChangeTickersMarginType(tickerList, type);
-			if (!result.Success) LogError(null, result.Message ?? string.Empty);
+			// var tickerList = tickers.Split(',').ToList();
+			// var result = await exchanger.ChangeTickersMarginType(tickerList, type);
+			// if (!result.Success) LogError(null, result.Message ?? string.Empty);
 
-			result.Audits.ForEach(x =>
-			{
-				x.UserId = exchange.UserId;
-				x.ActorId = bot.Id;
-				Db.Audits.Add(x);
-			});
+			// result.Audits.ForEach(x =>
+			// {
+			// 	x.UserId = exchange.UserId;
+			// 	x.ActorId = bot.Id;
+			// 	Db.Audits.Add(x);
+			// });
 
-			await Db.SaveChangesAsync();
+			// await Db.SaveChangesAsync();
 		}
 		catch (Exception ex)
 		{
@@ -440,7 +430,6 @@ public class BotsController : SecureController
 			ActorId = botId,
 			Type = type,
 			Description = description,
-			CorrelationId = ExchangeProviderBase.GenerateCorrelationId(),
 			CreatedDate = DateTime.UtcNow,
 		};
 

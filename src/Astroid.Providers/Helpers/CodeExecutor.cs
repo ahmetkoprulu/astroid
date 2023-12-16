@@ -1,4 +1,3 @@
-using System.CodeDom.Compiler;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Reflection;
@@ -7,7 +6,7 @@ namespace Astroid.Providers;
 
 public class CodeExecutor
 {
-	public static readonly string CodeTemplate = @"
+	private readonly string CodeTemplate = @"
 		using System;
 		using System.Collections.Generic;
 		using System.Linq;
@@ -24,7 +23,7 @@ public class CodeExecutor
 		}}
 	";
 
-	public static CodeExecutionResult<T> Execute<T>(string code, params object[] args)
+	public CodeExecutionResult<T> Execute<T>(string code, params object[] args)
 	{
 		var syntaxTree = CSharpSyntaxTree.ParseText(code);
 		var assemblyName = Path.GetRandomFileName();
@@ -73,7 +72,7 @@ public class CodeExecutor
 		return CodeExecutionResult<T>.Success((T)data!);
 	}
 
-	public static CodeExecutionResult<decimal> ExecuteComputationMethod(string code, params object[] args)
+	public CodeExecutionResult<decimal> ExecuteComputationMethod(string code, params object[] args)
 	{
 		code = string.Format(CodeTemplate, "decimal", "List<AMOrderBookEntry> entries", code);
 		var result = Execute<decimal>(code, args);
@@ -95,7 +94,7 @@ public class CodeExecutionResult<T>
 		Data = result
 	};
 
-	public static CodeExecutionResult<T> Error(string message, List<string> errors = default)
+	public static CodeExecutionResult<T> Error(string message, List<string>? errors = default)
 	{
 		errors ??= new();
 

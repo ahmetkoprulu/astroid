@@ -12,6 +12,8 @@ var builder = Host.CreateDefaultBuilder(args)
 
 		services.AddSingleton<ICacheService, RedisCache>();
 		services.AddSingleton<ExchangeInfoStore>();
+		services.AddSingleton<ExchangeCalculator>();
+		services.AddSingleton<CodeExecutor>();
 
 		services.AddSingleton<IMessageQueue, RabbitMessageQueue>();
 		services.AddSingleton<AQOrder>();
