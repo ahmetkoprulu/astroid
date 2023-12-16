@@ -63,7 +63,7 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		var symbolInfo = await GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 		var quantity = await ConvertUsdtToCoin(order, symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
-		await ChangeLeverage(order.Symbol, order.Position.Leverage);
+		if (order.Leverage.HasValue) await ChangeLeverage(order.Symbol, order.Leverage.Value);
 
 		var orderResult = await PlaceOrder(bot, order, quantity, OrderType.Buy, order.Position.Type, symbolInfo);
 		if (!orderResult.Success)
@@ -137,7 +137,7 @@ public abstract class ExchangeProviderBase : IDisposable
 	{
 		if (!bot.IsStopLossEnabled) return;
 
-		var slOrder = Repo.GetOpenStopLossOrder(order.Position.Id);
+		var slOrder = await Repo.GetOpenStopLossOrder(order.Position.Id);
 		if (slOrder != null) return;
 
 		if (bot.StopLossSettings.Price <= 0) bot.StopLossSettings.Price = 1;
@@ -208,7 +208,7 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		var quantity = Math.Max(position.CurrentQuantity, Math.Abs(exPosition.Quantity));
 		var orderResult = await PlaceMarketOrder(order.Symbol, quantity, OrderType.Sell, pType);
-		if (orderResult.Success) await Repo.CancelOpenOrders(position, closePosition: true);
+		if (orderResult.Success) await Repo.ClosePosition(order, orderResult.Quantity, orderResult.EntryPrice);
 
 		return orderResult;
 	}
@@ -240,7 +240,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			return result.AddAudit(AuditType.OpenOrderPlaced, $"Failed to open pyramiding position: {orderResult.Message}", data: JsonConvert.SerializeObject(new { order.Symbol, OrderType = "Buy", PositionType = order.Position.Type })).WithMessage(orderResult?.Message ?? "");
 		}
 
-		Repo.ExpandPosition(order, orderResult.Quantity, orderResult.EntryPrice, order.Position.Leverage);
+		Repo.ExpandPosition(order, orderResult.Quantity, orderResult.EntryPrice);
 		if (bot.IsStopLossEnabled) await CreateStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo.PricePrecision);
 		if (bot.IsTakePofitEnabled) await CreateTakeProfitOrders(bot, order, symbolInfo.QuantityPrecision, symbolInfo.PricePrecision);
 

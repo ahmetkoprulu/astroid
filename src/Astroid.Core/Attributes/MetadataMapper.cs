@@ -14,7 +14,7 @@ public class MetadataMapper
 		foreach (var metadata in values)
 		{
 			var property = properties.SingleOrDefault(x => x.Name == metadata.Property);
-			if (property == null) continue;
+			if (property == null || metadata.Value == null) continue;
 
 			if (property.PropertyType == metadata.Value.GetType())
 			{

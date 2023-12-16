@@ -262,8 +262,8 @@ public class BotsController : SecureController
 					return BadRequest($"Cannot place pyramiding order, position not found");
 				}
 
-				position ??= await Db.Positions.AddRequestedPosition(bot, orderRequest.Ticker, orderRequest.Leverage, orderRequest.PositionType);
-				await Db.Orders.AddOpenOrder(bot, position, orderRequest.Ticker, orderRequest.Quantity, orderRequest.QtyType, orderRequest.IsPyramiding);
+				position ??= await Db.Positions.AddRequestedPosition(bot, orderRequest.Ticker, orderRequest.PositionType);
+				await Db.Orders.AddOpenOrder(bot, position, orderRequest.Ticker, orderRequest.Quantity, orderRequest.QtyType, orderRequest.IsPyramiding, orderRequest.Leverage);
 				await Db.SaveChangesAsync();
 
 				return Success(null, "Order requested successfully");

@@ -52,7 +52,7 @@ public class ADPosition : IEntity
 		UpdatedDate = DateTime.UtcNow;
 	}
 
-	public void Expand(decimal quantity, decimal entryPrice, int leverage)
+	public void Expand(decimal quantity, decimal entryPrice)
 	{
 		AvgEntryPrice = Status == PositionStatus.Requested ? entryPrice : (AvgEntryPrice + entryPrice) / 2;
 
@@ -62,9 +62,14 @@ public class ADPosition : IEntity
 			EntryPrice = entryPrice;
 		}
 
-		Leverage = leverage;
 		Quantity += quantity;
 		CurrentQuantity += quantity;
+		UpdatedDate = DateTime.UtcNow;
+	}
+
+	public void ChangeLeverage(int leverage)
+	{
+		Leverage = leverage;
 		UpdatedDate = DateTime.UtcNow;
 	}
 }

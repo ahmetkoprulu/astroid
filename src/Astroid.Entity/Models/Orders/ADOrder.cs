@@ -14,7 +14,7 @@ public class ADOrder : IEntity
 	public Guid ExchangeId { get; set; }
 	public Guid PositionId { get; set; }
 	public string Symbol { get; set; } = string.Empty;
-	public int Leverage { get; set; }
+	public int? Leverage { get; set; }
 	public OrderTriggerType TriggerType { get; set; }
 	public decimal TriggerPrice { get; set; }
 	public decimal FilledPrice { get; set; }

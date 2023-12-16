@@ -53,7 +53,7 @@ public static class ContextExtentionMethods
 		set.Add(entity);
 	}
 
-	public static async Task<ADPosition> AddRequestedPosition(this DbSet<ADPosition> set, ADBot bot, string symbol, int leverage, PositionType type)
+	public static async Task<ADPosition> AddRequestedPosition(this DbSet<ADPosition> set, ADBot bot, string symbol, PositionType type)
 	{
 		var position = new ADPosition
 		{
@@ -66,7 +66,6 @@ public static class ContextExtentionMethods
 			AvgEntryPrice = 0,
 			Quantity = 0,
 			CurrentQuantity = 0,
-			Leverage = leverage,
 			Type = type,
 			Status = PositionStatus.Requested,
 			UpdatedDate = DateTime.MinValue,
@@ -102,7 +101,7 @@ public static class ContextExtentionMethods
 		await set.AddAsync(order);
 	}
 
-	public static async Task AddOpenOrder(this DbSet<ADOrder> set, ADBot bot, ADPosition position, string symbol, decimal? size, PositionSizeType type, bool isPyramiding)
+	public static async Task AddOpenOrder(this DbSet<ADOrder> set, ADBot bot, ADPosition position, string symbol, decimal? size, PositionSizeType type, bool isPyramiding, int? leverage = null)
 	{
 		var order = new ADOrder
 		{
@@ -121,6 +120,7 @@ public static class ContextExtentionMethods
 			Status = OrderStatus.Open,
 			UpdatedDate = DateTime.MinValue,
 			CreatedDate = DateTime.UtcNow,
+			Leverage = leverage
 		};
 
 		await set.AddAsync(order);

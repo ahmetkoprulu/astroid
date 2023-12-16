@@ -118,9 +118,11 @@ public class ExecutionRepository : IRepository, IDisposable
 		position.Reduce(quantity);
 	}
 
-	public void ExpandPosition(ADOrder order, decimal quantity, decimal entryPrice, int leverage)
+	public void ExpandPosition(ADOrder order, decimal quantity, decimal entryPrice, int? leverage = null)
 	{
-		order.Position.Expand(quantity, entryPrice, leverage);
+		order.Position.Expand(quantity, entryPrice);
+		if (leverage.HasValue) order.Position.ChangeLeverage(leverage.Value);
+
 		order.Fill(quantity, entryPrice);
 	}
 
@@ -130,15 +132,10 @@ public class ExecutionRepository : IRepository, IDisposable
 		order.Reject();
 	}
 
-	public async Task ClosePosition(Guid exchangeId, PositionType positionType, string ticker)
+	public async Task ClosePosition(ADOrder order, decimal quantity, decimal price)
 	{
-		var position = await Db.Positions
-			.Where(x => x.ExchangeId == exchangeId && x.Status == PositionStatus.Open && x.Type == positionType)
-			.FirstOrDefaultAsync(x => x.Symbol == ticker);
-
-		if (position == null) return;
-
-		position.Close();
+		order.Fill(quantity, price);
+		await CancelOpenOrders(order.Position, true);
 	}
 
 	public void CloseRequestedPosition(ADPosition position, ADOrder order)

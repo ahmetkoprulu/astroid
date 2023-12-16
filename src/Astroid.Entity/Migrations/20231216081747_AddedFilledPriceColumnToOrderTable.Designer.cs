@@ -3,6 +3,7 @@ using System;
 using Astroid.Entity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Astroid.Entity.Migrations
 {
     [DbContext(typeof(AstroidDb))]
-    partial class AstroidDbModelSnapshot : ModelSnapshot
+    [Migration("20231216081747_AddedFilledPriceColumnToOrderTable")]
+    partial class AddedFilledPriceColumnToOrderTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -308,7 +311,7 @@ namespace Astroid.Entity.Migrations
                     b.Property<decimal>("FilledQuantity")
                         .HasColumnType("numeric");
 
-                    b.Property<int?>("Leverage")
+                    b.Property<int>("Leverage")
                         .HasColumnType("integer");
 
                     b.Property<Guid>("PositionId")
