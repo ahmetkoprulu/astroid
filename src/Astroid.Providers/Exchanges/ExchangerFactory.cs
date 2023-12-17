@@ -25,6 +25,24 @@ public class ExchangerFactory
 		return provider;
 	}
 
+	public static ExchangeProviderBase? Create(IServiceScope scope, ADExchange exchange)
+	{
+		if (exchange?.Provider == null) return null;
+
+		ExchangeProviderBase? provider;
+		switch (exchange.Provider.Name)
+		{
+			case "binance-usd-futures":
+				provider = scope.ServiceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
+				provider.Context(exchange.PropertiesJson);
+				break;
+			default:
+				return null;
+		}
+
+		return provider;
+	}
+
 	public static ExchangeProviderBase? Create(string targetType)
 	{
 		var assembly = Assembly.GetExecutingAssembly();

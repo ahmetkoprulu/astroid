@@ -58,7 +58,7 @@ public class Worker : IHostedService
 		try
 		{
 			var bot = await GetBot(db, order.BotId, cancellationToken);
-			var exchanger = ExchangerFactory.Create(ServiceProvider, order.Exchange);
+			var exchanger = ExchangerFactory.Create(scope.ServiceProvider, order.Exchange);
 			(var success, var msg) = await ValidateTriggeredOrder(order, bot, exchanger, db);
 			if (!success)
 			{
