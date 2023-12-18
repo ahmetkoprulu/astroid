@@ -76,6 +76,7 @@ public class BotsController : SecureController
 			ExchangeId = bot.ExchangeId,
 			OrderType = bot.OrderType,
 			OrderMode = bot.OrderMode,
+			Leverage = bot.Leverage,
 			PositionSizeType = bot.PositionSizeType,
 			PositionSize = bot.PositionSize,
 			IsPositionSizeExpandable = bot.IsPositionSizeExpandable,
@@ -139,6 +140,7 @@ public class BotsController : SecureController
 				ExchangeId = model.ExchangeId,
 				OrderType = model.OrderType,
 				OrderMode = model.OrderMode,
+				Leverage = model.Leverage,
 				PositionSizeType = model.PositionSizeType,
 				PositionSize = model.PositionSize,
 				IsPositionSizeExpandable = model.IsPositionSizeExpandable,
@@ -169,6 +171,7 @@ public class BotsController : SecureController
 			bot.ExchangeId = model.ExchangeId;
 			bot.OrderType = model.OrderType;
 			bot.OrderMode = model.OrderMode;
+			bot.Leverage = model.Leverage;
 			bot.PositionSizeType = model.PositionSizeType;
 			bot.PositionSize = model.PositionSize;
 			bot.IsPositionSizeExpandable = model.IsPositionSizeExpandable;

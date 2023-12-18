@@ -59,6 +59,9 @@
 				</div>
 				<div class="card-body p-4 mb-4">
 					<p class="h4 mb-4">Position</p>
+					<b-form-group label="Leverage">
+						<SpinButton v-model="model.leverage" />
+					</b-form-group>
 					<b-form-group label="Position Size">
 						<b-input-group>
 							<b-form-input
@@ -284,6 +287,7 @@ import WebhookInfo from "@/components/Bots/WebhookInfo.vue";
 import DropDownSelect from "@/components/shared/DropdownSelect.vue";
 import ComputationMethodModal from "@/components/Bots/ComputationMethodModal.vue";
 import ComputationMethodTestModal from "@/components/Bots/ComputationMethodTestModal.vue";
+import SpinButton from "@/components/shared/SpinButton.vue";
 
 export default {
 	data() {
@@ -326,6 +330,7 @@ export default {
 				description: null,
 				exchangeId: null,
 				orderType: 1,
+				leverage: 3,
 				positionSize: 10,
 				isPositionSizeExpandable: true,
 				orderMode: 2,
@@ -527,6 +532,7 @@ export default {
 		DropDownSelect,
 		ComputationMethodModal,
 		ComputationMethodTestModal,
+		SpinButton,
 	},
 };
 </script>

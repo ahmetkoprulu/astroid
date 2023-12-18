@@ -11,6 +11,7 @@ public class AMBot
 	public Guid ExchangeId { get; set; }
 	public OrderEntryType OrderType { get; set; } = OrderEntryType.Market;
 	public OrderMode OrderMode { get; set; } = OrderMode.TwoWay;
+	public int Leverage { get; set; }
 	public PositionSizeType PositionSizeType { get; set; } = PositionSizeType.FixedInUsd;
 	public LimitSettings LimitSettings { get; set; } = new();
 	public decimal? PositionSize { get; set; } = null;

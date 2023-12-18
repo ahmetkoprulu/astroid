@@ -137,7 +137,7 @@ public record AMProviderResult
 		}
 
 		var targets = bot.PyramidingSettings.Targets;
-		if (targets.Any(x => !(x.Quantity > 0) || !(x.Target == 0)))
+		if (targets.Any(x => !(x.Quantity > 0) || x.Target == 0))
 		{
 			AddAudit(AuditType.OpenOrderPlaced, $"Failed placing pyramiding order: Target(s) share or price value is empty/zero.", CorrelationId, JsonConvert.SerializeObject(new { Order.Symbol }));
 

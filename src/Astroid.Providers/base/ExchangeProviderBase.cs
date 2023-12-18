@@ -36,14 +36,14 @@ public abstract class ExchangeProviderBase : IDisposable
 			else if (order.TriggerType == OrderTriggerType.Pyramiding) await BuyPyramiding(bot, order, result);
 			else if (order.TriggerType == OrderTriggerType.Buy) await Buy(bot, order, result);
 			else await Sell(bot, order, result);
-
-			await Repo.SaveChangesAsync();
 		}
 		catch (Exception ex)
 		{
 			result.AddAudit(AuditType.UnhandledException, ex.Message, data: JsonConvert.SerializeObject(new { order.Symbol, order.TriggerType, order.Position.Type })).WithMessage(ex.Message);
+			Repo.RejectOrderWithPosition(order);
 		}
 
+		await Repo.SaveChangesAsync();
 		return result;
 	}
 
@@ -63,7 +63,7 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		var symbolInfo = await GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 		var quantity = await ConvertUsdtToCoin(order, symbolInfo.LastPrice, symbolInfo.QuantityPrecision);
-		if (order.Leverage.HasValue) await ChangeLeverage(order.Symbol, order.Leverage.Value);
+		var lev = await ChangeLeverage(order, bot);
 
 		var orderResult = await PlaceOrder(bot, order, quantity, OrderType.Buy, order.Position.Type, symbolInfo);
 		if (!orderResult.Success)
@@ -72,7 +72,7 @@ public abstract class ExchangeProviderBase : IDisposable
 			return result;
 		}
 
-		Repo.ExpandPosition(order, orderResult.Quantity, orderResult.EntryPrice, order.Leverage);
+		Repo.ExpandPosition(order, orderResult.Quantity, orderResult.EntryPrice, lev);
 		if (result.ValidateStopLoss(bot)) await CreateStopLossOrder(bot, order, symbolInfo.LastPrice, symbolInfo.PricePrecision);
 		if (result.ValidateTakeProfit(bot)) await CreateTakeProfitOrders(bot, order, symbolInfo.PricePrecision, symbolInfo.QuantityPrecision);
 		if (result.ValidatePyramiding(bot)) await CreatePyramidingOrders(bot, order, symbolInfo.PricePrecision);
@@ -283,6 +283,15 @@ public abstract class ExchangeProviderBase : IDisposable
 		foreach (var ticker in tickers) await ChangeMarginType(ticker.ToUpper(), marginType, result);
 
 		return result.WithSuccess();
+	}
+
+	public async Task<int> ChangeLeverage(ADOrder order, ADBot bot)
+	{
+		var lev = order.Leverage ?? bot.Leverage;
+		if (lev <= 0) throw new InvalidOperationException("Leverage could not be zero. Consider adding defalt leverage to bot.");
+
+		await ChangeLeverage(order.Symbol, lev);
+		return lev;
 	}
 
 	public abstract Task ChangeLeverage(string ticker, int leverage);

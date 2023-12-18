@@ -16,6 +16,7 @@ public class ADBot : IEntity
 	// public SignalSourceType SignalSourceType { get; set; }
 	public OrderEntryType OrderType { get; set; } = OrderEntryType.Market;
 	public OrderMode OrderMode { get; set; } = OrderMode.TwoWay;
+	public int Leverage { get; set; }
 	public PositionSizeType PositionSizeType { get; set; } = PositionSizeType.FixedInUsd;
 	public decimal? PositionSize { get; set; }
 	public bool IsPositionSizeExpandable { get; set; }

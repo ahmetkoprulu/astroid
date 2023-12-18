@@ -8,7 +8,7 @@ public class AMOrderRequest
 {
 	public Guid? OrderId { get; set; }
 	public string Ticker { get; set; } = string.Empty;
-	public int Leverage { get; set; }
+	public int? Leverage { get; set; }
 	public string Type { get; set; } = string.Empty;
 	public int Risk { get; set; } = 1;
 	public decimal? Quantity { get; set; }
