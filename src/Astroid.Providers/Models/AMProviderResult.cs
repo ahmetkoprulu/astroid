@@ -24,6 +24,7 @@ public record AMProviderResult
 
 	public static AMProviderResult Create(ADPosition position) => new(position, null);
 
+	// TODO: Check if adding audit cause it breaks the program.
 	public static AMProviderResult Create() => new(null, null);
 
 	public AMProviderResult WithSuccess()

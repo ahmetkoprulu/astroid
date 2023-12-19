@@ -51,6 +51,7 @@
 							</div>
 						</td>
 						<td>{{ props.row.leverage }}</td>
+						<td>{{ props.row.realizedPnl }} USDT</td>
 						<td>{{ props.row.botLabel }}</td>
 						<td>
 							<img :src="icons[props.row.exchangeProviderName]" height="20" />
@@ -122,6 +123,7 @@ export default {
 				quantity: "Quantity",
 				entryPrice: "Price",
 				leverage: "Leverage",
+				realizedPnl: "Est. RPnL",
 				botLabel: "Bot",
 				exchangeLabel: "Market",
 				status: "Status",

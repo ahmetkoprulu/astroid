@@ -42,6 +42,9 @@
 				<span class="text-muted">avg: </span>{{ props.row.averagePrice }}
 			</div>
 		</template>
+		<template #column-realizedPnl="props">
+			{{ props.row.realizedPnl }} USDT
+		</template>
 		<template #column-status="props">
 			<b-badge pill :variant="props.row.status == 4 ? 'danger' : 'light'">
 				{{ $consts.POSITION_STATUS[props.row.status].title }}
@@ -64,6 +67,7 @@ export default {
 				quantity: "Quantity",
 				entryPrice: "Price",
 				leverage: "Leverage",
+				realizedPnl: "Est. RPnL",
 				status: "Status",
 				createdDate: "Created At",
 			},

@@ -55,6 +55,7 @@ public class PositionsController : SecureController
 				BotLabel = x.Bot.Label,
 				ExchangeLabel = x.Exchange.Label,
 				ExchangeProviderName = x.Exchange.Provider.Name,
+				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 				Orders = orders
 			};
 		}));
@@ -77,7 +78,7 @@ public class PositionsController : SecureController
 
 		return Success(model.ForJson(x =>
 		{
-			var orders = Db.Orders.Where(y => y.PositionId == x.Id && y.Status == OrderStatus.Open).OrderBy(x => x.CreatedDate).ToList();
+			var orders = Db.Orders.Where(y => y.PositionId == x.Id).OrderBy(x => x.CreatedDate).ToList();
 			return new AMPosition
 			{
 				Id = x.Id,
@@ -93,6 +94,7 @@ public class PositionsController : SecureController
 				BotLabel = x.Bot.Label,
 				ExchangeLabel = x.Exchange.Label,
 				ExchangeProviderName = x.Exchange.Provider.Name,
+				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 				Orders = orders
 			};
 		}));
@@ -115,6 +117,7 @@ public class PositionsController : SecureController
 
 		return Success(model.ForJson(x =>
 		{
+			var orders = Db.Orders.Where(y => y.PositionId == x.Id).OrderBy(x => x.CreatedDate).ToList();
 			return new AMPosition
 			{
 				Id = x.Id,
@@ -130,6 +133,7 @@ public class PositionsController : SecureController
 				BotLabel = x.Bot.Label,
 				ExchangeLabel = x.Exchange.Label,
 				ExchangeProviderName = x.Exchange.Provider.Name,
+				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 			};
 		}));
 	}

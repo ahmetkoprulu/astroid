@@ -93,7 +93,7 @@ public class ExecutionRepository : IRepository, IDisposable
 		return position;
 	}
 
-	public async Task ReducePosition(ADPosition position, bool success, decimal quantity, ADOrder? order = null)
+	public async Task ReducePosition(ADPosition position, bool success, decimal quantity, decimal pnl, ADOrder? order = null)
 	{
 		if (order != null && !success)
 		{
@@ -115,6 +115,7 @@ public class ExecutionRepository : IRepository, IDisposable
 		}
 
 		order.Fill(quantity);
+		order.RealizedPnl = pnl;
 		position.Reduce(quantity);
 	}
 
@@ -132,9 +133,10 @@ public class ExecutionRepository : IRepository, IDisposable
 		order.Reject();
 	}
 
-	public async Task ClosePosition(ADOrder order, decimal quantity, decimal price)
+	public async Task ClosePosition(ADOrder order, decimal quantity, decimal price, decimal pnl)
 	{
 		order.Fill(quantity, price);
+		order.RealizedPnl = pnl;
 		await CancelOpenOrders(order.Position, true);
 	}
 

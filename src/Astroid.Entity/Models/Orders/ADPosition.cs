@@ -15,6 +15,7 @@ public class ADPosition : IEntity
 	public string Symbol { get; set; } = string.Empty;
 	public decimal EntryPrice { get; set; }
 	public decimal AvgEntryPrice { get; set; }
+	public decimal WeightedEntryPrice { get; set; }
 	public decimal Quantity { get; set; }
 	public decimal CurrentQuantity { get; set; }
 	public int Leverage { get; set; }
@@ -55,6 +56,7 @@ public class ADPosition : IEntity
 	public void Expand(decimal quantity, decimal entryPrice)
 	{
 		AvgEntryPrice = Status == PositionStatus.Requested ? entryPrice : (AvgEntryPrice + entryPrice) / 2;
+		WeightedEntryPrice += entryPrice * quantity;
 
 		if (Status == PositionStatus.Requested)
 		{

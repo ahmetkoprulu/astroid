@@ -7,6 +7,13 @@ public class ExchangeCalculator
 
 	public ExchangeCalculator(CodeExecutor cExecutor) => CodeExecutor = cExecutor;
 
+	public decimal CalculatePnl(decimal entryPrice, decimal exitPrice, decimal quantity, int leverage, PositionType type)
+	{
+		var distance = CalculateDistanceFromEntry(entryPrice, exitPrice, type);
+
+		return distance * quantity * leverage;
+	}
+
 	public decimal CalculateStopLoss(decimal activation, decimal entryPrice, int precision, PositionType type)
 	{
 		if (type == PositionType.Long) return Math.Round(entryPrice - (entryPrice * activation / 100), precision);
@@ -86,4 +93,13 @@ public class ExchangeCalculator
 
 		return i;
 	}
+
+	private decimal CalculateDistanceFromEntry(decimal entryPrice, decimal exitPrice, PositionType type)
+	{
+		if (type == PositionType.Long) return exitPrice - entryPrice;
+
+		return entryPrice - exitPrice;
+	}
+
+	public decimal CalculateWeightedAveragePrice(decimal weightedPrice, decimal quantity) => weightedPrice / quantity;
 }

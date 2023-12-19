@@ -22,6 +22,7 @@ public class ADOrder : IEntity
 	public decimal Quantity { get; set; }
 	public PositionSizeType QuantityType { get; set; }
 	public decimal FilledQuantity { get; set; }
+	public decimal RealizedPnl { get; set; }
 	public bool ClosePosition { get; set; }
 	public OrderStatus Status { get; set; }
 	public Guid? RelatedTo { get; set; }

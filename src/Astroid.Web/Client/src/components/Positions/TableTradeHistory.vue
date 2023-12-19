@@ -25,6 +25,9 @@
 				{{ props.row.filledQuantity }}
 			</div>
 		</template>
+		<template #column-realizedPnl="props">
+			{{ props.row.realizedPnl }} USDT
+		</template>
 		<template #column-closePosition="props">
 			<b-badge pill :variant="props.row.closePosition ? 'success' : 'light'">
 				{{ props.row.closePosition ? "Yes" : "No" }}
@@ -52,6 +55,7 @@ export default {
 				symbol: "Symbol",
 				quantity: "Quantity",
 				triggerPrice: "Trigger Price",
+				realizedPnl: "Est. RPnL",
 				closePosition: "Close Position",
 				status: "Status",
 			},

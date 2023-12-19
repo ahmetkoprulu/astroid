@@ -101,10 +101,19 @@ public abstract class ExchangeProviderBase : IDisposable
 		var symbolInfo = await GetSymbolInfo(order.Exchange.Provider.Name, order.Symbol);
 		var quantity = Calculator.CalculateAssetQuantity(order.Quantity, order.QuantityType, symbolInfo.LastPrice, symbolInfo.QuantityPrecision, order.Position.Quantity);
 		var orderResult = await PlaceMarketOrder(order.Symbol, quantity, OrderType.Sell, order.Position.Type);
-		await Repo.ReducePosition(order.Position, orderResult.Success, orderResult.Quantity, order);
+		var pnl = GetPnl(order.Position, orderResult.EntryPrice, orderResult.Quantity);
+		await Repo.ReducePosition(order.Position, orderResult.Success, orderResult.Quantity, pnl, order);
 		if (!orderResult.Success) return result.AddAudit(AuditType.CloseOrderPlaced, $"Failed to sell {order.Symbol} - ${order.Position.Type}: {orderResult.Message}", data: JsonConvert.SerializeObject(new { order.Symbol, OrderType = "Sell", PositionType = order.Position.Type })).WithMessage($"Failed to sell {order.Symbol} - ${order.Position.Type}: {orderResult.Message}");
 
 		return result.WithSuccess();
+	}
+
+	protected decimal GetPnl(ADPosition position, decimal price, decimal quantity)
+	{
+		var wAveragePrice = position.WeightedEntryPrice / position.Quantity;
+		var pnl = Calculator.CalculatePnl(wAveragePrice, price, quantity, position.Leverage, position.Type);
+
+		return pnl;
 	}
 
 	protected async Task<decimal> ConvertUsdtToCoin(ADOrder order, decimal lastPrice, int quantityPrecision)
@@ -208,7 +217,11 @@ public abstract class ExchangeProviderBase : IDisposable
 
 		var quantity = Math.Max(position.CurrentQuantity, Math.Abs(exPosition.Quantity));
 		var orderResult = await PlaceMarketOrder(order.Symbol, quantity, OrderType.Sell, pType);
-		if (orderResult.Success) await Repo.ClosePosition(order, orderResult.Quantity, orderResult.EntryPrice);
+		if (orderResult.Success)
+		{
+			var pnl = GetPnl(order.Position, orderResult.EntryPrice, orderResult.Quantity);
+			await Repo.ClosePosition(order, orderResult.Quantity, orderResult.EntryPrice, pnl);
+		}
 
 		return orderResult;
 	}

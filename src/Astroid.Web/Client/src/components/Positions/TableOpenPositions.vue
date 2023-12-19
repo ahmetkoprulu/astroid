@@ -77,6 +77,7 @@ export default {
 				quantity: "Quantity",
 				entryPrice: "Price",
 				leverage: "Leverage",
+				realizedPnl: "Est. RPnL",
 				botLabel: "Bot",
 				status: "Status",
 				actions: " ",
