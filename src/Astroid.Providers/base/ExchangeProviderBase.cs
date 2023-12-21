@@ -289,7 +289,7 @@ public abstract class ExchangeProviderBase : IDisposable
 	public abstract Task<AMOrderBook> GetOrderBook(AMOrderBook orderBook, string ticker);
 	public abstract Task<IEnumerable<AMExchangePosition>> GetPositions();
 	public abstract Task<decimal> GetBalance(string asset);
-
+	public abstract Task<AMExchangeWallet> GetAccountInfo(Guid id, string name);
 	public async Task<AMProviderResult> ChangeTickersMarginType(List<string> tickers, MarginType marginType)
 	{
 		var result = AMProviderResult.Create();

@@ -7,6 +7,28 @@ namespace Astroid.Providers;
 
 public class ExchangerFactory
 {
+	public IServiceProvider ServiceProvider { get; set; }
+
+	public ExchangerFactory(IServiceProvider serviceProvider) => ServiceProvider = serviceProvider;
+
+	public ExchangeProviderBase? Create(ADExchange exchange)
+	{
+		if (exchange?.Provider == null) return null;
+
+		ExchangeProviderBase? provider;
+		switch (exchange.Provider.Name)
+		{
+			case "binance-usd-futures":
+				provider = ServiceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
+				provider.Context(exchange.PropertiesJson);
+				break;
+			default:
+				return null;
+		}
+
+		return provider;
+	}
+
 	public static ExchangeProviderBase? Create(IServiceProvider serviceProvider, ADExchange exchange)
 	{
 		if (exchange?.Provider == null) return null;

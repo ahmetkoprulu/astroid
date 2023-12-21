@@ -89,6 +89,12 @@ builder.Services.AddDbContext<AstroidDb>();
 builder.Services.AddSingleton<ICacheService, RedisCache>();
 builder.Services.AddSingleton<ExchangeInfoStore>();
 builder.Services.AddScoped<BinanceRestClient>();
+builder.Services.AddScoped<ExchangerFactory>();
+builder.Services.AddScoped<BinanceUsdFuturesProvider>();
+builder.Services.AddScoped<ExecutionRepository>();
+builder.Services.AddScoped<ExchangeCalculator>();
+builder.Services.AddScoped<MetadataMapper>();
+builder.Services.AddScoped<CodeExecutor>();
 
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {

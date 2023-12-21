@@ -4,7 +4,7 @@ import Index from "../pages/Index.vue";
 
 //Trading Pages
 import Trading from "../pages/Trading.vue";
-// import Dashboard from "../pages/Dashboard.vue";
+import Dashboard from "../pages/Dashboard.vue";
 
 import Markets from "../pages/Markets/List.vue";
 import MarketSave from "../pages/Markets/Save.vue";
@@ -40,16 +40,16 @@ export const routes = [
 		path: "/trading",
 		component: Trading,
 		children: [
-			// {
-			// 	name: "dashboard",
-			// 	path: "dashboard",
-			// 	component: Dashboard,
-			// 	meta: {
-			// 		title: "Dashboard",
-			// 		visible: true,
-			// 		icon: "speedometer2"
-			// 	}
-			// },
+			{
+				name: "dashboard",
+				path: "dashboard",
+				component: Dashboard,
+				meta: {
+					title: "Dashboard",
+					visible: true,
+					icon: "fa-solid fa-chart-pie"
+				}
+			},
 			{
 				name: "market-list",
 				path: "markets",

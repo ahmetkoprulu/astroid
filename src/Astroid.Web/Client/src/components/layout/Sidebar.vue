@@ -169,6 +169,7 @@ export default {
 	width: 250px;
 	padding: 10px 14px;
 	background: var(--sidebar-color);
+	border-right: 1px solid var(--md-sys-color-surface-9);
 }
 
 .sidebar.close {

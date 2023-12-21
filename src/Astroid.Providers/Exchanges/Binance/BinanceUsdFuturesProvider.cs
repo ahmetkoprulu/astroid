@@ -163,6 +163,33 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		});
 	}
 
+	public override async Task<AMExchangeWallet> GetAccountInfo(Guid id, string name)
+	{
+		var wallet = new AMExchangeWallet { Id = id, Name = name };
+		var res = await Client.UsdFuturesApi.Account.GetAccountInfoAsync();
+		if (!res.Success)
+		{
+			wallet.ErrorMessage = res?.Error?.Message;
+			return wallet;
+		}
+
+		foreach (var asset in res.Data.Assets)
+		{
+			if (asset.WalletBalance <= 0) continue;
+
+			wallet.Assets.Add(new AMExchangeWalletAsset { Name = asset.Asset, Balance = asset.AvailableBalance });
+		}
+
+		wallet.IsHealthy = true;
+		wallet.TotalBalance = res.Data.TotalWalletBalance;
+		wallet.UnrealizedPnl = res.Data.TotalUnrealizedProfit;
+
+		//IDEA: Add unrealized and realized pnl
+		//IDEA: Add positions
+
+		return wallet;
+	}
+
 	public override async Task<decimal> GetBalance(string asset)
 	{
 		var balancesResponse = await Client.UsdFuturesApi.Account.GetBalancesAsync();
