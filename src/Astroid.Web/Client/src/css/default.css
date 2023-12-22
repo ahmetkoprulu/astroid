@@ -30,6 +30,26 @@ a:hover {
 	color: var(--primary);
 }
 
+* {
+	scrollbar-width: auto;
+	scrollbar-color: var(--md-sys-color-primary) #ffffff;
+}
+
+/* Chrome, Edge, and Safari */
+*::-webkit-scrollbar {
+	width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+	background: rgba(0, 0, 0, 0.05);
+}
+
+*::-webkit-scrollbar-thumb {
+	background-color: var(--md-sys-color-primary);
+	border-radius: 10px;
+	border: 1px none #ffffff;
+}
+
 /* a.btn {
 	color: #fff !important;
 } */
