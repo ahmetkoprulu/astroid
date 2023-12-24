@@ -42,6 +42,7 @@
 		--md-sys-color-on-surface-variant-dark
 	);
 	--md-sys-color-outline: var(--md-sys-color-outline-dark);
+	--md-sys-color-outline-rgb: var(--md-sys-color-outline-rgb-dark);
 	--md-sys-color-inverse-on-surface: var(
 		--md-sys-color-inverse-on-surface-dark
 	);
@@ -96,4 +97,14 @@
 	--md-sys-color-secondary-container-9: rgb(
 		var(--md-sys-color-secondary-container-rgb) / 0.22
 	);
+
+	--md-sys-color-outline-1: rgb(var(--md-sys-color-outline-rgb) / 0.06);
+	--md-sys-color-outline-2: rgb(var(--md-sys-color-outline-rgb) / 0.08);
+	--md-sys-color-outline-3: rgb(var(--md-sys-color-outline-rgb) / 0.11);
+	--md-sys-color-outline-4: rgb(var(--md-sys-color-outline-rgb) / 0.12);
+	--md-sys-color-outline-5: rgb(var(--md-sys-color-outline-rgb) / 0.14);
+	--md-sys-color-outline-6: rgb(var(--md-sys-color-outline-rgb) / 0.16);
+	--md-sys-color-outline-7: rgb(var(--md-sys-color-outline-rgb) / 0.18);
+	--md-sys-color-outline-8: rgb(var(--md-sys-color-outline-rgb) / 0.2);
+	--md-sys-color-outline-9: rgb(var(--md-sys-color-outline-rgb) / 0.22);
 }

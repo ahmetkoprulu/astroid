@@ -101,7 +101,7 @@ export default {
 	position: fixed;
 	bottom: 0;
 	width: 100%;
-	z-index: 9;
+	z-index: 99;
 	display: none;
 	border-top: 1px solid var(--md-sys-color-surface-9);
 }

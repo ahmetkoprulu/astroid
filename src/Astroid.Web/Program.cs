@@ -90,7 +90,7 @@ builder.Services.AddSingleton<ICacheService, RedisCache>();
 builder.Services.AddSingleton<ExchangeInfoStore>();
 builder.Services.AddScoped<BinanceRestClient>();
 builder.Services.AddScoped<ExchangerFactory>();
-builder.Services.AddScoped<BinanceUsdFuturesProvider>();
+builder.Services.AddTransient<BinanceUsdFuturesProvider>();
 builder.Services.AddScoped<ExecutionRepository>();
 builder.Services.AddScoped<ExchangeCalculator>();
 builder.Services.AddScoped<MetadataMapper>();

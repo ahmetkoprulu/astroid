@@ -11,5 +11,11 @@ export default {
 	},
 	async getCumulativeProfit() {
 		return HTTP.get(`${URL}/cumulative-profit`);
+	},
+	async getImportantStats() {
+		return HTTP.get(`${URL}/important-stats`);
+	},
+	async getPnlHistory() {
+		return HTTP.get(`${URL}/pnl-history`);
 	}
 };

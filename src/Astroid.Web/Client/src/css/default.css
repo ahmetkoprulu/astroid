@@ -38,6 +38,7 @@ a:hover {
 /* Chrome, Edge, and Safari */
 *::-webkit-scrollbar {
 	width: 6px;
+	height: 6px;
 }
 
 *::-webkit-scrollbar-track {
@@ -155,6 +156,10 @@ main > .main {
 
 .table tr th {
 	font-weight: 400;
+}
+
+.no-border.table {
+	border: none;
 }
 
 .table tr td {

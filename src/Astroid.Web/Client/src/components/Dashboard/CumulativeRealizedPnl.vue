@@ -14,21 +14,45 @@
 					{
 						label: 'Last 30',
 						data: getThirtyRandomNumber(),
-						borderColor: generateRandomColor(),
-						tension: 0.5,
+						borderColor: lastColor,
+						tension: 0.3,
 						fill: true,
 					},
 					{
 						label: 'Prev. 30',
 						data: getThirtyRandomNumber(),
-						borderColor: generateRandomColor(),
-						tension: 0.5,
+						borderColor: prevColor,
+						tension: 0.3,
 					},
 				],
 			}"
 			:chart-options="{
 				responsive: true,
 				maintainAspectRatio: false,
+				scales: {
+					x: {
+						grid: {
+							color: outlineColor,
+						},
+						border: {
+							color: borderColor,
+						},
+						ticks: {
+							color: tickColor,
+						},
+					},
+					y: {
+						grid: {
+							color: outlineColor,
+						},
+						border: {
+							color: borderColor,
+						},
+						ticks: {
+							color: tickColor,
+						},
+					},
+				},
 			}"
 			:styles="{ height: '300px' }"
 		/>
@@ -78,6 +102,46 @@ export default {
 			if (!this.data.previous30Days) return [];
 
 			return this.data.previous30Days.map((x) => x.cumulativePnl);
+		},
+		lastColor() {
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-primary"
+			);
+
+			return backkgroundColor;
+		},
+		prevColor() {
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-secondary-container"
+			);
+
+			return backkgroundColor;
+		},
+		outlineColor() {
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-outline-9"
+			);
+
+			return backkgroundColor;
+		},
+		borderColor() {
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-outline"
+			);
+
+			return backkgroundColor;
+		},
+		tickColor() {
+			let docStyle = getComputedStyle(document.body);
+			let backkgroundColor = docStyle.getPropertyValue(
+				"--md-sys-color-outline"
+			);
+
+			return backkgroundColor;
 		},
 	},
 	methods: {
