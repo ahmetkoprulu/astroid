@@ -13,14 +13,14 @@
 				datasets: [
 					{
 						label: 'Last 30',
-						data: getThirtyRandomNumber(),
+						data: last30DaysPnl,
 						borderColor: lastColor,
 						tension: 0.3,
 						fill: true,
 					},
 					{
 						label: 'Prev. 30',
-						data: getThirtyRandomNumber(),
+						data: prev30DaysPnl,
 						borderColor: prevColor,
 						tension: 0.3,
 					},
@@ -151,6 +151,18 @@ export default {
 			try {
 				const response = await Service.getCumulativeProfit();
 				this.data = response.data.data;
+
+				this.data.last30Days.reduce((cumulativePnl, currentValue) => {
+					currentValue.cumulativePnl =
+						cumulativePnl + currentValue.cumulativePnl;
+					return currentValue.cumulativePnl;
+				}, 0);
+
+				this.data.previous30Days.reduce((cumulativePnl, currentValue) => {
+					currentValue.cumulativePnl =
+						cumulativePnl + currentValue.cumulativePnl;
+					return currentValue.cumulativePnl;
+				}, 0);
 			} catch (error) {
 				this.$errorToast("Wallet Info", error.message);
 			}

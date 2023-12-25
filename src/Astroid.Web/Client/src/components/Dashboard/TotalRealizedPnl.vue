@@ -125,12 +125,12 @@ export default {
 
 .naked-table.table {
 	border-collapse: separate !important;
-	border-spacing: 0 8px !important;
+	border-spacing: 0 10px !important;
 }
 
 .light-table {
 	max-height: 575px;
-	overflow-y: scroll;
+	overflow-y: hidden;
 }
 
 .naked-table .border-long {

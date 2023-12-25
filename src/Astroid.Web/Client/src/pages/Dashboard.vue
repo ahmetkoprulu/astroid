@@ -3,13 +3,13 @@
 		<page-header title="Dashboard" />
 		<ImportantStats />
 		<div class="row">
-			<div class="col-md-4 col-sm-5 col-lg-3 col-7 px-2 pb-3">
+			<div class="col-md-4 col-sm-5 col-lg-3 px-2 pb-3">
 				<div class="card-body h-100">
 					<p class="h5 mb-4">PnL</p>
 					<TotalRealizedPnl />
 				</div>
 			</div>
-			<div class="col-md-8 col-sm-7 col-lg-9 col-3 px-2 pb-3">
+			<div class="col-md-8 col-sm-7 col-lg-9 px-2 pb-3">
 				<div class="card-body mb-3">
 					<p class="h5 mb-4">Wallets</p>
 					<WalletInfo />

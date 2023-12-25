@@ -52,7 +52,7 @@ public class DashboardController : SecureController
 			.Where(x => x.UserId == CurrentUser.Id)
 			.Where(x => x.Status == OrderStatus.Filled)
 			.OrderByDescending(x => x.CreatedDate)
-			.Take(20)
+			.Take(11)
 			.Select(x => new AMDPnlHistoryItem
 			{
 				Id = x.Id,
@@ -60,7 +60,7 @@ public class DashboardController : SecureController
 				Type = x.Position.Type,
 				Market = x.Exchange.Label,
 				Provider = x.Exchange.Provider.Name,
-				RealizedPnl = x.RealizedPnl
+				RealizedPnl = Math.Round(x.RealizedPnl, 2)
 			})
 			.ToList();
 
@@ -76,38 +76,38 @@ public class DashboardController : SecureController
 		var l30Days = Enumerable.Range(0, 30)
 			.Select(x => thirtyDaysBefore.AddDays(x))
 			.GroupJoin(
-				Db.Positions
+				Db.Orders
 					.Where(x => x.UserId == CurrentUser.Id)
-					.Where(x => x.Status == PositionStatus.Closed || x.Status == PositionStatus.Open)
+					.Where(x => x.Status == OrderStatus.Filled)
 					.Where(x => x.CreatedDate > DateTime.UtcNow.AddDays(-30)),
 				x => x.Date,
-				x => x.CreatedDate.Date,
+				x => x.UpdatedDate.Date,
 				(x, y) => new AMDCumulativeRealizedPnl
 				{
 					Date = x,
 					PositionCount = y.Count(),
-					CumulativePnl = y.Sum(p => p.Orders.Where(x => x.Status == OrderStatus.Filled).Sum(x => x.RealizedPnl))
+					CumulativePnl = y.Sum(o => o.RealizedPnl)
 				}
 			).ToList();
 
 		var p30Days = Enumerable.Range(0, 30)
 			.Select(x => sixtyDaysBefore.AddDays(x))
 			.GroupJoin(
-				Db.Positions
+				Db.Orders
 					.Where(x => x.UserId == CurrentUser.Id)
-					.Where(x => x.Status == PositionStatus.Closed || x.Status == PositionStatus.Open)
+					.Where(x => x.Status == OrderStatus.Filled)
 					.Where(x => x.CreatedDate > DateTime.UtcNow.AddDays(-60) && x.CreatedDate < DateTime.UtcNow.AddDays(-30)),
 				x => x.Date,
-				x => x.CreatedDate.Date,
+				x => x.UpdatedDate.Date,
 				(x, y) => new AMDCumulativeRealizedPnl
 				{
 					Date = x,
 					PositionCount = y.Count(),
-					CumulativePnl = y.Sum(p => p.Orders.Where(x => x.Status == OrderStatus.Filled).Sum(x => x.RealizedPnl))
+					CumulativePnl = y.Sum(o => o.RealizedPnl)
 				}
 			).ToList();
 
-		return Success(new { Last30Days = l30Days, Previous30Days = l30Days });
+		return Success(new { Last30Days = l30Days, Previous30Days = p30Days });
 	}
 
 	[HttpGet("position-histogram")]
