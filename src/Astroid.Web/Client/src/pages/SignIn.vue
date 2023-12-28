@@ -94,7 +94,7 @@ export default {
 					return;
 				}
 
-				this.$router.push({ name: "market-list" });
+				this.$router.push({ name: "dashboard" });
 			} catch (err) {
 				this.$errorToast("Sign In", err);
 			}

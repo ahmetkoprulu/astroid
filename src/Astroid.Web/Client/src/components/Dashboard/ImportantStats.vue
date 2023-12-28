@@ -85,9 +85,7 @@ export default {
 
 			try {
 				const response = await Service.getImportantStats();
-				if (!response.data.data) return;
-
-				this.stats = response.data.data;
+				if (response.data.data) this.stats = response.data.data;
 			} catch (error) {
 				this.$errorToast("Important Stats", error.message);
 			}

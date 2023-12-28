@@ -1,6 +1,6 @@
 <template>
 	<b-overlay
-		class="min-h-300"
+		class="min-h-300 d-flex"
 		:show="loading"
 		no-fade
 		:opacity="1"
@@ -60,7 +60,13 @@
 				</div>
 			</div>
 		</div>
-		<div v-else>You do not have any wallet</div>
+		<div class="align-self-center w-100 text-center" v-else>
+			Click
+			<i class="btn-link" @click="$router.push({ name: 'market-save' })"
+				>here</i
+			>
+			to create your first wallet
+		</div>
 	</b-overlay>
 </template>
 <script>
