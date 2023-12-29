@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<page-header title="Positions" />
+		<page-header title="" />
 		<!-- card shadow-sm -->
 		<div class="page-body card-body p-4">
 			<v-table

@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<page-header title="Dashboard" />
+		<page-header title="" />
 		<ImportantStats />
 		<div class="row">
 			<div class="col-md-4 col-sm-5 col-lg-3 px-2 pb-3">

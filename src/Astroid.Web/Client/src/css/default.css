@@ -1054,10 +1054,10 @@ button {
 
 .card-body {
 	border: none !important;
-	border-top-left-radius: 8px !important;
-	border-top-right-radius: 8px !important;
-	border-bottom-right-radius: 8px !important;
-	border-bottom-left-radius: 8px !important;
+	border-top-left-radius: 4px !important;
+	border-top-right-radius: 4px !important;
+	border-bottom-right-radius: 4px !important;
+	border-bottom-left-radius: 4px !important;
 	background-color: var(--md-sys-color-surface-1) !important;
 	color: var(--md-sys-color-on-background) !important;
 }
@@ -1569,6 +1569,16 @@ a:hover {
 	padding: 12px 60px;
 }
 
+.vue-treeselect--disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
+.disabled {
+	pointer-events: none;
+	opacity: 0.5;
+}
+
 .sidebar.close ~ .main-container {
 	height: 100vh;
 	margin-left: 100px !important;
@@ -1576,4 +1586,8 @@ a:hover {
 
 body.dark .main-container .text {
 	color: var(--text-color);
+}
+
+#widget-container {
+	border: none !important;
 }

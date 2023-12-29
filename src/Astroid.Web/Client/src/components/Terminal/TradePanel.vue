@@ -33,6 +33,7 @@
 					v-model="model.ticker"
 					:options="symbolOptions"
 					placeholder="Select a symbol"
+					:disabled="!selectedBot"
 					@input="onSymbolChange"
 				>
 					<div slot="value-label" slot-scope="{ node }">
@@ -41,7 +42,7 @@
 							class="mr-2"
 							height="20"
 						/>
-						<span>{{ node.label }}</span>
+						<span>{{ node.label }}<small class="text-muted">/USDT</small></span>
 					</div>
 					<label slot="option-label" slot-scope="{ node }">
 						<img
@@ -49,14 +50,32 @@
 							class="mr-2"
 							height="20"
 						/>
-						<span>{{ node.label }}</span>
+						<span>{{ node.label }}<small class="text-muted">/USDT</small></span>
 					</label>
 				</v-select>
 			</b-form-group>
 		</div>
-		<div class="col-12">
+		<div class="col-12" v-if="isFutures">
+			<b-form-group label="Side">
+				<v-radio-group
+					v-model="model.positionType"
+					:options="positionTypeOptions"
+					size="md"
+					justify="between"
+					width="100%"
+					:gap="8"
+					fill
+					:disabled="!model.botId || !model.ticker || requesting"
+				/>
+			</b-form-group>
+		</div>
+		<div class="col-12" v-if="isFutures">
 			<b-form-group label="Leverage">
-				<b-form-spinbutton placeholder="Leverage" v-model="model.leverage">
+				<b-form-spinbutton
+					placeholder="Leverage"
+					v-model="model.leverage"
+					:disabled="!model.botId || !model.ticker || requesting"
+				>
 					<template slot="increment">
 						<button
 							tabindex="-1"
@@ -86,7 +105,9 @@
 		</div>
 		<div class="col-12">
 			<b-form-group label="Position Size">
-				<b-input-group>
+				<b-input-group
+					:class="{ disabled: !model.botId || !model.ticker || requesting }"
+				>
 					<b-form-input
 						type="number"
 						class="col-md-12"
@@ -113,24 +134,24 @@
 				</b-input-group>
 			</b-form-group>
 		</div>
-		<div class="col-6 mt-4 pr-1">
+		<div class="col-6 mt-3 pr-1">
 			<b-button
 				variant="success"
 				class="w-100 mt-2"
 				:disabled="!model.botId || !model.ticker || requesting"
 				@click="requestPosition('open-long')"
 			>
-				Long
+				Buy
 			</b-button>
 		</div>
-		<div class="col-6 mt-4 pl-1">
+		<div class="col-6 mt-3 pl-1">
 			<b-button
 				variant="danger"
 				class="w-100 mt-2"
 				:disabled="!model.botId || !model.ticker || requesting"
 				@click="requestPosition('open-short')"
 			>
-				Short
+				Sell
 			</b-button>
 		</div>
 	</b-overlay>
@@ -144,6 +165,7 @@ export default {
 		return {
 			exchangeLabel: {
 				"binance-usd-futures": "BINANCE",
+				"binance-spot": "BINANCE",
 			},
 			busy: false,
 			requesting: false,
@@ -153,10 +175,11 @@ export default {
 			iconUrl: "https://coinicons-api.vercel.app/api/icon/",
 			model: {
 				ticker: null,
-				leverage: 5,
+				leverage: 1,
 				quantity: 50,
 				quantityType: 2,
 				botId: null,
+				positionType: "long",
 				key: null,
 			},
 			quantityTypeIcons: {
@@ -188,6 +211,22 @@ export default {
 					label: x,
 				};
 			});
+		},
+		positionTypeOptions() {
+			return [
+				{
+					text: "Long",
+					value: "long",
+				},
+				{
+					text: "Short",
+					value: "short",
+				},
+			];
+		},
+		isFutures() {
+			console.log(this.selectedBot);
+			return this.selectedBot && this.selectedBot.exchange.providerType == 2;
 		},
 	},
 	async mounted() {
@@ -249,10 +288,16 @@ export default {
 			}
 
 			this.selectedBot = bot;
+			if (!this.isFutures) {
+				this.model.leverage = 1;
+				this.model.side = "long";
+			}
 		},
 		onSymbolChange(symbol) {
 			let exchange = this.exchangeLabel[this.selectedBot.exchange.providerName];
-			let s = symbol ? `${exchange}:${symbol}USDT.P` : null;
+			let s = symbol
+				? `${exchange}:${symbol}USDT${this.isFutures ? ".P" : ""}`
+				: null;
 			this.$emit("ticker-changed", s);
 		},
 		async getBots() {

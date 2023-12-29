@@ -19,6 +19,7 @@ export const PROPERTY_TYPES = {
 
 export const EXCHANGE_ICONS = {
 	"binance-usd-futures": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Binance_Logo.svg",
+	"binance-spot": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Binance_Logo.svg",
 }
 
 export const AUDIT_TYPE_DESCRIPTIONS = {
@@ -106,8 +107,18 @@ export const CHANNEL_TYPES = {
 	3: { id: 2, title: "Telegram", icon: "fa-brands fa-telegram fa-fw" },
 }
 
+export const EXCHANGE_PROVIDER_TYPES = {
+	1: { id: 1, title: "Spot" },
+	2: { id: 2, title: "USD Futures" }
+}
+
+export const EXCHANGE_PROVIDER_TYPES_ENUM = {
+	USD_FUTURES: 1,
+	SPOT: 2
+}
+
 export default {
 	PROPERTY_TYPES, EXCHANGE_ICONS, AUDIT_TYPE_DESCRIPTIONS, POSITION_SIZE_TYPES, ORDER_MODE_TYPES, ORDER_ENTRY_TYPES,
 	LIMIT_VALORIZATION_TYPES, LIMIT_ORDER_BOOK_COMPUTATION_METHODS, STOP_LOSS_TYPE, ORDER_TRIGGER_TYPES, ORDER_STATUS,
-	POSITION_STATUS, PRICE_REFERENCE_TYPES, CHANNEL_TYPES
+	POSITION_STATUS, PRICE_REFERENCE_TYPES, CHANNEL_TYPES, EXCHANGE_PROVIDER_TYPES, EXCHANGE_PROVIDER_TYPES_ENUM
 }

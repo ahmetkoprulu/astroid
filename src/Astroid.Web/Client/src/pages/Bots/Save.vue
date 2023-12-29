@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<page-header title="Save Bot" :actions="actions" />
+		<page-header title="" :actions="actions" />
 		<div class="page-body row">
 			<div class="col-lg-5 col-md-12">
 				<div class="card-body p-4 mb-4">

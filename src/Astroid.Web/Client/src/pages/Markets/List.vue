@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<page-header title="Wallets" :actions="actions" />
+		<page-header title="" :actions="actions" />
 		<!-- card shadow-sm -->
 		<div class="page-body card-body p-4">
 			<v-table

@@ -7,11 +7,11 @@
 		variant="dark"
 		spinner-variant="primary"
 	>
-		<div class="min-h-300" v-if="wallets.length > 0">
+		<div class="min-h-300 w-100" v-if="wallets.length > 0">
 			<div class="row d-flex justify-content-between">
 				<div class="col-md-4 col-sm-12">
 					<div v-if="selectedWallet.isHealthy">
-						<Doughnut
+						<Pie
 							:chart-data="{
 								labels: selectedWallet.assets.map((x) => x.name),
 								datasets: [
@@ -27,6 +27,11 @@
 							:chart-options="{
 								responsive: true,
 								maintainAspectRatio: false,
+								plugins: {
+									legend: {
+										display: false,
+									},
+								},
 							}"
 						/>
 					</div>
@@ -71,7 +76,7 @@
 </template>
 <script>
 import Service from "@/services/dashboard";
-import { Doughnut } from "vue-chartjs";
+import { Pie } from "vue-chartjs";
 import {
 	Chart as ChartJS,
 	Title,
@@ -126,7 +131,7 @@ export default {
 		},
 	},
 	components: {
-		Doughnut,
+		Pie,
 	},
 };
 </script>

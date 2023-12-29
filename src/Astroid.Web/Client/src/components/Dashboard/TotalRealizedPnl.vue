@@ -18,8 +18,9 @@
 					'text-success': differenceInPercentage > 0,
 					'text-danger': differenceInPercentage < 0,
 				}"
-				>▲</small
 			>
+				{{ differenceInPercentage > 0 ? "▲" : "▼" }}
+			</small>
 			{{ differenceInPercentage }}% vs. prev. 30 days
 		</div>
 		<div>

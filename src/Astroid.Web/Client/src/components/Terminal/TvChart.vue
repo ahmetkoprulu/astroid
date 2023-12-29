@@ -40,6 +40,7 @@ export default {
 			},
 			exchangeLabel: {
 				"binance-usd-futures": "BINANCE",
+				"binance-usd-spot": "BINANCE",
 			},
 		};
 	},
@@ -118,7 +119,5 @@ export default {
 </script>
 <style scoped>
 .chart {
-	border: 1px solid var(--md-sys-color-surface-9);
-	border-radius: 8px;
 }
 </style>

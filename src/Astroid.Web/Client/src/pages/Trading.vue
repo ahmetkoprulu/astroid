@@ -7,7 +7,7 @@
 			<main class="main-container w-100 px-3 px-md-0">
 				<b-overlay
 					class="px-lg-5 px-md-3 px-sm-0"
-					style="height: 100vh; overflow-y: auto"
+					style="height: 100vh"
 					:show="$busy"
 					no-fade
 					:opacity="1"

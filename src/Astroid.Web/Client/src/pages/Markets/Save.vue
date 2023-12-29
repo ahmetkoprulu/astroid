@@ -1,6 +1,6 @@
 <template>
 	<div>
-		<page-header title="Save Wallet" :actions="actions" />
+		<page-header title="" :actions="actions" />
 		<div class="page-body card-body p-4 col-lg-5 col-md-12">
 			<p class="h4 mb-4">General</p>
 			<ValidationObserver ref="form">
