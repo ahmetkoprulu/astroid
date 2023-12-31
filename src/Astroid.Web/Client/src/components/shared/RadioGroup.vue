@@ -81,6 +81,6 @@ export default {
 
 <style>
 .radio-group-flex {
-	flex: 1;
+	flex: 0;
 }
 </style>

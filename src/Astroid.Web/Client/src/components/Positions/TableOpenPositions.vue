@@ -3,63 +3,51 @@
 		:columns="columns"
 		:requestFunction="requestFunction"
 		:refreshButton="false"
+		table-class="naked-table text-nowrap"
 		ref="table"
 	>
-		<template #column-symbol="props">
-			<div class="d-flex w-100">
-				<span
+		<template #row-base="props">
+			<tr class="border-posiiton">
+				<td
+					class="p-0"
 					:class="{
-						'mr-2': true,
-						'bg-success': props.row.type == 1,
-						'bg-danger': props.row.type == 2,
+						'border-long': props.row.exchange.providerType == 1,
+						'border-short': props.row.exchange.providerType == 2,
+						'border-asset': props.row.exchange.providerType == 1,
 					}"
-					style="width: 5px; height: 22px"
-				/>
-				<span>
-					{{ props.row.symbol }}
-				</span>
-			</div>
-		</template>
-		<template #column-quantity="props">
-			<div>
-				{{ props.row.quantity }}
-			</div>
-			<div
-				v-if="
-					props.row.status !== 2 &&
-					props.row.quantity != props.row.currentQuantity
-				"
-			>
-				<span class="text-muted"> current: </span>
-				{{ props.row.currentQuantity }}
-			</div>
-		</template>
-		<template #column-entryPrice="props">
-			<div>
-				<span class="text-muted">entry: </span>{{ props.row.entryPrice }}
-			</div>
-			<div>
-				<span class="text-muted">avg: </span>{{ props.row.averagePrice }}
-			</div>
-		</template>
-		<template #column-actions="props">
-			<v-dropdown class="pull-right">
-				<v-dropdown-item @click="showHistory($event, props.row.orders)">
-					<i class="fa-regular fa-file-lines mr-2" /> Show order history
-				</v-dropdown-item>
-				<v-dropdown-item @click="closePosition($event, props.row.id)">
-					<i class="fa-solid fa-xmark mr-2" /> Close
-				</v-dropdown-item>
-			</v-dropdown>
-		</template>
-		<template #column-botLabel="props">
-			<img :src="icons[props.row.exchangeProviderName]" height="20" />
-			{{ props.row.exchangeLabel }}
-		</template>
-		<template #column-status="props">
-			<b-badge variant="light" pill>{{
-				$consts.POSITION_STATUS[props.row.status].title
-			}}</b-badge>
+				>
+					<img
+						:src="icons[props.row.exchange.providerName]"
+						class="mx-2"
+						height="20"
+					/>
+					<span class="mr-2">
+						{{ props.row.symbol }}
+					</span>
+					<b-badge variant="light" pill> {{ props.row.leverage }}x </b-badge>
+				</td>
+				<td>
+					{{ props.row.currentQuantity }}
+				</td>
+				<td>
+					{{ props.row.averagePrice }}
+				</td>
+				<td>
+					{{ props.row.weightedEntryPrice }}
+				</td>
+				<td>{{ props.row.realizedPnl }}</td>
+				<!-- <td>{{ props.row.botLabel }}</td> -->
+				<td>
+					<v-dropdown size="xs" class="pull-right">
+						<v-dropdown-item @click="showHistory($event, props.row.orders)">
+							<i class="fa-regular fa-file-lines mr-2" /> Show order history
+						</v-dropdown-item>
+						<v-dropdown-item @click="closePosition($event, props.row.id)">
+							<i class="fa-solid fa-xmark mr-2" /> Close
+						</v-dropdown-item>
+					</v-dropdown>
+				</td>
+			</tr>
 			<OrderHistoryModal ref="orderHistoryModal" :show-status="false" />
 		</template>
 	</v-table>
@@ -74,12 +62,11 @@ export default {
 		return {
 			columns: {
 				symbol: "Symbol",
-				quantity: "Quantity",
+				quantity: "Size",
 				entryPrice: "Price",
-				leverage: "Leverage",
-				realizedPnl: "Est. RPnL",
-				botLabel: "Bot",
-				status: "Status",
+				breakEvenPrice: "Break Even",
+				realizedPnl: "PnL",
+				// botLabel: "Bot",
 				actions: " ",
 			},
 		};
@@ -127,3 +114,8 @@ export default {
 	components: { OrderHistoryModal },
 };
 </script>
+<style scoped>
+.ws-nowrap {
+	white-space: nowrap;
+}
+</style>

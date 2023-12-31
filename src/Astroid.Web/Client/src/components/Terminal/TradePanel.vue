@@ -60,7 +60,7 @@
 				<v-radio-group
 					v-model="model.positionType"
 					:options="positionTypeOptions"
-					size="md"
+					size="sm"
 					justify="between"
 					width="100%"
 					:gap="8"
@@ -104,7 +104,7 @@
 			</b-form-group>
 		</div>
 		<div class="col-12">
-			<b-form-group label="Position Size">
+			<b-form-group label=" Size">
 				<b-input-group
 					:class="{ disabled: !model.botId || !model.ticker || requesting }"
 				>
@@ -135,24 +135,22 @@
 			</b-form-group>
 		</div>
 		<div class="col-6 mt-3 pr-1">
-			<b-button
-				variant="success"
-				class="w-100 mt-2"
+			<button
+				class="btn btn-long w-100 mt-2"
 				:disabled="!model.botId || !model.ticker || requesting"
-				@click="requestPosition('open-long')"
+				@click="requestPosition('open')"
 			>
 				Buy
-			</b-button>
+			</button>
 		</div>
 		<div class="col-6 mt-3 pl-1">
-			<b-button
-				variant="danger"
-				class="w-100 mt-2"
+			<button
+				class="btn btn-short w-100 mt-2"
 				:disabled="!model.botId || !model.ticker || requesting"
-				@click="requestPosition('open-short')"
+				@click="requestPosition('close')"
 			>
 				Sell
-			</b-button>
+			</button>
 		</div>
 	</b-overlay>
 </template>
@@ -225,7 +223,6 @@ export default {
 			];
 		},
 		isFutures() {
-			console.log(this.selectedBot);
 			return this.selectedBot && this.selectedBot.exchange.providerType == 2;
 		},
 	},
@@ -235,7 +232,7 @@ export default {
 		this.busy = false;
 	},
 	methods: {
-		async requestPosition(side) {
+		async requestPosition(type) {
 			if (
 				!this.selectedBot ||
 				!this.selectedBot.key ||
@@ -253,7 +250,7 @@ export default {
 				leverage: this.model.leverage,
 				quantity: this.model.quantity,
 				quantityType: this.quantityTypeLabels[this.model.quantityType],
-				type: side,
+				type: `${type}-${this.model.positionType}`,
 				key: this.selectedBot.key,
 			};
 
@@ -263,15 +260,15 @@ export default {
 				this.requesting = true;
 				const response = await BotService.execute(m);
 				if (!response.data.success) {
-					this.$errorToast("Execute Bot", response.data.message);
+					this.$errorToast("Request Position", response.data.message);
 					this.requesting = false;
 
 					return;
 				}
 
-				this.$successToast("Execute Bot", response.data.message);
+				this.$successToast("Request Position", response.data.message);
 			} catch (error) {
-				this.$errorToast("Execute Bot", error.message);
+				this.$errorToast("Request Position", error.message);
 			}
 			this.requesting = false;
 		},
@@ -282,15 +279,20 @@ export default {
 				this.selectedBot.exchange.providerName != bot.exchange.providerName
 			) {
 				this.selectedBot = bot;
+				if (this.selectedBot.exchange.providerType == 2) {
+					this.model.leverage = 1;
+					this.model.positionType = "long";
+				}
+
 				await this.getSymbols();
 
 				return;
 			}
 
 			this.selectedBot = bot;
-			if (!this.isFutures) {
+			if (this.selectedBot.exchange.providerType == 2) {
 				this.model.leverage = 1;
-				this.model.side = "long";
+				this.model.positionType = "long";
 			}
 		},
 		onSymbolChange(symbol) {
@@ -338,3 +340,18 @@ export default {
 	},
 };
 </script>
+<style>
+.btn-long {
+	background-color: var(--long) !important;
+	background: var(--long) !important;
+	border-color: var(--long) !important;
+	color: #fff !important;
+}
+
+.btn-short {
+	background-color: var(--short) !important;
+	background: var(--short) !important;
+	border-color: var(--short) !important;
+	color: #fff !important;
+}
+</style>

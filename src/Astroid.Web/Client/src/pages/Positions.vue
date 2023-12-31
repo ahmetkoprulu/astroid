@@ -55,7 +55,7 @@
 						<td>{{ props.row.botLabel }}</td>
 						<td>
 							<img :src="icons[props.row.exchangeProviderName]" height="20" />
-							{{ props.row.exchangeLabel }}
+							{{ props.row.exchange.name }}
 						</td>
 						<td>
 							<b-badge

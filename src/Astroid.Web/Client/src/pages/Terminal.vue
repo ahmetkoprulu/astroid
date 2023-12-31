@@ -1,14 +1,13 @@
 <template>
 	<div>
 		<page-header title="" />
-
-		<div class="page-body row m-0">
-			<div class="p-0 col-md-12 col-sm-12 col-lg-9" style="height: 600px">
+		<div class="page-body d-flex flex-wrap justify-content-start m-0">
+			<div class="flex-fill bl-1 bt-1 br-sm-1" style="height: 600px">
 				<div style="height: 600px">
 					<TvChart :symbol="symbol" :key="symbol" />
 				</div>
 			</div>
-			<div class="p-0 col-sm-12 col-md-12 col-lg-3 bl-1 bt-1 br-1">
+			<div class="bl-1 bt-1 br-1 trade-panel">
 				<div class="card-body h-100 border-radius-0">
 					<TradePanel
 						@ticker-changed="onTickerChanged"
@@ -99,5 +98,19 @@ export default {
 	border-top-right-radius: 0px !important;
 	border-bottom-right-radius: 0px !important;
 	border-bottom-left-radius: 0px !important;
+}
+
+.trade-panel {
+	width: 300px;
+}
+
+@media (max-width: 750px) {
+	.trade-panel {
+		width: 100%;
+	}
+
+	.br-sm-1 {
+		border-right: 1px solid var(--md-sys-color-surface-9);
+	}
 }
 </style>

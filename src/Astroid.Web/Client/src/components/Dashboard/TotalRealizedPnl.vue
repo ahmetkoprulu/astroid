@@ -44,6 +44,7 @@
 								:class="{
 									'border-long': item.type == 1,
 									'border-short': item.type == 2,
+									'border-asset': item.providerType == 1,
 								}"
 							>
 								{{ item.symbol }}
@@ -126,7 +127,7 @@ export default {
 
 .naked-table.table {
 	border-collapse: separate !important;
-	border-spacing: 0 10px !important;
+	border-spacing: 0 4px !important;
 }
 
 .light-table {
@@ -135,11 +136,15 @@ export default {
 }
 
 .naked-table .border-long {
-	border-left: 5px solid var(--success) !important;
+	border-left: 5px solid var(--long) !important;
+}
+
+.naked-table .border-asset {
+	border-left: 5px solid var(--neutral) !important;
 }
 
 .naked-table .border-short {
-	border-left: 5px solid var(--danger) !important;
+	border-left: 5px solid var(--short) !important;
 	margin-bottom: 4px !important;
 }
 </style>

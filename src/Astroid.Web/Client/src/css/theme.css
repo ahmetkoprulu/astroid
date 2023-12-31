@@ -3,3 +3,9 @@
 @import url(typography.module.css);
 @import url(theme.light.css);
 @import url(theme.dark.css);
+
+:root {
+	--long: #10c476;
+	--short: #f53d52;
+	--neutral: #a4a4a4;
+}
