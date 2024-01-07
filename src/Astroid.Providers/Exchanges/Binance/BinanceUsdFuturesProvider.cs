@@ -6,7 +6,7 @@ using CryptoExchange.Net.Authentication;
 
 namespace Astroid.Providers;
 
-public class BinanceUsdFuturesProvider : ExchangeProviderBase
+public class BinanceUsdFuturesProvider : ExchangeFuturesProviderBase
 {
 	[PropertyMetadata("API Key", Type = PropertyTypes.Text, Required = true, Encrypted = true, Group = "General")]
 	public string Key { get; set; } = string.Empty;
@@ -27,7 +27,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		Client.UsdFuturesApi.SetApiCredentials(new ApiCredentials(Key, Secret));
 	}
 
-	public override async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderType oType, PositionType pType, bool reduceOnly = false)
+	protected override async Task<AMOrderResult> PlaceMarketOrder(string ticker, decimal quantity, OrderType oType, PositionType pType, bool reduceOnly = false)
 	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
@@ -49,7 +49,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return AMOrderResult.WithSuccess(orderResponse.Data.AveragePrice, orderResponse.Data.QuantityFilled, orderResponse.Data.Id.ToString());
 	}
 
-	public override async Task<AMOrderResult> PlaceOrderTillPositionFilled(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings)
+	protected override async Task<AMOrderResult> PlaceOrderTillPositionFilled(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings)
 	{
 		var remainingQuantity = quantity; var lastEntryPrice = 0m; var totalQuantity = 0m; var i = 0; var cts = new CancellationTokenSource(settings.ForceTimeout * 1000);
 		while (remainingQuantity > 0)
@@ -89,7 +89,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return AMOrderResult.WithSuccess(lastEntryPrice, totalQuantity);
 	}
 
-	public override async Task<AMOrderResult> PlaceDeviatedOrder(string ticker, decimal quantity, decimal price, OrderType oType, PositionType pType)
+	protected override async Task<AMOrderResult> PlaceDeviatedOrder(string ticker, decimal quantity, decimal price, OrderType oType, PositionType pType)
 	{
 		var orderResponse = await Client.UsdFuturesApi.Trading
 			.PlaceOrderAsync(
@@ -109,7 +109,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return AMOrderResult.WithSuccess(orderResponse.Data.AveragePrice, orderResponse.Data.QuantityFilled, orderResponse.Data.Id.ToString());
 	}
 
-	public override async Task<AMOrderResult> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings)
+	protected override async Task<AMOrderResult> PlaceOboOrder(AMOrderBook orderBook, string ticker, decimal quantity, OrderType oType, PositionType pType, LimitSettings settings)
 	{
 		var entryIndex = 1;
 		if (settings.ComputeEntryPoint) entryIndex = await Calculator.CalculateEntryPointIndexAsync(orderBook, pType, settings);
@@ -137,7 +137,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return AMOrderResult.WithFailure($"Failed placing OBO limit order");
 	}
 
-	public override async Task<AMOrderBook> GetOrderBook(AMOrderBook ob, string ticker)
+	protected override async Task<AMOrderBook> GetOrderBook(AMOrderBook ob, string ticker)
 	{
 		var orderBookResponse = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker);
 		if (!orderBookResponse.Success) throw new Exception($"Failed getting order book: {orderBookResponse?.Error?.Message}");
@@ -148,7 +148,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 				1);
 	}
 
-	public override async Task<IEnumerable<AMExchangePosition>> GetPositions()
+	protected override async Task<IEnumerable<AMExchangePosition>> GetPositions()
 	{
 		var response = await Client.UsdFuturesApi.Account.GetPositionInformationAsync();
 		if (!response.Success)
@@ -190,7 +190,7 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return wallet;
 	}
 
-	public override async Task<decimal> GetBalance(string asset)
+	protected override async Task<decimal> GetBalance(string asset)
 	{
 		var balancesResponse = await Client.UsdFuturesApi.Account.GetBalancesAsync();
 		if (!balancesResponse.Success) throw new Exception($"Could not get account balances: {balancesResponse?.Error?.Message}");
@@ -200,13 +200,13 @@ public class BinanceUsdFuturesProvider : ExchangeProviderBase
 		return balanceInfo.AvailableBalance;
 	}
 
-	public override async Task ChangeLeverage(string ticker, int leverage)
+	protected override async Task ChangeLeverage(string ticker, int leverage)
 	{
 		var response = await Client.UsdFuturesApi.Account.ChangeInitialLeverageAsync(ticker, leverage);
 		if (!response.Success) throw new Exception($"Failed changing leverage: {response.Error?.Message}");
 	}
 
-	public override async Task ChangeMarginType(string ticker, MarginType marginType, AMProviderResult result)
+	protected override async Task ChangeMarginType(string ticker, MarginType marginType, AMProviderResult result)
 	{
 		var response = await Client.UsdFuturesApi.Account.ChangeMarginTypeAsync(ticker, (FuturesMarginType)marginType);
 

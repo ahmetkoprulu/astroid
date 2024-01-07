@@ -50,7 +50,7 @@ public class DashboardController : SecureController
 			.Include(x => x.Exchange)
 			.ThenInclude(x => x.Provider)
 			.Where(x => x.UserId == CurrentUser.Id)
-			.Where(x => x.Status == OrderStatus.Filled)
+			.Where(x => x.Status == OrderStatus.Filled && x.RealizedPnl != 0)
 			.OrderByDescending(x => x.CreatedDate)
 			.Take(11)
 			.Select(x => new AMDPnlHistoryItem
@@ -60,6 +60,7 @@ public class DashboardController : SecureController
 				Type = x.Position.Type,
 				Market = x.Exchange.Label,
 				Provider = x.Exchange.Provider.Name,
+				ProviderType = x.Exchange.Provider.Type,
 				RealizedPnl = Math.Round(x.RealizedPnl, 2)
 			})
 			.ToList();
@@ -186,6 +187,7 @@ public class DashboardController : SecureController
 		public PositionType Type { get; set; }
 		public string Market { get; set; } = string.Empty;
 		public string Provider { get; set; } = string.Empty;
+		public ExchangeProviderType ProviderType { get; set; }
 		public decimal RealizedPnl { get; set; }
 	}
 

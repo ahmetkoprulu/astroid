@@ -51,6 +51,7 @@ public class BotsController : SecureController
 				ProviderId = x.Exchange.Provider.Id,
 				ProviderName = x.Exchange.Provider.Name,
 				ProviderLabel = x.Exchange.Provider.Title,
+				ProviderType = x.Exchange.Provider.Type,
 			}
 		}));
 	}
@@ -117,6 +118,7 @@ public class BotsController : SecureController
 					ProviderId = x.Exchange.Provider.Id,
 					ProviderName = x.Exchange.Provider.Name,
 					ProviderLabel = x.Exchange.Provider.Title,
+					ProviderType = x.Exchange.Provider.Type,
 				}
 			})
 			.ToListAsync();

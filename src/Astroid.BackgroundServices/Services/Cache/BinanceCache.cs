@@ -164,7 +164,7 @@ public class BinanceCache : IHostedService
 			{
 				{ "PricePrecision", sym.PricePrecision },
 				{ "BaseAsset", sym.BaseAsset },
-				// { "QuoteAsset", sym.QuoteAsset },
+				{ "QuoteAsset", sym.QuoteAsset },
 				{ "QuantityPrecision", sym.QuantityPrecision },
 				{ "LastPrice", price?.Price ?? 0 },
 				{ "MarkPrice", 0 },
@@ -184,9 +184,9 @@ public class BinanceCache : IHostedService
 		);
 	}
 
-	public async Task<BinanceFuturesOrderBook> GetDepth(string ticker)
-	{
-		var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker, 100);
-		return snapshot.Data;
-	}
+	// public async Task<BinanceFuturesOrderBook> GetDepth(string ticker)
+	// {
+	// 	var snapshot = await Client.UsdFuturesApi.ExchangeData.GetOrderBookAsync(ticker, 100);
+	// 	return snapshot.Data;
+	// }
 }

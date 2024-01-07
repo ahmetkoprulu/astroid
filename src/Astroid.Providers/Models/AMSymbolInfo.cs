@@ -25,6 +25,10 @@ public class AMSymbolInfo
 	public async Task<int> GetPricePrecision() => await Cache.GetHash<int>(SymbolKey, "PricePrecision");
 	public async Task SetPricePrecision(int value) => await Cache.SetHash(SymbolKey, "PricePrecision", value);
 
+	public decimal StepSize { get; set; }
+	public async Task<decimal> GetStepSize() => await Cache.GetHash<decimal>(SymbolKey, "StepSize");
+	public async Task SetStepSize(decimal value) => await Cache.SetHash(SymbolKey, "StepSize", value);
+
 	public decimal LastPrice { get; set; }
 	public async Task<decimal> GetLastPrice() => await Cache.GetHash<decimal>(SymbolKey, "LastPrice");
 	public async Task SetLastPrice(decimal value) => await Cache.SetHash(SymbolKey, "LastPrice", value);

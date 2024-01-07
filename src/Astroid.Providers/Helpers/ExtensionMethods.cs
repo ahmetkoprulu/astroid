@@ -53,6 +53,7 @@ public static class ExtensionMethods
 
 	#region Enum Conversions
 
+	// Binance
 	public static PositionType Reverse(this PositionType type) =>
 		type switch
 		{
@@ -89,10 +90,19 @@ public static class ExtensionMethods
 	{
 		if (type == OrderType.Buy && pType == PositionType.Long) return OrderSide.Buy;
 		else if (type == OrderType.Buy && pType == PositionType.Short) return OrderSide.Sell;
+		else if (type == OrderType.Buy && pType == PositionType.Asset) return OrderSide.Buy;
 		else if (type == OrderType.Sell && pType == PositionType.Long) return OrderSide.Sell;
 		else if (type == OrderType.Sell && pType == PositionType.Short) return OrderSide.Buy;
+		else if (type == OrderType.Sell && pType == PositionType.Asset) return OrderSide.Sell;
 		else throw new ArgumentOutOfRangeException(nameof(type), type, null);
 	}
+
+	public static ProviderErrorTypes ToErrorCode(this int? code) =>
+		code switch
+		{
+			-2010 => ProviderErrorTypes.InsufficientBalance,
+			_ => ProviderErrorTypes.Unknown
+		};
 
 	#endregion
 }

@@ -22,6 +22,10 @@ public class ExchangerFactory
 				provider = ServiceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
 				provider.Context(exchange.PropertiesJson);
 				break;
+			case "binance-spot":
+				provider = ServiceProvider.GetRequiredService<BinanceSpotProvider>();
+				provider.Context(exchange.PropertiesJson);
+				break;
 			default:
 				return null;
 		}
@@ -38,6 +42,10 @@ public class ExchangerFactory
 		{
 			case "binance-usd-futures":
 				provider = serviceProvider.GetRequiredService<BinanceUsdFuturesProvider>();
+				provider.Context(exchange.PropertiesJson);
+				break;
+			case "binance-spot":
+				provider = serviceProvider.GetRequiredService<BinanceSpotProvider>();
 				provider.Context(exchange.PropertiesJson);
 				break;
 			default:

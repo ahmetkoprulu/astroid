@@ -11,6 +11,7 @@ var builder = Host.CreateDefaultBuilder(args)
 	{
 		services.AddDbContext<AstroidDb>(ServiceLifetime.Transient);
 		services.AddTransient<BinanceUsdFuturesProvider>();
+		services.AddTransient<BinanceSpotProvider>();
 		services.AddScoped<BinanceRestClient>();
 
 		services.AddSingleton<ICacheService, RedisCache>();

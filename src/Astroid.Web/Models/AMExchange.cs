@@ -11,5 +11,6 @@ public class AMExchange
 	public Guid ProviderId { get; set; }
 	public string ProviderName { get; set; } = string.Empty;
 	public string ProviderLabel { get; set; } = string.Empty;
+	public ExchangeProviderType ProviderType { get; set; }
 	public DateTime CreatedDate { get; set; }
 }

@@ -7,6 +7,7 @@ public enum PositionType : short
 	Unknown = 0,
 	Long = 1,
 	Short = 2,
+	Asset = 3,
 	Both = 3
 }
 
@@ -169,4 +170,21 @@ public enum OrderConditionType : short
 	Increasing = 1,
 	Decreasing = 2,
 	Immediate = 3
+}
+
+public enum ExchangeProviderType : short
+{
+	[Description("Spot")]
+	Spot = 1,
+
+	[Description("USD Futures")]
+	UsdFutures = 2,
+}
+
+
+public enum ProviderErrorTypes : short
+{
+	Unknown = 0,
+	InsufficientBalance = 10,
+	MinQuantity = 20,
 }

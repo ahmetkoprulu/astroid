@@ -53,8 +53,12 @@ public class PositionsController : SecureController
 				Status = x.Status,
 				CreatedDate = x.CreatedDate,
 				BotLabel = x.Bot.Label,
-				ExchangeLabel = x.Exchange.Label,
-				ExchangeProviderName = x.Exchange.Provider.Name,
+				Exchange = new AMExchange
+				{
+					Name = x.Exchange.Label,
+					ProviderName = x.Exchange.Provider.Name,
+					ProviderType = x.Exchange.Provider.Type
+				},
 				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 				Orders = orders
 			};
@@ -92,8 +96,12 @@ public class PositionsController : SecureController
 				Status = x.Status,
 				CreatedDate = x.CreatedDate,
 				BotLabel = x.Bot.Label,
-				ExchangeLabel = x.Exchange.Label,
-				ExchangeProviderName = x.Exchange.Provider.Name,
+				Exchange = new AMExchange
+				{
+					Name = x.Exchange.Label,
+					ProviderName = x.Exchange.Provider.Name,
+					ProviderType = x.Exchange.Provider.Type
+				},
 				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 				Orders = orders
 			};
@@ -131,8 +139,12 @@ public class PositionsController : SecureController
 				Status = x.Status,
 				CreatedDate = x.CreatedDate,
 				BotLabel = x.Bot.Label,
-				ExchangeLabel = x.Exchange.Label,
-				ExchangeProviderName = x.Exchange.Provider.Name,
+				Exchange = new AMExchange
+				{
+					Name = x.Exchange.Label,
+					ProviderName = x.Exchange.Provider.Name,
+					ProviderType = x.Exchange.Provider.Type
+				},
 				RealizedPnl = Math.Round(orders.Sum(y => y.RealizedPnl), 4),
 			};
 		}));
