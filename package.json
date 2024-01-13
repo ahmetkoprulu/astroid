@@ -7,6 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
+    "install-packages": "cd src/Astroid.Web && npm install",
     "dev": "cd src/Astroid.Web && dotnet watch run",
     "dev-services": "cd src/Astroid.BackgroundServices && dotnet watch run",
     "dev-bot-manager": "cd src/Astroid.BotManager && dotnet watch run",
