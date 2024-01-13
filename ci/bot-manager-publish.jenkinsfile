@@ -1,0 +1,65 @@
+title = 'Astroid-Web-Publish'
+buildNumber = '1'
+
+node {
+        stage('Pull from SCM') {
+            git branch: 'master', url: 'https://github.com/ahmetkoprulu/astroid.git'
+        }
+
+        stage('Dotnet Build Bot Manager Service') {
+            try {
+                sh 'dotnet build ./src/Astroid.BotManager/'
+            }
+            catch (ex) {
+                failed(ex, 'Dotnet Build Bot Manager Service')
+            }
+        }
+
+        stage('Dotnet Test') {
+        }
+
+        stage('Docker Build') {
+            try {
+                sh 'npm run build:docker:bot-manager'
+            }
+            catch (ex) {
+                failed(ex, 'Docker Build Bot Manager Service')
+            }
+        }
+
+        stage('Docker Publish') {
+            try {
+                withCredentials([usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIALS', passwordVariable: 'DOCKER_PASSWORD', usernameVariable: 'DOCKER_USERNAME')]) {
+                    sh 'docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD'
+                    sh 'docker push ahmetkoprulu/astroid-bot-manager:latest'
+                }
+                success('Published Bot Manager to Docker repository')
+            }
+            catch (ex) {
+                failed(ex, 'Docker Publish Bot Manager Service')
+            }
+        }
+
+        stage('Clean Up') {
+        }
+}
+
+def failed (ex, step) {
+    echo "${step} step is failed."
+    notify("***\\u274C ${title} - Build ${buildNumber}***", "Step: ${step}")
+    throw ex
+}
+
+def success (message) {
+    notify("***\\u2705 ${title} - Build ${buildNumber}***", message)
+}
+
+def notify (title, message) {
+    withCredentials([string(credentialsId: 'TELEGRAM_BOT_TOKEN', variable: 'TOKEN')]) {
+        message = message.replaceAll('(\\r|\\n|\\r\\n)+', '\\\\n')
+        def body = "{\"text\" : \"${title}\\n${message}\"}"
+        def url = "https://api.telegram.org/bot$TOKEN/sendMessage?chat_id=$TELEGRAM_CHAT_ID"
+        def command = "curl -X POST -H \"Content-Type: application/json\" -d '${body}' ${url}"
+        sh command
+    }
+}
