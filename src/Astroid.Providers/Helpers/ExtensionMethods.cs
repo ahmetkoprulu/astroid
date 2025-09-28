@@ -3,7 +3,6 @@ using Astroid.Core;
 using Astroid.Entity;
 using Astroid.Providers;
 using Binance.Net.Enums;
-using CryptoExchange.Net.CommonObjects;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Astroid.Providers.Extentions;

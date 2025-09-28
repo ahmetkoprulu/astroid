@@ -166,7 +166,7 @@ public class BinanceUsdFuturesProvider : ExchangeFuturesProviderBase
 	public override async Task<AMExchangeWallet> GetAccountInfo(Guid id, string name)
 	{
 		var wallet = new AMExchangeWallet { Id = id, Name = name };
-		var res = await Client.UsdFuturesApi.Account.GetAccountInfoAsync();
+		var res = await Client.UsdFuturesApi.Account.GetAccountInfoV3Async();
 		if (!res.Success)
 		{
 			wallet.ErrorMessage = res?.Error?.Message;

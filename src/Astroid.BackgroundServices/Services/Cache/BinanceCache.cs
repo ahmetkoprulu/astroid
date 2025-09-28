@@ -8,7 +8,6 @@ using Binance.Net.Objects;
 using Binance.Net.Objects.Models.Futures;
 using Binance.Net.Objects.Options;
 using CryptoExchange.Net.Authentication;
-using CryptoExchange.Net.CommonObjects;
 using Microsoft.CodeAnalysis;
 using Newtonsoft.Json;
 
@@ -81,7 +80,7 @@ public class BinanceCache : IHostedService
 	{
 		Logger.LogInformation("Subscribing Sockets.");
 		await GetExchangeInfo();
-		await SocketClient.UsdFuturesApi.SubscribeToAllTickerUpdatesAsync(async data =>
+		await SocketClient.UsdFuturesApi.ExchangeData.SubscribeToAllTickerUpdatesAsync(async data =>
 		{
 			var prices = data.Data;
 			var pairsList = new List<KeyValuePair<string, string>>();
